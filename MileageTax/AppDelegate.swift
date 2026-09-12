@@ -16,7 +16,7 @@ import CoreData
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
-        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
         
@@ -33,6 +33,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 print("FCM registration token: \(token)")
             }
         }
+        
+        // 1. Register background tasks (BGTaskScheduler requires this BEFORE didFinishLaunching returns)
+        TripTrackerService.registerBackgroundTasks()
+        // 2. Pass launch options to the engine so it knows if iOS woke the app in the background
+        TripTrackerAppLifecycle.handleLaunch(launchOptions: launchOptions)
         
         return true
     }
