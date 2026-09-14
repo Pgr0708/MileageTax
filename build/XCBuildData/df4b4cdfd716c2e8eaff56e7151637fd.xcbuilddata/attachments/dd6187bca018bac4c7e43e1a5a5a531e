@@ -1,0 +1,26 @@
+{
+  "" : {
+    "const-values" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary.swiftconstvalues",
+    "dependencies" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary.d",
+    "diagnostics" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary.dia",
+    "emit-module-dependencies" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary-emit-module.dia",
+    "pch" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityExtension-primary.swiftdeps"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTaxLiveActivity/MileageTaxLiveActivity.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivity.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivity.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivity.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTaxLiveActivity/MileageTaxLiveActivityBundle.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityBundle.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityBundle.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/MileageTaxLiveActivityBundle.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTaxLiveActivityExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

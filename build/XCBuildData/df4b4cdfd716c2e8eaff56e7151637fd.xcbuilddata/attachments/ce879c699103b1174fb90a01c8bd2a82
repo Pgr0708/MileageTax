@@ -1,0 +1,4 @@
+module GoogleDataTransport {
+umbrella header "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/GoogleDataTransport/GoogleDataTransport/GDTCORLibrary/Public/GoogleDataTransport/GoogleDataTransport.h"
+export *
+}

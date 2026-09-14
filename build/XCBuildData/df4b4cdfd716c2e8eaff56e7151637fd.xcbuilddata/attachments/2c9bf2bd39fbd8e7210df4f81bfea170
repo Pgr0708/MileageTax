@@ -1,0 +1,211 @@
+{
+  "" : {
+    "const-values" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary.swiftconstvalues",
+    "dependencies" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary.d",
+    "diagnostics" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary.dia",
+    "emit-module-dependencies" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary-emit-module.dia",
+    "pch" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTax-primary.swiftdeps"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/ApiManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ApiManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ApiManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ApiManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Apis.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Apis.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Apis.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Apis.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/AppDelegate.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppDelegate.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/AppInfo.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppInfo.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppInfo.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppInfo.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/AppStorageKeys.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppStorageKeys.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppStorageKeys.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppStorageKeys.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/BaseViewModel.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/BaseViewModel.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/BaseViewModel.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/BaseViewModel.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/ColorExtention.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ColorExtention.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ColorExtention.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ColorExtention.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Consts.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Consts.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Consts.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Consts.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/ContentView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/CoreDataManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/CoreDataManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/CoreDataManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/CoreDataManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/CustomizationScreenView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/CustomizationScreenView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/CustomizationScreenView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/CustomizationScreenView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/DropsManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/DropsManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/DropsManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/DropsManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/L10n.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/L10n.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/L10n.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/L10n.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/LanguageScreenView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/LanguageScreenView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/LanguageScreenView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/LanguageScreenView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Languages.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Languages.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Languages.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/Languages.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Managers/BluetoothVehicleManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/BluetoothVehicleManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/BluetoothVehicleManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/BluetoothVehicleManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Managers/ExportEngine.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ExportEngine.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ExportEngine.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ExportEngine.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Managers/LiveActivityManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/LiveActivityManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/LiveActivityManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/LiveActivityManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Managers/NotificationManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/NotificationManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/NotificationManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/NotificationManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/MileageTaxApp.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTaxApp.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTaxApp.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/MileageTaxApp.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Models/AppTheme.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppTheme.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppTheme.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppTheme.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/NotificationScreenView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/NotificationScreenView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/NotificationScreenView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/NotificationScreenView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/OnBoardingScreenView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/OnBoardingScreenView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/OnBoardingScreenView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/OnBoardingScreenView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/PaywallScreenView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/PaywallScreenView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/PaywallScreenView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/PaywallScreenView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/PaywallViewModel.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/PaywallViewModel.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/PaywallViewModel.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/PaywallViewModel.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/RootView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RootView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RootView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RootView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/SettingsManager.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/SettingsManager.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/SettingsManager.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/SettingsManager.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/SplashScreenView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/SplashScreenView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/SplashScreenView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/SplashScreenView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/TripIntelligenceEngine.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripIntelligenceEngine.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripIntelligenceEngine.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripIntelligenceEngine.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Views/AppTabView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppTabView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppTabView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/AppTabView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Views/ClassifyView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ClassifyView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ClassifyView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/ClassifyView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Views/RadarView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RadarView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RadarView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RadarView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Views/RulesView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RulesView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RulesView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/RulesView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Views/TrackView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TrackView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TrackView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TrackView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/Views/VaultView.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/VaultView.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/VaultView.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/VaultView.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/MileageTax/utils/FullWidthButton.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/FullWidthButton.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/FullWidthButton.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/FullWidthButton.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/DerivedSources/CoreDataGenerated/GoViral/GoViral+CoreDataModel.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/GoViral+CoreDataModel.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/GoViral+CoreDataModel.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/GoViral+CoreDataModel.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/DerivedSources/CoreDataGenerated/GoViral/TripEntity+CoreDataClass.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripEntity+CoreDataClass.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripEntity+CoreDataClass.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/DerivedSources/CoreDataGenerated/GoViral/TripEntity+CoreDataProperties.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripEntity+CoreDataProperties.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/TripEntity+CoreDataProperties.o"
+  },
+  "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/minaxi/Desktop/parth demo/MileageTax/build/MileageTax.build/Release-iphoneos/MileageTax.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

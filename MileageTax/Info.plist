@@ -18,7 +18,11 @@
 		<string>MileageTax requires precise GPS accuracy to record exact odometer mileage and generate IRS-compliant audit logs.</string>
 	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>MileageTax connects to your car's Bluetooth or CarPlay to automatically start and stop drive tracking with zero false positives.</string>
+	<string>Used to detect your car and auto-start mileage tracking.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Used to detect your car and auto-start mileage tracking.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIAppFonts</key>
 	<array/>
 	<key>UIBackgroundModes</key>

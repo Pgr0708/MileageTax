@@ -1,0 +1,4 @@
+module third_party_IsAppEncrypted {
+umbrella "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/GoogleUtilities/third_party/IsAppEncrypted/Public"
+export *
+}

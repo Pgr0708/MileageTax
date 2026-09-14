@@ -1,0 +1,4 @@
+module Drops {
+header "Drops-Swift.h"
+export *
+}

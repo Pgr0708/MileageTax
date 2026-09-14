@@ -1,0 +1,4 @@
+module FirebaseAnalyticsWrapper {
+umbrella "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/firebase-ios-sdk/FirebaseAnalyticsWrapper/include"
+export *
+}

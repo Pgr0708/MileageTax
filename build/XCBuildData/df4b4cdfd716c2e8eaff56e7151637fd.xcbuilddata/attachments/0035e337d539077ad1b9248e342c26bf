@@ -1,0 +1,4 @@
+module GoogleUtilities_Logger {
+umbrella "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/GoogleUtilities/GoogleUtilities/Logger/Public"
+export *
+}

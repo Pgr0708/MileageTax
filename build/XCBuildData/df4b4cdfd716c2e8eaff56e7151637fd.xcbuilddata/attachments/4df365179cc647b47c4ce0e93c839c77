@@ -1,0 +1,4 @@
+module GoogleUtilities_AppDelegateSwizzler {
+umbrella "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/GoogleUtilities/GoogleUtilities/AppDelegateSwizzler/Public"
+export *
+}

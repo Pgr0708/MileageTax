@@ -1,0 +1,4 @@
+module nanopb {
+umbrella "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/nanopb/spm_headers"
+export *
+}

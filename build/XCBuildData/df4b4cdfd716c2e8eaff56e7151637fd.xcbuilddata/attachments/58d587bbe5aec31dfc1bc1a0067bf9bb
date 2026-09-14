@@ -1,0 +1,61 @@
+{
+  "" : {
+    "const-values" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary.swiftconstvalues",
+    "dependencies" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary.d",
+    "diagnostics" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary.dia",
+    "emit-module-dependencies" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary-emit-module.dia",
+    "pch" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops-primary.swiftdeps"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/AnimationContext.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/AnimationContext.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/AnimationContext.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/AnimationContext.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/Animator.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Animator.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Animator.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Animator.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/Drop.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drop.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drop.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drop.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/DropView.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/DropView.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/DropView.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/DropView.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/Drops.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Drops.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/PassthroughView.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/PassthroughView.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/PassthroughView.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/PassthroughView.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/PassthroughWindow.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/PassthroughWindow.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/PassthroughWindow.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/PassthroughWindow.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/Presenter.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Presenter.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Presenter.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Presenter.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/Weak.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Weak.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Weak.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/Weak.o"
+  },
+  "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/Sources/WindowViewController.swift" : {
+    "index-unit-output-path" : "/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/WindowViewController.o",
+    "llvm-bc" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/WindowViewController.bc",
+    "object" : "/Users/minaxi/Library/Developer/Xcode/DerivedData/MileageTax-eqpvysdpjktsbeejcngexpmconmt/SourcePackages/checkouts/Drops/build/Drops.build/Release-iphoneos/Drops.build/Objects-normal/arm64/WindowViewController.o"
+  }
+}

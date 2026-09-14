@@ -9,17 +9,54 @@
 /* Begin PBXBuildFile section */
 		581D087B305416A8004E0CB4 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 58E8F26030318A5900395271 /* FirebaseAnalytics */; };
 		581D087C305416A8004E0CB4 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 58E8F28230318A5900395271 /* FirebaseMessaging */; };
+		58C0962030581C5D00C4F7AE /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 58C0961F30581C5D00C4F7AE /* WidgetKit.framework */; };
+		58C0962230581C5D00C4F7AE /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 58C0962130581C5D00C4F7AE /* SwiftUI.framework */; };
+		58C0963130581C5F00C4F7AE /* MileageTaxLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 58C0961D30581C5D00C4F7AE /* MileageTaxLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		58E8F256303189D900395271 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 58E8F255303189D900395271 /* RevenueCat */; };
 		58E8F26F30318A5900395271 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 58E8F26E30318A5900395271 /* FirebaseCore */; };
 		58E8F28E30318A7700395271 /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 58E8F28D30318A7700395271 /* Drops */; };
 		58E8F8143031951800395271 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 58E8F8133031951800395271 /* Lottie */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		58C0962F30581C5F00C4F7AE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 588CAF1630540867009CE8E7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 58C0961C30581C5D00C4F7AE;
+			remoteInfo = MileageTaxLiveActivityExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		58C0963230581C5F00C4F7AE /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				58C0963130581C5F00C4F7AE /* MileageTaxLiveActivityExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		588CAF1E30540867009CE8E7 /* MileageTax.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MileageTax.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		58C0961D30581C5D00C4F7AE /* MileageTaxLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MileageTaxLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		58C0961F30581C5D00C4F7AE /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		58C0962130581C5D00C4F7AE /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		58C0963630581C5F00C4F7AE /* Exceptions for "MileageTaxLiveActivity" folder in "MileageTaxLiveActivityExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 58C0961C30581C5D00C4F7AE /* MileageTaxLiveActivityExtension */;
+		};
 		58E8FA1930319E5200395271 /* Exceptions for "MileageTax" folder in "MileageTax" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -38,6 +75,14 @@
 			path = MileageTax;
 			sourceTree = "<group>";
 		};
+		58C0962330581C5D00C4F7AE /* MileageTaxLiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				58C0963630581C5F00C4F7AE /* Exceptions for "MileageTaxLiveActivity" folder in "MileageTaxLiveActivityExtension" target */,
+			);
+			path = MileageTaxLiveActivity;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +99,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		58C0961A30581C5D00C4F7AE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				58C0962230581C5D00C4F7AE /* SwiftUI.framework in Frameworks */,
+				58C0962030581C5D00C4F7AE /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -61,6 +115,8 @@
 			isa = PBXGroup;
 			children = (
 				588CAF2030540867009CE8E7 /* MileageTax */,
+				58C0962330581C5D00C4F7AE /* MileageTaxLiveActivity */,
+				58C0961E30581C5D00C4F7AE /* Frameworks */,
 				588CAF1F30540867009CE8E7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -69,8 +125,18 @@
 			isa = PBXGroup;
 			children = (
 				588CAF1E30540867009CE8E7 /* MileageTax.app */,
+				58C0961D30581C5D00C4F7AE /* MileageTaxLiveActivityExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		58C0961E30581C5D00C4F7AE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				58C0961F30581C5D00C4F7AE /* WidgetKit.framework */,
+				58C0962130581C5D00C4F7AE /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -83,10 +149,12 @@
 				588CAF1A30540867009CE8E7 /* Sources */,
 				588CAF1B30540867009CE8E7 /* Frameworks */,
 				588CAF1C30540867009CE8E7 /* Resources */,
+				58C0963230581C5F00C4F7AE /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				58C0963030581C5F00C4F7AE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				588CAF2030540867009CE8E7 /* MileageTax */,
@@ -104,6 +172,28 @@
 			productReference = 588CAF1E30540867009CE8E7 /* MileageTax.app */;
 			productType = "com.apple.product-type.application";
 		};
+		58C0961C30581C5D00C4F7AE /* MileageTaxLiveActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 58C0963530581C5F00C4F7AE /* Build configuration list for PBXNativeTarget "MileageTaxLiveActivityExtension" */;
+			buildPhases = (
+				58C0961930581C5D00C4F7AE /* Sources */,
+				58C0961A30581C5D00C4F7AE /* Frameworks */,
+				58C0961B30581C5D00C4F7AE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				58C0962330581C5D00C4F7AE /* MileageTaxLiveActivity */,
+			);
+			name = MileageTaxLiveActivityExtension;
+			packageProductDependencies = (
+			);
+			productName = MileageTaxLiveActivityExtension;
+			productReference = 58C0961D30581C5D00C4F7AE /* MileageTaxLiveActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -115,6 +205,9 @@
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					588CAF1D30540867009CE8E7 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					58C0961C30581C5D00C4F7AE = {
 						CreatedOnToolsVersion = 26.6;
 					};
 				};
@@ -154,12 +247,20 @@
 			projectRoot = "";
 			targets = (
 				588CAF1D30540867009CE8E7 /* MileageTax */,
+				58C0961C30581C5D00C4F7AE /* MileageTaxLiveActivityExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		588CAF1C30540867009CE8E7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		58C0961B30581C5D00C4F7AE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -176,7 +277,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		58C0961930581C5D00C4F7AE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		58C0963030581C5F00C4F7AE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 58C0961C30581C5D00C4F7AE /* MileageTaxLiveActivityExtension */;
+			targetProxy = 58C0962F30581C5F00C4F7AE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		588CAF2730540869009CE8E7 /* Debug */ = {
@@ -376,6 +492,66 @@
 			};
 			name = Release;
 		};
+		58C0963330581C5F00C4F7AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QH39X8R3UD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MileageTaxLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MileageTaxLiveActivity;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bhavik.MileageTax.MileageTaxLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		58C0963430581C5F00C4F7AE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QH39X8R3UD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MileageTaxLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MileageTaxLiveActivity;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bhavik.MileageTax.MileageTaxLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -393,6 +569,15 @@
 			buildConfigurations = (
 				588CAF2A30540869009CE8E7 /* Debug */,
 				588CAF2B30540869009CE8E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		58C0963530581C5F00C4F7AE /* Build configuration list for PBXNativeTarget "MileageTaxLiveActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				58C0963330581C5F00C4F7AE /* Debug */,
+				58C0963430581C5F00C4F7AE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
