@@ -15,6 +15,7 @@ struct VaultView: View {
     @State private var exportType: ExportType? = nil
     @State private var showExportShare = false
     @State private var exportURL: URL? = nil
+    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
 
     enum VaultPeriod: String, CaseIterable {
         case ytd = "YTD"
@@ -35,7 +36,7 @@ struct VaultView: View {
         let now = Date()
         let calendar = Calendar.current
         let year = calendar.component(.year, from: now)
-        let trips = allTrips.filter { $0.classification == "business" }
+        let trips = allTrips.filter { $0.tripClassification == .business }
         switch period {
         case .ytd:
             let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
@@ -137,7 +138,7 @@ struct VaultView: View {
                 summaryCell(
                     title: "IRS Deduction",
                     value: String(format: "$%.2f", totalDeduction),
-                    sub: "@$0.67/mi",
+                    sub: String(format: "@$%.3f/mi", irsRate),
                     color: .amberGlow)
                 Divider().background(Color.glassBorder)
                 summaryCell(

@@ -37,8 +37,8 @@ struct ClassifyView: View {
     private var displayedTrips: [TripEntity] {
         switch filter {
         case .pending:  return pendingTrips.map { $0 }
-        case .business: return allTrips.filter { $0.classification == "business" }
-        case .personal: return allTrips.filter { $0.classification == "personal" }
+        case .business: return allTrips.filter { $0.tripClassification == .business }
+        case .personal: return allTrips.filter { $0.tripClassification == .personal }
         case .all:      return allTrips.map { $0 }
         }
     }
@@ -249,7 +249,7 @@ struct ClassifyView: View {
         HStack(spacing: AppSpacing.md) {
             // Personal
             Button {
-                classify(trip: trip, as: "personal")
+                classify(trip: trip, as: .personal)
             } label: {
                 Label("Personal", systemImage: "house.fill")
                     .font(.subheadline)
@@ -261,7 +261,7 @@ struct ClassifyView: View {
             }
             // Business
             Button {
-                classify(trip: trip, as: "business")
+                classify(trip: trip, as: .business)
             } label: {
                 Label("Business", systemImage: "briefcase.fill")
                     .font(.subheadline)
@@ -278,9 +278,9 @@ struct ClassifyView: View {
     // MARK: - Swipe Indicator
 
     private var swipeBorderColor: Color {
-        if swipeOffset.width > 40  { return Color.neonEmerald }
-        if swipeOffset.width < -40 { return Color.deepPurple }
-        return Color.glassBorder
+        if swipeOffset.width > 40       { return .neonEmerald }
+        else if swipeOffset.width < -40 { return .deepPurple }
+        return .glassBorder
     }
 
     private var swipeLabel: some View {
@@ -332,16 +332,16 @@ struct ClassifyView: View {
 
     // MARK: - Actions
 
-    private func classify(trip: TripEntity, as classification: String) {
+    private func classify(trip: TripEntity, as classification: TripClassification) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-            swipeOffset = classification == "business"
+            swipeOffset = classification == .business
                 ? CGSize(width: 500, height: 0)
                 : CGSize(width: -500, height: 0)
             swipeOpacity = 0
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            trip.classification = classification
-            trip.needsReview    = false
+            trip.tripClassification = classification
+            trip.needsReview        = false
             if !purposeText.isEmpty { trip.businessPurpose = purposeText }
             CoreDataManager.shared.save()
             purposeText  = ""
@@ -352,8 +352,8 @@ struct ClassifyView: View {
 
     private func handleSwipe(trip: TripEntity, velocity: DragGesture.Value) {
         let w = velocity.translation.width
-        if w > 80       { classify(trip: trip, as: "business") }
-        else if w < -80 { classify(trip: trip, as: "personal") }
+        if w > 80       { classify(trip: trip, as: .business) }
+        else if w < -80 { classify(trip: trip, as: .personal) }
         else {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 swipeOffset = .zero

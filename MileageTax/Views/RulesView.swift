@@ -9,14 +9,14 @@ import UserNotifications
 struct RulesView: View {
     @StateObject private var bluetooth = BluetoothVehicleManager.shared
 
-    // UserDefaults-backed settings
-    @AppStorage("MT_autoClassifyWorkHours") private var autoClassifyWorkHours = false
-    @AppStorage("MT_workHoursStart")        private var workHoursStart: Double = 8    // hour
-    @AppStorage("MT_workHoursEnd")          private var workHoursEnd:   Double = 18
-    @AppStorage("MT_irsRateOverride")       private var irsRateOverride: Double = 0.67
-    @AppStorage("MT_btGatingEnabled")       private var btGatingEnabled  = true
-    @AppStorage("MT_notificationsEnabled")  private var notificationsOn  = true
-    @AppStorage("MT_weeklyReportEnabled")   private var weeklyReportOn   = true
+    // Centralized Settings (Single Source of Truth)
+    @AppStorage(AppStorageKeys.autoClassifyWorkHours) private var autoClassifyWorkHours = false
+    @AppStorage(AppStorageKeys.workHoursStart)        private var workHoursStart: Double = MileageTaxDefaults.defaultWorkStartHour
+    @AppStorage(AppStorageKeys.workHoursEnd)          private var workHoursEnd:   Double = MileageTaxDefaults.defaultWorkEndHour
+    @AppStorage(AppStorageKeys.irsRateOverride)       private var irsRateOverride: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.btGatingEnabled)       private var btGatingEnabled  = true
+    @AppStorage(AppStorageKeys.notificationsEnabled)  private var notificationsOn  = true
+    @AppStorage(AppStorageKeys.weeklyReportEnabled)   private var weeklyReportOn   = true
 
     @State private var showBTSetup     = false
 

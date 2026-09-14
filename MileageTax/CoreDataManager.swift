@@ -7,7 +7,7 @@ import Foundation
 import CoreData
 import SwiftUI
 
-class CoreDataManager: NSObject {
+final class CoreDataManager: NSObject {
 
     static let shared = CoreDataManager()
 
@@ -162,6 +162,20 @@ class CoreDataManager: NSObject {
         if let entity = try? context.fetch(req).first {
             context.delete(entity)
             save()
+        }
+    }
+}
+
+// MARK: - Single Source of Truth TripEntity Extensions
+
+extension TripEntity {
+    public var tripClassification: TripClassification {
+        get {
+            guard let classification else { return .unclassified }
+            return TripClassification(rawValue: classification) ?? .unclassified
+        }
+        set {
+            classification = newValue.rawValue
         }
     }
 }

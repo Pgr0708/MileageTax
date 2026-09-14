@@ -29,6 +29,22 @@ enum AppStorageKeys {
     static let selectedTheme               = "selectedTheme"
     static let isPremium                   = "isPremium"
 
+    // MARK: MileageTax Automations & Rules
+    static let autoClassifyWorkHours       = "MT_autoClassifyWorkHours"
+    static let workHoursStart              = "MT_workHoursStart"
+    static let workHoursEnd                = "MT_workHoursEnd"
+    static let irsRateOverride             = "MT_irsRateOverride"
+    static let btGatingEnabled             = "MT_btGatingEnabled"
+    static let weeklyReportEnabled         = "MT_weeklyReportEnabled"
+    static let knownVehicles               = "MTKnownVehicleBluetoothNames"
+}
+
+// MARK: - MileageTax Single Source of Truth Defaults
+
+public enum MileageTaxDefaults {
+    public static let irsRatePerMile: Double      = 0.67
+    public static let defaultWorkStartHour: Double = 8.0
+    public static let defaultWorkEndHour: Double   = 18.0
 }
 
 

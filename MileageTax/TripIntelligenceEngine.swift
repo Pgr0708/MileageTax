@@ -470,7 +470,17 @@ final class TripTrackerService: NSObject, ObservableObject {
         }
     }
 
-    var rate: TaxJurisdictionRate = .usIRS2024
+    var rate: TaxJurisdictionRate {
+        get {
+            let saved = UserDefaults.standard.double(forKey: AppStorageKeys.irsRateOverride)
+            let ratePerMile = saved > 0 ? saved : MileageTaxDefaults.irsRatePerMile
+            return TaxJurisdictionRate(currencyCode: "USD", ratePerMile: ratePerMile)
+        }
+        set {
+            UserDefaults.standard.set(newValue.ratePerMile, forKey: AppStorageKeys.irsRateOverride)
+        }
+    }
+
     var knownVehicles: [VehicleProfile] = []
 
     // MARK: Core managers
@@ -833,6 +843,15 @@ final class TripTrackerService: NSObject, ObservableObject {
     /// displacement by an overnight-old seed location timestamp.
     private func beginMotionVerification(trigger: TripStartTrigger) {
         guard state == .dormant else { return }
+
+        // Bluetooth Gating Rule: If enabled, only verify/start if connected to paired car
+        if UserDefaults.standard.bool(forKey: AppStorageKeys.btGatingEnabled) {
+            if !BluetoothVehicleManager.shared.isConnectedToVehicle {
+                tripLogger.debug("Bluetooth gating active — vehicle not connected. Suppressing verification.")
+                return
+            }
+        }
+
         activeTripStartTrigger       = trigger
         verifyingMotionStartTime     = Date()       // PATCH 2
         verifyingMotionStartLocation = lastKnownAnyLocation
@@ -1180,6 +1199,19 @@ final class TripTrackerService: NSObject, ObservableObject {
         record.vehicleName           = connectedAudioDeviceName
         record.currencyCode          = rate.currencyCode
         record.updatedAt             = Date()
+
+        // ── Auto-Classify Work Hours Rule (Single Source of Truth) ──
+        if UserDefaults.standard.bool(forKey: AppStorageKeys.autoClassifyWorkHours) {
+            let startHour = Calendar.current.component(.hour, from: record.startDate)
+            let startSetting = Int(UserDefaults.standard.double(forKey: AppStorageKeys.workHoursStart))
+            let endSetting = Int(UserDefaults.standard.double(forKey: AppStorageKeys.workHoursEnd))
+            let effectiveStart = startSetting > 0 ? startSetting : Int(MileageTaxDefaults.defaultWorkStartHour)
+            let effectiveEnd = endSetting > 0 ? endSetting : Int(MileageTaxDefaults.defaultWorkEndHour)
+            if startHour >= effectiveStart && startHour < effectiveEnd {
+                record.classification = .business
+                record.needsReview    = false
+            }
+        }
 
         // ── Persist to CoreData ──
         CoreDataManager.shared.saveTripRecord(record)

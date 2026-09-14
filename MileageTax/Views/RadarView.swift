@@ -17,12 +17,12 @@ struct RadarView: View {
     @State private var showProfile = false
     @State private var showSettings = false
 
-    // IRS rate for 2024
-    private let irsRate = 0.67
+    // Centralized IRS Rate (Single Source of Truth)
+    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
 
-    private var ytdMiles: Double  { trips.reduce(0) { $0 + $1.totalDistanceMiles } }
+    private var ytdMiles: Double     { trips.reduce(0) { $0 + $1.totalDistanceMiles } }
     private var ytdDeduction: Double { trips.reduce(0) { $0 + $1.taxDeductionValueUSD } }
-    private var businessTrips: Int { trips.filter { $0.classification == "business" }.count }
+    private var businessTrips: Int   { trips.filter { $0.tripClassification == .business }.count }
     private var pendingCount: Int  { trips.filter { $0.needsReview }.count }
     private var thisWeekMiles: Double {
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
@@ -348,18 +348,18 @@ struct TripRowCard: View {
     let trip: TripEntity
 
     private var classColor: Color {
-        switch trip.classification {
-        case "business": return .neonEmerald
-        case "personal": return .deepPurple
-        default:         return .amberGlow
+        switch trip.tripClassification {
+        case .business:                return .neonEmerald
+        case .personal:                return .deepPurple
+        case .unclassified, .needsReview: return .amberGlow
         }
     }
 
     private var classIcon: String {
-        switch trip.classification {
-        case "business": return "briefcase.fill"
-        case "personal": return "house.fill"
-        default:         return "questionmark.circle.fill"
+        switch trip.tripClassification {
+        case .business:                return "briefcase.fill"
+        case .personal:                return "house.fill"
+        case .unclassified, .needsReview: return "questionmark.circle.fill"
         }
     }
 
