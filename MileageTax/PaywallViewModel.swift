@@ -11,7 +11,7 @@ import RevenueCat
 internal import Combine
 
 
-class ProViewModel : BaseViewModel {
+final class ProViewModel : BaseViewModel {
     @Published var selectedPackage : Package?
     @Published var allPackages = [Package]()
 

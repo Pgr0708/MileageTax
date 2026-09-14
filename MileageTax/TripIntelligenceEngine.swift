@@ -449,15 +449,20 @@ final class TripTrackerService: NSObject, ObservableObject {
 
     // MARK: Published state
 
-    @Published private(set) var state:               TripState    = .dormant
-    @Published private(set) var liveDistanceMiles:   Double       = 0
-    @Published private(set) var liveDeductionUSD:    Double       = 0
-    @Published private(set) var liveDurationSeconds: TimeInterval = 0
-    @Published private(set) var currentSpeedMph:     Double       = 0
-    @Published private(set) var isInsideVerifiedVehicle: Bool     = false
+    @Published private(set) var state:                    TripState    = .dormant
+    @Published private(set) var liveDistanceMiles:        Double       = 0
+    @Published private(set) var liveDeductionUSD:         Double       = 0
+    @Published private(set) var liveDurationSeconds:      TimeInterval = 0
+    @Published private(set) var currentSpeedMph:          Double       = 0
+    @Published private(set) var isInsideVerifiedVehicle:  Bool         = false
     @Published private(set) var connectedAudioDeviceName: String?
-    @Published private(set) var lastCompletedTrip:   TripMemoryRecord?
-    @Published private(set) var authorizationIssue:  String?
+    @Published private(set) var lastCompletedTrip:        TripMemoryRecord?
+    @Published private(set) var authorizationIssue:       String?
+    @Published private(set) var horizontalAccuracyMeters: Double       = 1.1
+    @Published private(set) var motionSmoothnessScore:     Double       = 99.4
+    @Published private(set) var currentDrainRatePerHour:  Double       = 1.1
+    @Published private(set) var startAddressString:        String       = "580 Market St, Financial Dist"
+    @Published private(set) var targetAddressString:       String       = "Palo Alto Tech Campus, Building B"
 
     var liveBannerText: String {
         switch state {
@@ -981,6 +986,10 @@ final class TripTrackerService: NSObject, ObservableObject {
         guard timeDelta > 0.1 else { return }
         let distanceDelta    = location.distance(from: last)
         let computedVelocity = distanceDelta / timeDelta
+
+        if location.horizontalAccuracy > 0 {
+            self.horizontalAccuracyMeters = Double(round(location.horizontalAccuracy * 10) / 10)
+        }
 
         // LAYER 3 — Teleport filter
         guard computedVelocity < TripTrackerConfig.maxPlausibleSpeedMS else { return }

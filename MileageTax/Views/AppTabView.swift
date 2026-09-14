@@ -18,11 +18,11 @@ struct AppTabView: View {
         ZStack(alignment: .bottom) {
             // ── Content ──────────────────────────────────────────────────────
             TabView(selection: $selectedTab) {
-                RadarView()
+                RadarView(selectedTab: $selectedTab)
                     .tag(0)
                 ClassifyView(preselectedTripID: $classifyTripID)
                     .tag(1)
-                TrackView()
+                TrackView(selectedTab: $selectedTab)
                     .tag(2)
                 VaultView()
                     .tag(3)
