@@ -74,7 +74,7 @@ struct RootView: View {
             CustomizationScreenView()
             
         case .home:
-            ContentView()
+            AppTabView()
             
         default:
             SplashScreenView()

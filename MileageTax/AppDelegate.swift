@@ -38,6 +38,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         TripTrackerService.registerBackgroundTasks()
         // 2. Pass launch options to the engine so it knows if iOS woke the app in the background
         TripTrackerAppLifecycle.handleLaunch(launchOptions: launchOptions)
+        // 3. Configure local notification categories and delegate
+        NotificationManager.shared.configure()
+        NotificationManager.shared.scheduleWeeklySummary()
         
         return true
     }
