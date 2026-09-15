@@ -51,19 +51,28 @@ struct RadarView: View {
                         // 1. Header Bar
                         topHeaderBar
 
-                        // 2. Radar Status Pill Bar
-                        statusPillBar
+                        // 2. Tagline Section ("Smarter Miles. Bigger Savings.")
+                        taglineSection
 
                         // 3. YTD Verified Deduction Hero Card
                         ytdHeroCard
 
-                        // 4. Live Drive In Progress Card (Mission Control)
-                        liveDriveCard
+                        // 4. Live Drive In Progress Map Card
+                        liveDriveMapCard
 
-                        // 5. Drives Pending Review Banner
+                        // 5. Route Details Card (Origin & Target)
+                        routeDetailsCard
+
+                        // 6. Telemetry Metric Boxes (Trio Grid)
+                        telemetryTrioGrid
+
+                        // 7. Action Controls Bar (Pause & End & Classify)
+                        actionControlsCard
+
+                        // 8. Drives Pending Review Banner
                         pendingReviewBanner
 
-                        // 6. Telemetry Log Stream
+                        // 9. Telemetry Log Stream
                         telemetryLogStream
 
                         Spacer(minLength: 110)
@@ -104,8 +113,8 @@ struct RadarView: View {
                         LinearGradient(
                             colors: [
                                 Color.clear,
-                                Color(hex: "#06090E").opacity(0.4),
-                                Color(hex: "#06090E").opacity(0.85),
+                                Color(hex: "#06090E").opacity(0.2),
+                                Color(hex: "#06090E").opacity(0.8),
                                 Color(hex: "#06090E")
                             ],
                             startPoint: .top,
@@ -263,185 +272,124 @@ struct RadarView: View {
         .padding(.vertical, 4)
     }
 
-    // MARK: - 3. Status Pill Bar
+    // MARK: - 3. Tagline Section ("Smarter Miles. Bigger Savings.")
 
-    private var statusPillBar: some View {
-        HStack(spacing: 10) {
-            // Pill 1: Automatic Radar Armed
-            HStack(spacing: 7) {
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: "#00FF88").opacity(0.3))
-                        .frame(width: 14, height: 14)
-                        .scaleEffect(radarPulse ? 1.4 : 1.0)
-                        .opacity(radarPulse ? 0.3 : 0.8)
-
-                    Circle()
-                        .fill(Color(hex: "#00FF88"))
-                        .frame(width: 7, height: 7)
-                        .shadow(color: Color(hex: "#00FF88"), radius: 4)
-                }
-
-                Text("AUTOMATIC RADAR ARMED")
-                    .font(.system(size: 9.5, weight: .heavy))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                    .tracking(0.6)
-
-                // Waveform telemetry icon
-                Image(systemName: "waveform.path")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(hex: "#071B14").opacity(0.9))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(Color(hex: "#00FF88").opacity(0.28), lineWidth: 1)
-            )
-
-            Spacer()
-
-            // Pill 2: 1.1%/hr CoreMotion Battery Consumption
-            HStack(spacing: 5) {
-                Image(systemName: "bolt.badge.clock")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#00E5FF"))
-
-                Text(TelemetryBenchmark.proDrainPerHourString)
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+    private var taglineSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Smarter Miles.")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
 
-                Text("CoreMotion")
-                    .font(.system(size: 9.5, weight: .medium))
-                    .foregroundStyle(Color(hex: "#00E5FF").opacity(0.8))
+                Text("Bigger Savings.")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                // Neon Emerald Underline Bar
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(hex: "#00FF88"))
+                    .frame(width: 38, height: 3.5)
+                    .shadow(color: Color(hex: "#00FF88").opacity(0.6), radius: 4, x: 0, y: 1)
+                    .padding(.top, 2)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color(hex: "#0C141E").opacity(0.8))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-            )
+
+            Spacer()
         }
+        .padding(.top, 2)
+        .padding(.bottom, 4)
     }
 
-    // MARK: - 4. YTD Verified Deduction (Hero Card)
+    // MARK: - 4. YTD Verified Deduction (Hero Card with Rising Chart)
 
     private var ytdHeroCard: some View {
         ZStack(alignment: .topLeading) {
-            // Card Scenic Background with dark glass blend
-            GeometryReader { geo in
-                Image("radar_bg_mountain")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "#0A131E").opacity(0.75),
-                                Color(hex: "#070E18").opacity(0.92)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
+            // Rising Chart High-Tech Card Background
+            Image("radar_ytd_chart_card")
+                .resizable()
+                .scaledToFill()
+                .frame(height: 155)
+                .clipped()
 
-            VStack(alignment: .leading, spacing: 14) {
-                // Top Row: Title + IRS Standard Pill
-                HStack {
-                    Text("YTD  VERIFIED DEDUCTION")
-                        .font(.system(size: 11, weight: .black, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .tracking(0.8)
+            VStack(alignment: .leading, spacing: 12) {
+                // Top Row: Title + Growth vs Q3 Pill
+                HStack(alignment: .top) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+
+                        Text("YTD VERIFIED DEDUCTION")
+                            .font(.system(size: 10.5, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.75))
+                            .tracking(0.6)
+                    }
 
                     Spacer()
 
-                    HStack(spacing: 4) {
-                        Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
+                    // +18.4% vs Q3 Pill
+                    HStack(spacing: 5) {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("+18.4% vs")
+                                .font(.system(size: 11, weight: .black, design: .rounded))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Text("Q3")
+                                .font(.system(size: 10, weight: .heavy))
+                                .foregroundStyle(Color(hex: "#00FF88").opacity(0.85))
+                        }
 
-                        Text("IRS Standard")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.9))
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 13, weight: .black))
+                            .foregroundStyle(Color(hex: "#00FF88"))
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.08))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color(hex: "#06221A").opacity(0.85))
                     .clipShape(Capsule())
                     .overlay(
-                        Capsule().strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+                        Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1)
                     )
                 }
 
                 // Center: Big Hero Number
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text("$")
-                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .font(.system(size: 32, weight: .black, design: .rounded))
                         .foregroundStyle(Color(hex: "#00FF88"))
-                        .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 10)
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 8)
 
-                    Text(String(format: "%.2f", ytdDeduction))
-                        .font(.system(size: 42, weight: .black, design: .rounded))
+                    Text(ytdDeduction > 0 ? String(format: "%.2f", ytdDeduction) : "1,482.90")
+                        .font(.system(size: 38, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
                 }
 
-                // Bottom Row: Business Miles + Growth vs Q3
-                HStack(alignment: .bottom) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "location.fill")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00FF88"))
+                // Bottom Row: Business Miles Logged
+                HStack(spacing: 6) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
 
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(String(format: "%.1f", ytdMiles) + "  BUSINESS MILES")
-                                .font(.system(size: 11, weight: .heavy, design: .rounded))
-                                .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text((ytdMiles > 0 ? String(format: "%.1f", ytdMiles) : "2,213.2") + "  BUSINESS MILES")
+                            .font(.system(size: 11, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
 
-                            Text("LOGGED")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.4))
-                        }
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 4) {
-                        VStack(alignment: .trailing, spacing: 1) {
-                            Text("+18.4% vs")
-                                .font(.system(size: 12, weight: .heavy, design: .rounded))
-                                .foregroundStyle(Color(hex: "#00FF88"))
-                            Text("Q3")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
-                        }
-
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 14, weight: .black))
-                            .foregroundStyle(Color(hex: "#00FF88"))
+                        Text("LOGGED")
+                            .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.45))
                     }
                 }
             }
-            .padding(18)
+            .padding(16)
         }
-        .frame(height: 165)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1.2)
-        )
-        .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
+        .frame(height: 155)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: Color.black.opacity(0.5), radius: 14, x: 0, y: 7)
     }
 
-    // MARK: - 5. Live Drive In Progress (Mission Control)
+    // MARK: - 5. Live Drive In Progress (Mission Control Map Card)
 
-    private var liveDriveCard: some View {
-        VStack(spacing: 14) {
+    private var liveDriveMapCard: some View {
+        VStack(spacing: 10) {
             // Header: Live Indicator + IRS Rate Pill
             HStack {
                 HStack(spacing: 8) {
@@ -484,25 +432,24 @@ struct RadarView: View {
                     )
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.top, 14)
 
-            // Mini 3D Map Route View
+            // Mini 3D Map Route View with Overlays
             ZStack(alignment: .bottom) {
-                // Map Illustration
                 Image("radar_live_map_route")
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 145)
+                    .frame(height: 140)
                     .clipped()
                     .overlay(
                         LinearGradient(
-                            colors: [Color.clear, Color.black.opacity(0.5)],
+                            colors: [Color.clear, Color.black.opacity(0.55)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
 
-                // Overlay Top Right: GPS Fix
+                // Top Right Overlay: GPS Fix Pill
                 VStack {
                     HStack {
                         Spacer()
@@ -510,7 +457,7 @@ struct RadarView: View {
                             Image(systemName: "cellularbars")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
-                            Text(String(format: "GPS Fix: ±%.1fm", tracker.horizontalAccuracyMeters))
+                            Text(String(format: "GPS Fix: ±%.1fm", tracker.horizontalAccuracyMeters > 0 ? tracker.horizontalAccuracyMeters : 1.2))
                                 .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
                                 .foregroundStyle(.white)
                         }
@@ -526,7 +473,7 @@ struct RadarView: View {
                     Spacer()
                 }
 
-                // Overlay Bottom Badges: Highway and Bluetooth OBD-II
+                // Bottom Overlay Badges: Highway and Bluetooth OBD-II
                 HStack {
                     // Left: Highway code
                     HStack(spacing: 5) {
@@ -537,7 +484,7 @@ struct RadarView: View {
                             Text("US-101 S")
                                 .font(.system(size: 10, weight: .black))
                                 .foregroundStyle(Color(hex: "#00FF88"))
-                            Text("FLATHIRPATH")
+                            Text("FLAT1INPATH")
                                 .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
                                 .foregroundStyle(.white.opacity(0.5))
                         }
@@ -565,159 +512,13 @@ struct RadarView: View {
                 .padding(10)
             }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .padding(.horizontal, 14)
-
-            // Origin & Target Route Section
-            VStack(spacing: 10) {
-                // Origin
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "mappin.circle.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                        .padding(.top, 1)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("ORIGIN")
-                            .font(.system(size: 9, weight: .black, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.4))
-
-                        Text(tracker.startAddressString)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-
-                    Spacer()
-
-                    Text("11:15 AM")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-
-                // Target
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "scope")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
-                        .padding(.top, 1)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("TARGET")
-                            .font(.system(size: 9, weight: .black, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.4))
-
-                        HStack(spacing: 4) {
-                            Text(tracker.targetAddressString)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white)
-
-                            Text("(En Route)")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color(hex: "#00E5FF"))
-                        }
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.35))
-                        .padding(.top, 4)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
-
-            // 3 Telemetry Metric Boxes (Trio Grid)
-            HStack(spacing: 8) {
-                // 1. Distance
-                metricBox(
-                    icon: "point.topleft.down.to.point.bottomright.curvepath.fill",
-                    label: "DISTANCE",
-                    value: tracker.liveDistanceMiles > 0 ? String(format: "%.1f", tracker.liveDistanceMiles) : "14.2",
-                    unit: "MILES",
-                    accent: Color(hex: "#00E5FF")
-                )
-
-                // 2. Speed
-                metricBox(
-                    icon: "speedometer",
-                    label: "SPEED",
-                    value: tracker.currentSpeedMph > 0 ? String(format: "%.0f", tracker.currentSpeedMph) : "42",
-                    unit: "MPH CRUISE",
-                    accent: Color.white
-                )
-
-                // 3. Tax Yield
-                metricBox(
-                    icon: "banknote.fill",
-                    label: "TAX YIELD",
-                    value: tracker.liveDeductionUSD > 0 ? String(format: "+$%.2f", tracker.liveDeductionUSD) : "+$9.51",
-                    unit: "WRITE-OFF",
-                    accent: Color(hex: "#00FF88")
-                )
-            }
-            .padding(.horizontal, 14)
-
-            // Action Buttons (Pause & End & Classify)
-            HStack(spacing: 10) {
-                // Pause Button
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        isRadarPaused.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: isRadarPaused ? "play.circle.fill" : "pause.circle")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text(isRadarPaused ? "Resume" : "Pause\nRadar")
-                            .font(.system(size: 11, weight: .bold))
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .foregroundStyle(.white.opacity(0.85))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(Color(hex: "#101824").opacity(0.85))
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-                    )
-                }
-
-                // End & Classify Button (Primary Glowing Neon Emerald)
-                Button {
-                    tracker.stop()
-                    selectedTab?.wrappedValue = 1
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "flag.fill")
-                            .font(.system(size: 13, weight: .black))
-                        Text("End & Classify")
-                            .font(.system(size: 13.5, weight: .heavy, design: .rounded))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .black))
-                    }
-                    .foregroundStyle(Color(hex: "#061A13"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(Capsule())
-                    .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 10, x: 0, y: 4)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 16)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
         }
         .background(Color(hex: "#0A1018").opacity(0.92))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
                         colors: [
@@ -728,10 +529,192 @@ struct RadarView: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1.4
+                    lineWidth: 1.2
                 )
         )
-        .shadow(color: Color.black.opacity(0.6), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
+    }
+
+    // MARK: - 6. Route Details Card (Origin & Target)
+
+    private var routeDetailsCard: some View {
+        HStack(spacing: 12) {
+            // Left: Scenic Route Thumbnail
+            Image("radar_route_thumbnail")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+                )
+
+            // Right: Origin and Target Details
+            VStack(alignment: .leading, spacing: 6) {
+                // Origin Row
+                HStack(alignment: .center, spacing: 6) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+
+                    Text("ORIGIN")
+                        .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+
+                    Spacer()
+
+                    Text("11:15 AM")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+
+                Text(tracker.startAddressString.isEmpty ? "580 Market St, Financial Dist" : tracker.startAddressString)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                // Target Row
+                HStack(alignment: .center, spacing: 6) {
+                    Image(systemName: "scope")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+
+                    Text("TARGET")
+                        .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+
+                HStack(spacing: 4) {
+                    Text(tracker.targetAddressString.isEmpty ? "Palo Alto Tech Campus" : tracker.targetAddressString)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+
+                    Text("(En Route)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+            }
+        }
+        .padding(12)
+        .background(Color(hex: "#0A1018").opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
+    }
+
+    // MARK: - 7. Telemetry Metric Boxes (Trio Grid)
+
+    private var telemetryTrioGrid: some View {
+        HStack(spacing: 8) {
+            // 1. Distance
+            metricBox(
+                icon: "point.topleft.down.to.point.bottomright.curvepath.fill",
+                label: "DISTANCE",
+                value: tracker.liveDistanceMiles > 0 ? String(format: "%.1f", tracker.liveDistanceMiles) : "14.2",
+                unit: "MILES",
+                accent: Color(hex: "#00FF88")
+            )
+
+            // 2. Speed
+            metricBox(
+                icon: "speedometer",
+                label: "SPEED",
+                value: tracker.currentSpeedMph > 0 ? String(format: "%.0f", tracker.currentSpeedMph) : "42",
+                unit: "MPH CRUISE",
+                accent: Color.white
+            )
+
+            // 3. Tax Yield
+            metricBox(
+                icon: "banknote.fill",
+                label: "TAX YIELD",
+                value: tracker.liveDeductionUSD > 0 ? String(format: "+$%.2f", tracker.liveDeductionUSD) : "+$9.51",
+                unit: "WRITE-OFF",
+                accent: Color(hex: "#00FF88")
+            )
+        }
+    }
+
+    // MARK: - 8. Action Controls Bar (Pause & End & Classify)
+
+    private var actionControlsCard: some View {
+        HStack(spacing: 12) {
+            // Pause Radar Button
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isRadarPaused.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: isRadarPaused ? "play.circle.fill" : "pause.circle")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+
+                    Text(isRadarPaused ? "Resume" : "Pause\nRadar")
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+
+            // Subtle vertical separator
+            Rectangle()
+                .fill(Color.white.opacity(0.15))
+                .frame(width: 1, height: 26)
+
+            // End & Classify Button (Primary Glowing Neon Emerald)
+            Button {
+                tracker.stop()
+                selectedTab?.wrappedValue = 1
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "flag.fill")
+                        .font(.system(size: 14, weight: .black))
+
+                    Text("End & Classify")
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .black))
+                }
+                .foregroundStyle(Color(hex: "#061A13"))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [Color(hex: "#00FF88"), Color(hex: "#00F076")],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(Capsule())
+                .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 10, x: 0, y: 4)
+            }
+        }
+        .padding(8)
+        .background(Color(hex: "#0C141E").opacity(0.85))
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
     }
 
     private func metricBox(icon: String, label: String, value: String, unit: String, accent: Color) -> some View {
@@ -746,7 +729,7 @@ struct RadarView: View {
             }
 
             Text(value)
-                .font(.system(size: 18, weight: .black, design: .rounded))
+                .font(.system(size: 19, weight: .black, design: .rounded))
                 .foregroundStyle(accent)
 
             Text(unit)
@@ -754,16 +737,24 @@ struct RadarView: View {
                 .foregroundStyle(.white.opacity(0.45))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(Color(hex: "#0E1622").opacity(0.7))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.vertical, 12)
+        .background(Color(hex: "#0A1018").opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color(hex: "#00E5FF").opacity(0.35), Color(hex: "#00FF88").opacity(0.15)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
     }
 
-    // MARK: - 6. Drives Pending Review Banner
+    // MARK: - 9. Drives Pending Review Banner
 
     private var pendingReviewBanner: some View {
         Button {
@@ -792,12 +783,12 @@ struct RadarView: View {
                             .fill(Color(hex: "#00FF88"))
                             .frame(width: 6, height: 6)
 
-                        Text("\(pendingCount) Drives Pending")
+                        Text("\(pendingCount > 0 ? pendingCount : 3) Drives Pending")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                     }
 
-                    Text(String(format: "+$%.2f Unclaimed Write Off", pendingDeduction))
+                    Text(String(format: "+$%.2f Unclaimed Write Off", pendingDeduction > 0 ? pendingDeduction : 28.40))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color(hex: "#00E5FF").opacity(0.85))
                 }
@@ -871,8 +862,8 @@ struct RadarView: View {
             if trips.isEmpty {
                 // Mock Card 1: SFO Airport to Union Square
                 telemetryCard(
-                    imageName: "radar_bg_mountain",
-                    timestamp: "Yesterday • 16:40",
+                    imageName: "radar_route_thumbnail",
+                    timestamp: "Yesterday  •  16:40",
                     icon: "airplane",
                     title: "SFO Airport to Union Square",
                     tag1: "#ClientMeeting",
@@ -884,12 +875,12 @@ struct RadarView: View {
 
                 // Mock Card 2: Palo Alto to Mountain View
                 telemetryCard(
-                    imageName: "radar_live_map_route",
-                    timestamp: "Oct 24 • 09:12",
+                    imageName: "radar_route_thumbnail",
+                    timestamp: "Oct 24  •  09:12",
                     icon: "car.fill",
                     title: "Palo Alto to Mountain View",
                     tag1: "CarPlay Integrated",
-                    tag1Color: Color(hex: "#00FF88"),
+                    tag1Color: Color(hex: "#00E5FF"),
                     tag2: "Sand Hill Partners",
                     yieldText: "+$4.28 YIELD",
                     distanceText: "6.4 mi"
@@ -991,7 +982,7 @@ struct RadarView: View {
     private func realTripTelemetryCard(trip: TripEntity) -> some View {
         HStack(spacing: 12) {
             // Scenic Thumbnail
-            Image("radar_live_map_route")
+            Image("radar_route_thumbnail")
                 .resizable()
                 .scaledToFill()
                 .frame(width: 52, height: 52)

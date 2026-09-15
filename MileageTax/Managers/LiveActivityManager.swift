@@ -22,7 +22,7 @@ public struct TripLiveActivityAttributes: ActivityAttributes {
         public var deductionUSD:  Double
         public var elapsedSeconds: Int
         public var startAddress:  String
-        public var statusLabel:   String    // e.g. "Active", "Idle Buffer"
+        public var statusLabel:   String    
     }
 
     public var tripID: String

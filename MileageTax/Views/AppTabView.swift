@@ -90,80 +90,146 @@ private struct CustomTabBar: View {
     @Binding var selected: Int
     var trackerState: TripState
 
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
+        predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
+        animation: .default)
+    private var pendingTrips: FetchedResults<TripEntity>
+
     private let items: [(icon: String, label: String)] = [
-        ("chart.bar.fill", "Radar"),
-        ("rectangle.stack.fill", "Classify"),
-        ("location.fill", "Track"),
-        ("archivebox.fill", "Vault"),
-        ("brain.head.profile", "Rules"),
+        ("safari", "Radar"),
+        ("tag.fill", "Classify"),
+        ("bolt.fill", "TRACK"),
+        ("building.columns.fill", "Vault"),
+        ("gearshape.fill", "Rules"),
     ]
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .bottom, spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 Spacer()
-                tabButton(index: index, icon: item.icon, label: item.label)
+                if index == 2 {
+                    // Center Elevated Neon TRACK Button
+                    centerTrackButton(icon: item.icon, label: item.label)
+                } else {
+                    regularTabButton(index: index, icon: item.icon, label: item.label)
+                }
                 Spacer()
             }
         }
-        .padding(.top, 12)
-        .padding(.bottom, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 18)
         .background(
             ZStack {
                 Rectangle()
-                    .fill(.ultraThinMaterial)
+                    .fill(Color(hex: "#060A10").opacity(0.94))
                 Rectangle()
-                    .fill(Color.white.opacity(0.04))
-                Rectangle()
-                    .fill(AppGradient.glassCard)
+                    .fill(.ultraThinMaterial.opacity(0.3))
+                
+                // Subtle bottom emerald aurora glow
+                RadialGradient(
+                    colors: [Color(hex: "#00FF88").opacity(0.12), Color.clear],
+                    center: .bottom,
+                    startRadius: 0,
+                    endRadius: 180
+                )
             }
             .overlay(
                 Divider()
                     .background(Color.white.opacity(0.08)),
-                alignment: .top)
+                alignment: .top
+            )
+            .ignoresSafeArea(edges: .bottom)
         )
     }
 
+    // Regular Tab Button
     @ViewBuilder
-    private func tabButton(index: Int, icon: String, label: String) -> some View {
-        let isSelected  = selected == index
-        let isTrack     = index == 2
-        let isLive      = isTrack && trackerState == .activeTracking
+    private func regularTabButton(index: Int, icon: String, label: String) -> some View {
+        let isSelected = selected == index
+        let pendingCount = pendingTrips.count > 0 ? pendingTrips.count : 3
 
         Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 selected = index
             }
         } label: {
+            VStack(spacing: 5) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .font(.system(size: 19, weight: isSelected ? .bold : .medium))
+                        .foregroundStyle(
+                            isSelected ? Color(hex: "#00E5FF") : Color.white.opacity(0.45)
+                        )
+                        .scaleEffect(isSelected ? 1.08 : 1.0)
+                        .frame(width: 32, height: 26)
+
+                    // Badge for Classify tab (Index 1)
+                    if index == 1 && pendingCount > 0 {
+                        Text("\(pendingCount)")
+                            .font(.system(size: 9, weight: .heavy))
+                            .foregroundStyle(Color(hex: "#061A13"))
+                            .frame(width: 15, height: 15)
+                            .background(Color(hex: "#00FF88"))
+                            .clipShape(Circle())
+                            .offset(x: 8, y: -4)
+                            .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 4)
+                    }
+                }
+
+                Text(label)
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                    .foregroundStyle(
+                        isSelected ? Color(hex: "#00E5FF") : Color.white.opacity(0.45)
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // Center Elevated TRACK Button
+    @ViewBuilder
+    private func centerTrackButton(icon: String, label: String) -> some View {
+        let isLive = trackerState == .activeTracking
+
+        Button {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.65)) {
+                selected = 2
+            }
+        } label: {
             VStack(spacing: 4) {
                 ZStack {
-                    if isLive {
-                        Circle()
-                            .fill(Color.crimsonPulse.opacity(0.25))
-                            .frame(width: 44, height: 44)
-                            .scaleEffect(isSelected ? 1.1 : 1)
-                            .animation(
-                                .easeInOut(duration: 1).repeatForever(autoreverses: true),
-                                value: isLive)
-                    }
-                    Image(systemName: isLive ? "waveform.path.ecg" : icon)
-                        .font(.system(size: isTrack ? 22 : 20, weight: .semibold))
-                        .foregroundStyle(
-                            isLive ? Color.crimsonPulse :
-                            isSelected ? Color.neonEmerald :
-                            Color.textSecondary)
-                        .scaleEffect(isSelected ? 1.15 : 1)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
-                }
-                .frame(width: 44, height: 34)
+                    // Outer pulsing glowing ring
+                    Circle()
+                        .strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 2)
+                        .frame(width: 52, height: 52)
 
-                Text(isLive ? "LIVE" : label)
-                    .font(.micro)
-                    .foregroundStyle(
-                        isLive ? Color.crimsonPulse :
-                        isSelected ? Color.neonEmerald :
-                        Color.textTertiary)
-                    .animation(.easeInOut(duration: 0.2), value: isSelected)
+                    // Glowing green elevated disc
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: isLive ?
+                                    [Color(hex: "#FF3B30"), Color(hex: "#FF6259")] :
+                                    [Color(hex: "#00FF88"), Color(hex: "#00D670")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 44, height: 44)
+                        .shadow(color: isLive ? Color(hex: "#FF3B30").opacity(0.5) : Color(hex: "#00FF88").opacity(0.55), radius: 10, x: 0, y: 3)
+
+                    // Bolt icon
+                    Image(systemName: isLive ? "waveform.path.ecg" : "bolt.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(Color(hex: "#041B12"))
+                }
+                .offset(y: -8)
+
+                Text(isLive ? "LIVE" : "TRACK")
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .foregroundStyle(isLive ? Color(hex: "#FF3B30") : Color(hex: "#00FF88"))
+                    .tracking(0.5)
+                    .offset(y: -6)
             }
         }
         .buttonStyle(.plain)

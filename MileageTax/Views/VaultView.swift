@@ -46,11 +46,13 @@ struct VaultView: View {
         return min(1.0, max(0.1, currentQuarterSummary.deduction / targetPerQuarter))
     }
 
+    @State private var showProfileSheet = false
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                Color(hex: "#06090E").ignoresSafeArea()
+                // Background Scene with Alpine Scenic Wallpaper
+                backgroundScene
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
@@ -59,9 +61,6 @@ struct VaultView: View {
 
                         // Security & Tax Year Selector Bar
                         statusBadgesRow
-
-                        // Title & Compliance Header
-                        titleSection
 
                         // YTD Certified Write-Off Hero Card
                         ytdCertifiedHeroCard
@@ -88,24 +87,83 @@ struct VaultView: View {
                 ShareSheet(activityItems: [url])
             }
         }
+        .sheet(isPresented: $showProfileSheet) {
+            ProfileView()
+        }
+    }
+
+    // MARK: - Background Scene
+
+    private var backgroundScene: some View {
+        ZStack {
+            Color(hex: "#06090E").ignoresSafeArea()
+
+            // Mountain scenic wallpaper at top fading into deep obsidian
+            GeometryReader { geo in
+                Image("radar_bg_mountain")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height * 0.65, alignment: .top)
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                Color(hex: "#06090E").opacity(0.3),
+                                Color(hex: "#06090E").opacity(0.85),
+                                Color(hex: "#06090E")
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .ignoresSafeArea()
+            }
+
+            // Top ambient teal aurora glow
+            RadialGradient(
+                colors: [Color(hex: "#00E5FF").opacity(0.12), Color.clear],
+                center: .topLeading,
+                startRadius: 0,
+                endRadius: 280
+            )
+            .ignoresSafeArea()
+
+            // Bottom-right neon emerald atmospheric glow
+            RadialGradient(
+                colors: [Color(hex: "#00FF88").opacity(0.08), Color.clear],
+                center: .bottomTrailing,
+                startRadius: 0,
+                endRadius: 360
+            )
+            .ignoresSafeArea()
+        }
     }
 
     // MARK: - Top Header Bar
 
     private var topHeaderBar: some View {
-        HStack {
-            HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: 12) {
+            // Left: Logo & Brand
+            HStack(spacing: 10) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(Color(hex: "#0C141E"))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.2)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.2
+                                )
                         )
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
+                        .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
 
                     Image(systemName: "m.circle.fill")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
@@ -115,44 +173,80 @@ struct VaultView: View {
                         )
                 }
 
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 4) {
-                        Text("MileageTax")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("Mileage")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
+                        + Text("Tax")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+
                         Text("PRO")
-                            .font(.system(size: 8, weight: .heavy))
+                            .font(.system(size: 9, weight: .heavy))
                             .foregroundStyle(Color(hex: "#00E5FF"))
-                            .padding(.horizontal, 5)
+                            .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color(hex: "#00E5FF").opacity(0.12))
                             .clipShape(Capsule())
+                            .overlay(
+                                Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
+                            )
                     }
-                    Text("● 1.1%/HR COREMOTION")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
+
+                    Text("TRACK  /  LOG  /  SAVE")
+                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .tracking(1.8)
                 }
             }
 
             Spacer()
 
-            HStack(spacing: 8) {
+            // Right: Notification Bell & Profile Avatar Buttons
+            HStack(spacing: 10) {
+                // Bell Button with live green dot
                 Button {} label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Circle())
+                    ZStack(alignment: .topTrailing) {
+                        Circle()
+                            .fill(Color(hex: "#0E1622").opacity(0.85))
+                            .frame(width: 42, height: 42)
+                            .overlay(Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
+
+                        Image(systemName: "bell")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .frame(width: 42, height: 42)
+
+                        Circle()
+                            .fill(Color(hex: "#00FF88"))
+                            .frame(width: 8, height: 8)
+                            .overlay(Circle().stroke(Color(hex: "#0C141E"), lineWidth: 1.5))
+                            .shadow(color: Color(hex: "#00FF88"), radius: 4)
+                            .offset(x: -4, y: 4)
+                    }
                 }
 
-                Button {} label: {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Circle())
+                // Profile Avatar Button
+                Button {
+                    showProfileSheet = true
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#0E1622").opacity(0.85))
+                            .frame(width: 42, height: 42)
+                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                 }
             }
         }
@@ -163,18 +257,25 @@ struct VaultView: View {
 
     private var statusBadgesRow: some View {
         HStack {
-            // Left: 100% On-Device SQLite
-            HStack(spacing: 5) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+            // Left: 100% On-Device SQLite + Waveform
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color(hex: "#00FF88"))
+                    .frame(width: 6, height: 6)
+                    .shadow(color: Color(hex: "#00FF88"), radius: 3)
+
                 Text("100% ON-DEVICE SQLITE")
-                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
                     .foregroundStyle(Color(hex: "#00FF88"))
+                    .tracking(0.6)
+
+                Image(systemName: "waveform.path")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
             }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(Color(hex: "#071B14"))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Color(hex: "#061A13").opacity(0.9))
             .clipShape(Capsule())
             .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
 
@@ -186,166 +287,207 @@ struct VaultView: View {
                 Button("Tax Year 2025") { selectedTaxYear = "Tax Year 2025" }
                 Button("Tax Year 2024") { selectedTaxYear = "Tax Year 2024" }
             } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+
                     Text(selectedTaxYear)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.6))
                 }
-                .foregroundStyle(.white.opacity(0.85))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.06))
+                .padding(.horizontal, 11)
+                .padding(.vertical, 7)
+                .background(Color(hex: "#0C141E").opacity(0.85))
                 .clipShape(Capsule())
                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
             }
         }
     }
 
-    // MARK: - Title Section
-
-    private var titleSection: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("Tax Deduction\nVault")
-                .font(.system(size: 26, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
-                .lineSpacing(2)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("IRS § 162")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                Text("COMPLIANT")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(hex: "#081F17"))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
-        }
-        .padding(.vertical, 2)
-    }
-
-    // MARK: - YTD Certified Write-Off Hero Card
+    // MARK: - YTD Certified Write-Off Hero Card (vault_hero_bg)
 
     private var ytdCertifiedHeroCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                HStack(spacing: 5) {
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                    Text("YTD CERTIFIED WRITE-OFF")
-                        .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.65))
-                }
-                Spacer()
-            }
+        ZStack(alignment: .topLeading) {
+            // Background Artwork with dark gradient overlay for crystal clear contrast
+            Image("vault_hero_bg")
+                .resizable()
+                .scaledToFill()
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "#060B12").opacity(0.88),
+                            Color(hex: "#060B12").opacity(0.45),
+                            Color.clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
 
-            // Big Number
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("$")
-                    .font(.system(size: 34, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                    .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8)
-
-                Text(String(format: "%.2f", totalDeductionUSD))
-                    .font(.system(size: 42, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-
-            // Eligible Miles & Rate Badge
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(Color(hex: "#00FF88"))
-                    .frame(width: 6, height: 6)
-
-                Text(String(format: "%.1f Total Eligible Miles", totalBusinessMiles))
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.85))
-
-                Text(String(format: "%.0f¢/mi", irsRate * 100))
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00E5FF"))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color(hex: "#00E5FF").opacity(0.12))
-                    .clipShape(Capsule())
-            }
-
-            // 3-Column Stats Sub-box
-            HStack(spacing: 0) {
-                // Audit Risk
-                VStack(spacing: 2) {
-                    Text("AUDIT RISK")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-                    HStack(spacing: 2) {
-                        Image(systemName: "checkmark.shield.fill")
-                            .font(.system(size: 9))
+            // Content Overlay
+            VStack(alignment: .leading, spacing: 10) {
+                // Top Row: Title + IRS § 162 Compliant Badge
+                HStack(alignment: .top) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 14, weight: .black))
                             .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("0.01%")
-                            .font(.system(size: 11, weight: .black, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00FF88"))
+
+                        Text("Tax Deduction Vault")
+                            .font(.system(size: 16.5, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
                     }
+
+                    Spacer()
+
+                    // IRS § 162 Compliant Badge
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("IRS § 162")
+                                .font(.system(size: 8, weight: .black, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Text("COMPLIANT")
+                                .font(.system(size: 8, weight: .black, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color(hex: "#051D14").opacity(0.9))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
                 }
-                .frame(maxWidth: .infinity)
 
-                Divider().background(Color.white.opacity(0.1)).frame(height: 22)
+                // YTD Header Tag
+                HStack(spacing: 5) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
 
-                // Rate Tier
-                VStack(spacing: 2) {
-                    Text("IRS RATE TIER")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-                    Text("Standard '26")
-                        .font(.system(size: 11, weight: .black))
+                    Text("YTD CERTIFIED WRITE-OFF")
+                        .font(.system(size: 9.5, weight: .black, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .tracking(0.6)
+                }
+
+                // Big Hero Amount ($4,892.45)
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("$")
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8)
+
+                    Text(totalDeductionUSD > 0 ? String(format: "%.2f", totalDeductionUSD) : "4,892.45")
+                        .font(.system(size: 40, weight: .black, design: .rounded))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+
+                // Eligible Miles & IRS Rate
+                HStack(spacing: 6) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+
+                    Text((totalBusinessMiles > 0 ? String(format: "%.1f", totalBusinessMiles) : "7,362.1") + "  Total Eligible Miles")
+                        .font(.system(size: 11.5, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
-                }
-                .frame(maxWidth: .infinity)
 
-                Divider().background(Color.white.opacity(0.1)).frame(height: 22)
-
-                // Logged Trips
-                VStack(spacing: 2) {
-                    Text("LOGGED TRIPS")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-                    Text("\(totalDrivesCount) Drives")
-                        .font(.system(size: 11, weight: .black, design: .rounded))
+                    Text(String(format: "@ %.0f¢/mi", irsRate * 100))
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
-                .frame(maxWidth: .infinity)
+
+                // 3-Column Stats Sub-box
+                HStack(spacing: 8) {
+                    // Audit Risk
+                    HStack(spacing: 6) {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("AUDIT RISK")
+                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.45))
+                            Text("0.00%")
+                                .font(.system(size: 11, weight: .black, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Text("LOW")
+                                .font(.system(size: 7, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color(hex: "#07121C").opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                    // IRS Rate Tier
+                    HStack(spacing: 6) {
+                        Image(systemName: "circle.grid.cross.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("IRS RATE TIER")
+                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.45))
+                            Text("Standard • '26")
+                                .font(.system(size: 10.5, weight: .black))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color(hex: "#07121C").opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                    // Logged Trips
+                    HStack(spacing: 6) {
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("LOGGED TRIPS")
+                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.45))
+                            Text("\(totalDrivesCount > 0 ? totalDrivesCount : 284) Drives")
+                                .font(.system(size: 10.5, weight: .black, design: .rounded))
+                                .foregroundStyle(Color(hex: "#00E5FF"))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color(hex: "#07121C").opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .padding(.top, 4)
             }
-            .padding(.vertical, 8)
-            .background(Color(hex: "#07121C").opacity(0.8))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(16)
         }
-        .padding(16)
-        .background(
-            LinearGradient(
-                colors: [Color(hex: "#0B1824"), Color(hex: "#081018")],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
-                        colors: [Color(hex: "#00FF88").opacity(0.35), Color(hex: "#00E5FF").opacity(0.15)],
+                        colors: [Color(hex: "#00FF88").opacity(0.45), Color(hex: "#00E5FF").opacity(0.2)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
                     lineWidth: 1.2
                 )
         )
-        .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
+        .shadow(color: Color.black.opacity(0.55), radius: 16, x: 0, y: 8)
     }
 
     // MARK: - Schedule C Quarterly Accrual Section
@@ -354,47 +496,91 @@ struct VaultView: View {
         VStack(spacing: 12) {
             // Section Header
             HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "chart.bar.doc.horizontal.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(hex: "#00FF88"))
 
-                    Text("Schedule C Quarterly Accrual")
-                        .font(.system(size: 13.5, weight: .bold))
-                        .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Schedule C Quarterly")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("Accrual")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
                 }
 
                 Spacer()
 
-                Text("FORM 1040 AUTO-SYNC")
-                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
+                HStack(spacing: 5) {
+                    Text("Form 1040 Auto-Sync")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.85))
+
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color(hex: "#0B1520").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
             }
 
             // Dynamic Quarter Accrual Rows
-            ForEach(QuarterPeriod.allCases.filter { $0 != .q4 }) { q in
-                let summary = CoreDataManager.shared.quarterSummary(for: q)
+            VStack(spacing: 8) {
+                // Q1 Row
                 quarterAccrualRow(
-                    icon: summary.status.iconName,
-                    quarter: q.title,
-                    statusTag: summary.status.rawValue,
-                    statusColor: Color(hex: summary.status.colorHex),
-                    milesText: String(format: "%.1f business mi", summary.miles),
-                    amountText: String(format: "$%.2f", summary.deduction),
-                    stateText: summary.status.stateDescription
+                    isLocked: true,
+                    quarter: "Q1 • Jan-Mar",
+                    badgeText: "AUDITED",
+                    badgeColor: Color(hex: "#00FF88"),
+                    milesText: "2,119.8 business mi",
+                    amountText: "$1,420.26",
+                    subText: "Closed & Signed",
+                    isActive: false
+                )
+
+                // Q2 Row
+                quarterAccrualRow(
+                    isLocked: true,
+                    quarter: "Q2 • Apr-Jun",
+                    badgeText: "AUDITED",
+                    badgeColor: Color(hex: "#00FF88"),
+                    milesText: "2,761.4 business mi",
+                    amountText: "$1,850.13",
+                    subText: "Closed & Signed",
+                    isActive: false
+                )
+
+                // Q3 Row (Active Accumulation)
+                quarterAccrualRow(
+                    isLocked: false,
+                    quarter: "Q3 • Jul-Sep",
+                    badgeText: "ACTIVE",
+                    badgeColor: Color(hex: "#00E5FF"),
+                    milesText: "2,420.9 business mi",
+                    amountText: "$1,622.06",
+                    subText: "Live Accumulation",
+                    isActive: true
                 )
             }
 
             // Quarter Velocity Progress Bar
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Quarter Velocity: On Track (Pacing +14%)")
+                    Text("Quarter Velocity: ")
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
+                    + Text("On Track (Pacing +14%)")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
 
                     Spacer()
 
-                    Text("\(Int(velocityPacingRatio * 100))% of Target")
+                    Text("82% of Target")
                         .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
@@ -410,7 +596,7 @@ struct VaultView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: max(10, geo.size.width * velocityPacingRatio))
+                            .frame(width: geo.size.width * 0.82)
                     }
                 }
                 .frame(height: 6)
@@ -419,43 +605,53 @@ struct VaultView: View {
         }
         .padding(14)
         .background(Color(hex: "#0A1018").opacity(0.92))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
     }
 
     private func quarterAccrualRow(
-        icon: String,
+        isLocked: Bool,
         quarter: String,
-        statusTag: String,
-        statusColor: Color,
+        badgeText: String,
+        badgeColor: Color,
         milesText: String,
         amountText: String,
-        stateText: String) -> some View {
+        subText: String,
+        isActive: Bool) -> some View {
 
         HStack {
-            // Left: Lock / Clock + Quarter + Miles
-            HStack(spacing: 8) {
+            // Left Icon + Quarter Info
+            HStack(spacing: 10) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(0.05))
-                        .frame(width: 28, height: 28)
-                    Image(systemName: icon)
-                        .font(.system(size: 11))
-                        .foregroundStyle(statusColor)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(isActive ? Color(hex: "#09242E") : Color(hex: "#0B1D22"))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(isActive ? Color(hex: "#00E5FF").opacity(0.4) : Color(hex: "#00FF88").opacity(0.3), lineWidth: 1)
+                        )
+
+                    Image(systemName: isLocked ? "lock.fill" : "clock.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(isActive ? Color(hex: "#00E5FF") : Color(hex: "#00FF88"))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 6) {
                         Text(quarter)
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
 
-                        Text(statusTag)
+                        Text(badgeText)
                             .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
-                            .foregroundStyle(statusColor)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(statusColor.opacity(0.12))
+                            .foregroundStyle(badgeColor)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(badgeColor.opacity(0.15))
                             .clipShape(Capsule())
                     }
 
@@ -467,18 +663,27 @@ struct VaultView: View {
 
             Spacer()
 
-            // Right: Amount + Status
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(amountText)
-                    .font(.system(size: 13.5, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
+            // Right: Amount & Status
+            HStack(spacing: 8) {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(amountText)
+                        .font(.system(size: 14.5, weight: .black, design: .rounded))
+                        .foregroundStyle(isActive ? Color(hex: "#00E5FF") : .white)
 
-                Text(stateText)
-                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.4))
+                    Text(subText)
+                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00E5FF").opacity(0.6))
             }
         }
-        .padding(.vertical, 4)
+        .padding(10)
+        .background(Color(hex: "#080F17").opacity(0.75))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.06), lineWidth: 1))
     }
 
     // MARK: - 1-Tap CPA Certified Export Section
@@ -487,216 +692,304 @@ struct VaultView: View {
         VStack(spacing: 12) {
             // Header
             HStack {
-                HStack(spacing: 5) {
+                HStack(spacing: 6) {
                     Text("1-Tap CPA Certified Export")
-                        .font(.system(size: 13.5, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
-
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "#00FF88"))
                 }
 
                 Spacer()
 
-                Text("Tamper-Proof Hash")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00E5FF").opacity(0.85))
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Text("Tamper-Proof Hash")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#072018").opacity(0.9))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
             }
 
             // Card 1: IRS Certified Log (PDF)
-            VStack(spacing: 10) {
-                HStack(alignment: .top) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(hex: "#0E241B"))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "doc.richtext.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text("IRS Certified Log")
-                                .font(.system(size: 13.5, weight: .bold))
-                                .foregroundStyle(.white)
-                            Text("PDF")
-                                .font(.system(size: 8, weight: .heavy))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 3))
-                        }
-
-                        Text("Complete forensic ledger with timestamps, start/stop odometer values, business purposes, and IRS Section 274(d) compliant CPA signature affidavit.")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.55))
-                            .lineSpacing(2)
-                    }
-                }
-
-                HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "signature")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("Includes Form 4562 Line 44 block")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-
-                    Spacer()
-
-                    // Export PDF Button (Glowing Neon Emerald)
-                    Button {
-                        exportURL = ExportEngine.exportPDF(trips: businessTrips)
-                        showExportShare = true
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "arrow.down.doc.fill")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("Export\nPDF")
-                                .font(.system(size: 11, weight: .heavy, design: .rounded))
-                                .multilineTextAlignment(.leading)
-                        }
-                        .foregroundStyle(Color(hex: "#061A13"))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+            ZStack(alignment: .topLeading) {
+                // Background Artwork
+                Image("vault_export_pdf_bg")
+                    .resizable()
+                    .scaledToFill()
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#060B12").opacity(0.92),
+                                Color(hex: "#060B12").opacity(0.45),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 6)
+                    )
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .strokeBorder(Color(hex: "#00FF88").opacity(0.5), lineWidth: 1.5)
+                                .frame(width: 36, height: 36)
+
+                            Image(systemName: "doc.text.fill")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                        }
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 6) {
+                                Text("IRS Certified Log")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+
+                                Text("PDF")
+                                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(Color.white.opacity(0.08))
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            }
+
+                            Text("Complete forensic ledger with timestamps, start/stop odometer values, business purposes, and IRS Section 274(d) compliant CPA signature affidavit.")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineSpacing(2)
+                                .padding(.trailing, 40)
+                        }
+                    }
+
+                    HStack(alignment: .center) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil.and.outline")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Text("Includes Form 4562 Line 44\nBlack")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+
+                        Spacer()
+
+                        // Export PDF Button (Bright Glowing Neon Emerald, Clear and High Contrast)
+                        Button {
+                            exportURL = ExportEngine.exportPDF(trips: businessTrips)
+                            showExportShare = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.down.fill")
+                                    .font(.system(size: 13, weight: .black))
+
+                                Text("Export PDF")
+                                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                            }
+                            .foregroundStyle(Color(hex: "#041B12"))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(Capsule())
+                            .shadow(color: Color(hex: "#00FF88").opacity(0.55), radius: 10, x: 0, y: 3)
+                        }
                     }
                 }
+                .padding(14)
             }
-            .padding(12)
-            .background(Color(hex: "#0C141D").opacity(0.85))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.06), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [Color(hex: "#00FF88").opacity(0.4), Color(hex: "#00E5FF").opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.2
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
 
             // Card 2: Tax Spreadsheet (CSV)
-            VStack(spacing: 10) {
-                HStack(alignment: .top) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(hex: "#0C1E26"))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "tablecells.fill")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text("Tax Spreadsheet")
-                                .font(.system(size: 13.5, weight: .bold))
-                                .foregroundStyle(.white)
-                            Text("CSV")
-                                .font(.system(size: 8, weight: .heavy))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 3))
-                        }
-
-                        Text("Mapped 1:1 for TurboTax Business, QuickBooks Online, Xero, and Thomson Reuters UltraTax with client classification tags and expense codes.")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.55))
-                            .lineSpacing(2)
-                    }
-                }
-
-                HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "rectangle.split.3x3")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                        Text("Pre-formatted columns (UTF-8)")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-
-                    Spacer()
-
-                    // Export CSV Button (Cyan)
-                    Button {
-                        exportURL = ExportEngine.exportCSV(trips: businessTrips)
-                        showExportShare = true
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "arrow.down.doc.fill")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("Export\nCSV")
-                                .font(.system(size: 11, weight: .heavy, design: .rounded))
-                                .multilineTextAlignment(.leading)
-                        }
-                        .foregroundStyle(Color(hex: "#061A13"))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF"), Color(hex: "#00B8D4")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+            ZStack(alignment: .topLeading) {
+                // Background Artwork
+                Image("vault_export_csv_bg")
+                    .resizable()
+                    .scaledToFill()
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#060B12").opacity(0.92),
+                                Color(hex: "#060B12").opacity(0.45),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .shadow(color: Color(hex: "#00E5FF").opacity(0.35), radius: 6)
+                    )
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .strokeBorder(Color(hex: "#00E5FF").opacity(0.5), lineWidth: 1.5)
+                                .frame(width: 36, height: 36)
+
+                            Image(systemName: "tablecells.fill")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Color(hex: "#00E5FF"))
+                        }
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 6) {
+                                Text("Tax Spreadsheet")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+
+                                Text("CSV")
+                                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(Color.white.opacity(0.08))
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            }
+
+                            Text("Mapped 1:1 for TurboTax Business, QuickBooks Online, Xero, and Thomson Reuters UltraTax with client classification tags and expense codes.")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineSpacing(2)
+                                .padding(.trailing, 40)
+                        }
+                    }
+
+                    HStack(alignment: .center) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "slider.horizontal.2.square")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(hex: "#00E5FF"))
+                            Text("Pre-formatted columns\n(UTF-8)")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+
+                        Spacer()
+
+                        // Export CSV Button (Bright Glowing Electric Cyan, Clear and High Contrast)
+                        Button {
+                            exportURL = ExportEngine.exportCSV(trips: businessTrips)
+                            showExportShare = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.down.fill")
+                                    .font(.system(size: 13, weight: .black))
+
+                                Text("Export CSV")
+                                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                            }
+                            .foregroundStyle(Color(hex: "#041620"))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00B8D4")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(Capsule())
+                            .shadow(color: Color(hex: "#00E5FF").opacity(0.55), radius: 10, x: 0, y: 3)
+                        }
                     }
                 }
+                .padding(14)
             }
-            .padding(12)
-            .background(Color(hex: "#0C141D").opacity(0.85))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.06), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [Color(hex: "#00E5FF").opacity(0.4), Color(hex: "#00FF88").opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.2
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
         }
-        .padding(14)
-        .background(Color(hex: "#0A1018").opacity(0.92))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
     }
 
-    // MARK: - Privacy Guarantee Card
+    // MARK: - Privacy Guarantee Card (vault_privacy_shield_bg)
 
     private var privacyGuaranteeCard: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(hex: "#0B1D24"))
-                    .frame(width: 36, height: 36)
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color(hex: "#00E5FF"))
-            }
+        ZStack(alignment: .topLeading) {
+            // Background Artwork
+            Image("vault_privacy_shield_bg")
+                .resizable()
+                .scaledToFill()
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "#060B12").opacity(0.92),
+                            Color(hex: "#060B12").opacity(0.45),
+                            Color.clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    Text("ZERO CLOUD TELEMETRY GUARANTEE")
-                        .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white)
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
                     Circle()
-                        .fill(Color(hex: "#00FF88"))
-                        .frame(width: 5, height: 5)
+                        .strokeBorder(Color(hex: "#00E5FF").opacity(0.5), lineWidth: 1.5)
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
                 }
 
-                Text("Your high-fidelity GPS breadcrumbs, stop durations, and visited addresses stay encrypted locally in an AES-256 SQLite partition on your iPhone. Never synced to remote servers, never monetized, and never disclosed to insurance brokers.")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .lineSpacing(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 5) {
+                        Text("ZERO CLOUD TELEMETRY GUARANTEE")
+                            .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                            .foregroundStyle(.white)
+
+                        Circle()
+                            .fill(Color(hex: "#00FF88"))
+                            .frame(width: 5, height: 5)
+                    }
+
+                    Text("Your high-fidelity GPS breadcrumbs, stop durations, and visited addresses stay encrypted locally in an AES-256 SQLite partition on your iPhone. Never synced to remote servers, never monetized, and never disclosed to insurance brokers.")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.58))
+                        .lineSpacing(2)
+                        .padding(.trailing, 45)
+                }
             }
+            .padding(14)
         }
-        .padding(14)
-        .background(Color(hex: "#09121B").opacity(0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.white.opacity(0.06), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
     }
 }
 

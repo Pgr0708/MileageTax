@@ -32,6 +32,7 @@ struct ClassifyView: View {
     @State private var undoTimerCountdown: Int = 3
     @State private var showUndoBanner: Bool = false
     @State private var undoTimerTask: DispatchWorkItem? = nil
+    @State private var radarPulse: Bool = false
 
     private var currentTrip: TripEntity? {
         if let id = preselectedTripID {
@@ -50,6 +51,15 @@ struct ClassifyView: View {
             ZStack {
                 // Background
                 Color(hex: "#06090E").ignoresSafeArea()
+
+                // Subtle ambient glow
+                RadialGradient(
+                    colors: [Color(hex: "#00E5FF").opacity(0.05), Color.clear],
+                    center: .topLeading,
+                    startRadius: 10,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
 
                 VStack(spacing: 12) {
                     // Top App Header
@@ -74,6 +84,11 @@ struct ClassifyView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                radarPulse = true
+            }
+        }
     }
 
     // MARK: - Top Header Bar
@@ -219,205 +234,16 @@ struct ClassifyView: View {
         let purpose = currentTrip?.businessPurpose ?? purposeTag
 
         return VStack(spacing: 12) {
-            // Header Row: Time and Auto-Stopped Pill
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-
-                    Text(timeString)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-
-                Spacer()
-
-                Text("AUTO-STOPPED")
-                    .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
-            }
-
-            // Stats Pill Row
-            HStack(spacing: 8) {
-                statPill(icon: "timer", text: "\(durationMins) MINS")
-                statPill(icon: "point.topleft.down.to.point.bottomright.curvepath.fill", text: String(format: "%.1f MILES", tripMiles))
-                statPill(icon: "gauge.with.needle", text: String(format: "%.1f MPH AVG", avgSpeedMph))
-                Spacer()
-            }
-
-            // Spatial Route Arc Box
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(hex: "#080F17").opacity(0.95))
-
-                // Curved Route Arc
-                Canvas { context, size in
-                    var path = Path()
-                    path.move(to: CGPoint(x: 30, y: size.height * 0.75))
-                    path.addCurve(
-                        to: CGPoint(x: size.width - 40, y: size.height * 0.35),
-                        control1: CGPoint(x: size.width * 0.35, y: size.height * 0.65),
-                        control2: CGPoint(x: size.width * 0.65, y: size.height * 0.25)
-                    )
-
-                    // Glowing path line
-                    context.stroke(
-                        path,
-                        with: .linearGradient(
-                            Gradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")]),
-                            startPoint: CGPoint(x: 30, y: size.height * 0.75),
-                            endPoint: CGPoint(x: size.width - 40, y: size.height * 0.35)
-                        ),
-                        lineWidth: 3
-                    )
-                }
-                .frame(height: 110)
-
-                // Departure & Arrival Labels
-                VStack(alignment: .leading, spacing: 32) {
-                    // Departure
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hex: "#00E5FF"))
-                            .frame(width: 8, height: 8)
-                            .shadow(color: Color(hex: "#00E5FF"), radius: 4)
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("DEPARTURE ORIGIN")
-                                .font(.system(size: 8, weight: .black, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.4))
-                            Text(departure)
-                                .font(.system(size: 11.5, weight: .bold))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(.leading, 12)
-
-                    // Arrival
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hex: "#00FF88"))
-                            .frame(width: 8, height: 8)
-                            .shadow(color: Color(hex: "#00FF88"), radius: 4)
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("ARRIVAL DESTINATION")
-                                .font(.system(size: 8, weight: .black, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.4))
-                            Text(arrival)
-                                .font(.system(size: 11.5, weight: .bold))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(.leading, 12)
-                }
-                .padding(.vertical, 8)
-            }
-            .frame(height: 110)
-
-            // Potential IRS Write-Off Section
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("POTENTIAL IRS WRITE-OFF")
-                        .font(.system(size: 9, weight: .black, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-
-                    Spacer()
-
-                    Text(String(format: "Standard %.0f¢/mi", irsRate * 100))
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color(hex: "#00FF88").opacity(0.1))
-                        .clipShape(Capsule())
-                }
-
-                HStack(alignment: .firstTextBaseline) {
-                    Text(String(format: "+$%.2f", tripDeduction))
-                        .font(.system(size: 28, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-
-                    Text("Accrued Yield")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
-
-                    Spacer()
-
-                    Text("IRS Form 1040-ES")
-                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-                }
-            }
-            .padding(12)
-            .background(Color(hex: "#071616").opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(hex: "#00FF88").opacity(0.12), lineWidth: 1))
-
-            // Bottom Tags Row
-            HStack(spacing: 8) {
-                // Pill 1: Purpose
-                HStack(spacing: 4) {
-                    Image(systemName: "tag.fill")
-                        .font(.system(size: 9))
-                    Text(purpose)
-                        .font(.system(size: 10, weight: .bold))
-                }
-                .foregroundStyle(Color(hex: "#00E5FF"))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.05))
-                .clipShape(Capsule())
-
-                // Pill 2: Vehicle
-                HStack(spacing: 4) {
-                    Image(systemName: "car.fill")
-                        .font(.system(size: 9))
-                    Text(vehicle)
-                        .font(.system(size: 10, weight: .bold))
-                }
-                .foregroundStyle(Color(hex: "#00FF88"))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.05))
-                .clipShape(Capsule())
-
-                // Pill 3: Split Drive
-                HStack(spacing: 4) {
-                    Image(systemName: "scissors")
-                        .font(.system(size: 9))
-                    Text("Split Drive")
-                        .font(.system(size: 10, weight: .bold))
-                }
-                .foregroundStyle(.white.opacity(0.6))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.05))
-                .clipShape(Capsule())
-
-                Spacer()
-            }
+            cardHeaderRow(timeString: timeString)
+            cardStatsRow(durationMins: durationMins, tripMiles: tripMiles, avgSpeedMph: avgSpeedMph)
+            routeVisualizationBox(departure: departure, arrival: arrival)
+            irsWriteOffBox(deduction: tripDeduction)
+            cardMetadataTagsRow(purpose: purpose, vehicle: vehicle)
         }
         .padding(14)
-        .background(Color(hex: "#0A1018").opacity(0.94))
+        .background(Color(hex: "#0A1018").opacity(0.95))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(
-                    swipeOffset.width > 40 ? Color(hex: "#00FF88") :
-                    swipeOffset.width < -40 ? Color(hex: "#7B4FFF") :
-                    Color.white.opacity(0.08),
-                    lineWidth: 1.2
-                )
-        )
+        .overlay(cardBorderOverlay)
         .offset(swipeOffset)
         .opacity(swipeOpacity)
         .gesture(
@@ -438,6 +264,276 @@ struct ClassifyView: View {
                 }
         )
         .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
+    }
+
+    @ViewBuilder
+    private var cardBorderOverlay: some View {
+        if swipeOffset.width > 40 {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color(hex: "#00FF88"), lineWidth: 1.5)
+        } else if swipeOffset.width < -40 {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color(hex: "#7B4FFF"), lineWidth: 1.5)
+        } else {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color(hex: "#00E5FF").opacity(0.35), Color(hex: "#00FF88").opacity(0.25), Color.white.opacity(0.06)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.2
+                )
+        }
+    }
+
+    private func cardHeaderRow(timeString: String) -> some View {
+        HStack {
+            HStack(spacing: 6) {
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+
+                Text(timeString)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+            Spacer()
+
+            Text("AUTO-STOPPED")
+                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.7))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.06))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
+        }
+    }
+
+    private func cardStatsRow(durationMins: Int, tripMiles: Double, avgSpeedMph: Double) -> some View {
+        HStack(spacing: 8) {
+            statPill(icon: "timer", text: "\(durationMins) MINS")
+            statPill(icon: "point.topleft.down.to.point.bottomright.curvepath.fill", text: String(format: "%.1f MILES", tripMiles))
+            statPill(icon: "gauge.with.needle", text: String(format: "%.1f MPH AVG", avgSpeedMph))
+            Spacer()
+        }
+    }
+
+    private func routeVisualizationBox(departure: String, arrival: String) -> some View {
+        ZStack(alignment: .leading) {
+            // Background artistic topography & particle route
+            Image("classify_spatial_route_bg")
+                .resizable()
+                .scaledToFill()
+                .frame(height: 124)
+                .clipped()
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "#06090E").opacity(0.75),
+                            Color(hex: "#06090E").opacity(0.2),
+                            Color(hex: "#06090E").opacity(0.8)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color(hex: "#00E5FF").opacity(0.4), Color(hex: "#00FF88").opacity(0.2), Color.white.opacity(0.08)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+
+            // Glowing bezier path ribbon overlay
+            Canvas { context, size in
+                var path = Path()
+                path.move(to: CGPoint(x: 34, y: size.height * 0.72))
+                path.addCurve(
+                    to: CGPoint(x: size.width - 44, y: size.height * 0.32),
+                    control1: CGPoint(x: size.width * 0.35, y: size.height * 0.60),
+                    control2: CGPoint(x: size.width * 0.65, y: size.height * 0.22)
+                )
+
+                // Outer ambient glow path
+                context.stroke(
+                    path,
+                    with: .linearGradient(
+                        Gradient(colors: [Color(hex: "#00E5FF").opacity(0.5), Color(hex: "#00FF88").opacity(0.6)]),
+                        startPoint: CGPoint(x: 34, y: size.height * 0.72),
+                        endPoint: CGPoint(x: size.width - 44, y: size.height * 0.32)
+                    ),
+                    lineWidth: 6
+                )
+
+                // Sharp core glowing path
+                context.stroke(
+                    path,
+                    with: .linearGradient(
+                        Gradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")]),
+                        startPoint: CGPoint(x: 34, y: size.height * 0.72),
+                        endPoint: CGPoint(x: size.width - 44, y: size.height * 0.32)
+                    ),
+                    lineWidth: 3
+                )
+            }
+            .frame(height: 124)
+
+            // Departure & Arrival Labels with pulsing nodes
+            VStack(alignment: .leading, spacing: 32) {
+                // Departure Origin
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .stroke(Color(hex: "#00E5FF").opacity(radarPulse ? 0.0 : 0.8), lineWidth: 1.5)
+                            .frame(width: radarPulse ? 22 : 10, height: radarPulse ? 22 : 10)
+                        Circle()
+                            .fill(Color(hex: "#00E5FF"))
+                            .frame(width: 8, height: 8)
+                            .shadow(color: Color(hex: "#00E5FF"), radius: 5)
+                    }
+                    .frame(width: 22, height: 22)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("DEPARTURE ORIGIN")
+                            .font(.system(size: 8, weight: .black, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00E5FF").opacity(0.9))
+                        Text(departure)
+                            .font(.system(size: 11.5, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.leading, 12)
+
+                // Arrival Destination
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#00FF88").opacity(0.2))
+                            .frame(width: 22, height: 22)
+                        Image(systemName: "mappin.circle.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+                            .shadow(color: Color(hex: "#00FF88"), radius: 6)
+                    }
+                    .frame(width: 22, height: 22)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("ARRIVAL DESTINATION")
+                            .font(.system(size: 8, weight: .black, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00FF88").opacity(0.9))
+                        Text(arrival)
+                            .font(.system(size: 11.5, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.leading, 12)
+            }
+            .padding(.vertical, 8)
+        }
+        .frame(height: 124)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func irsWriteOffBox(deduction: Double) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("POTENTIAL IRS WRITE-OFF")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.4))
+
+                Spacer()
+
+                Text(String(format: "Standard %.0f¢/mi", irsRate * 100))
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(hex: "#00FF88").opacity(0.1))
+                    .clipShape(Capsule())
+            }
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(String(format: "+$%.2f", deduction))
+                    .font(.system(size: 29, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8, x: 0, y: 0)
+
+                Text("Accrued Yield")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
+                    Text("IRS Form 1040-ES")
+                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+            }
+        }
+        .padding(12)
+        .background(Color(hex: "#071616").opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(hex: "#00FF88").opacity(0.15), lineWidth: 1))
+    }
+
+    private func cardMetadataTagsRow(purpose: String, vehicle: String) -> some View {
+        HStack(spacing: 8) {
+            // Pill 1: Purpose
+            HStack(spacing: 4) {
+                Image(systemName: "tag.fill")
+                    .font(.system(size: 9))
+                Text(purpose)
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(Color(hex: "#00E5FF"))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.05))
+            .clipShape(Capsule())
+
+            // Pill 2: Vehicle
+            HStack(spacing: 4) {
+                Image(systemName: "car.fill")
+                    .font(.system(size: 9))
+                Text(vehicle)
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(Color(hex: "#00FF88"))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.05))
+            .clipShape(Capsule())
+
+            // Pill 3: Split Drive
+            HStack(spacing: 4) {
+                Image(systemName: "scissors")
+                    .font(.system(size: 9))
+                Text("Split Drive")
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(.white.opacity(0.6))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.05))
+            .clipShape(Capsule())
+
+            Spacer()
+        }
     }
 
     private func statPill(icon: String, text: String) -> some View {
