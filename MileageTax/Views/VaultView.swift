@@ -505,7 +505,7 @@ struct VaultView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(VaultCardBackground(imageName: "vault_hero_bg", aspectRatio: 1024.0 / 377.0, trailingOffset: 20))
+        .background(VaultCardBackground(imageName: "vault_hero_bg", aspectRatio: 1024.0 / 377.0))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -827,7 +827,7 @@ struct VaultView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(VaultCardBackground(imageName: "vault_export_pdf_bg", aspectRatio: 1024.0 / 377.0, trailingOffset: 35))
+            .background(VaultCardBackground(imageName: "vault_export_pdf_bg", aspectRatio: 1024.0 / 377.0))
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -923,7 +923,7 @@ struct VaultView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(VaultCardBackground(imageName: "vault_export_csv_bg", aspectRatio: 1024.0 / 344.0, trailingOffset: 25))
+            .background(VaultCardBackground(imageName: "vault_export_csv_bg", aspectRatio: 1024.0 / 344.0))
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -978,7 +978,7 @@ struct VaultView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(VaultCardBackground(imageName: "vault_privacy_shield_bg", aspectRatio: 1024.0 / 341.0, trailingOffset: 25))
+        .background(VaultCardBackground(imageName: "vault_privacy_shield_bg", aspectRatio: 1024.0 / 341.0))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)

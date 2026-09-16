@@ -18,6 +18,7 @@ struct TrackView: View {
     @State private var dialPulse = false
     @State private var isPaused = false
     @State private var showCameraSheet = false
+    @State private var showProfileSheet = false
 
     // Real dynamic metrics from TripTrackerService
     private var displaySpeed: Double {
@@ -53,26 +54,23 @@ struct TrackView: View {
                         // 3-Column Horizontal Metrics Glass Bar
                         threeColumnMetricsBar
 
-                        // Waypoint Tracking Timeline Card
+                        // Waypoint Tracking Master Card (Includes Timeline, Telemetry Trio, and Live Tags)
                         waypointTrackingCard
-
-                        // Trio Telemetry Performance Cards
-                        trioTelemetryCards
-
-                        // Live Drive Tags & Classification
-                        liveDriveTagsSection
 
                         // Primary Action CTA: Stop & Classify Drive
                         primaryActionCTA
 
-                        Spacer(minLength: 110)
+                        Spacer(minLength: 120)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 4)
                 }
+                .scrollBounceBehavior(.basedOnSize)
             }
         }
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showProfileSheet) {
+            ProfileView()
+        }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 dialPulse = true
@@ -83,35 +81,52 @@ struct TrackView: View {
     // MARK: - Scenic Background
 
     private var scenicBackground: some View {
-        ZStack {
-            Color(hex: "#06090E").ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack(alignment: .top) {
+                Color(hex: "#06090E").ignoresSafeArea()
 
-            Image("track_bg_scenic")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "#06090E").opacity(0.12),
-                            Color(hex: "#06090E").opacity(0.35),
-                            Color(hex: "#06090E").opacity(0.85),
-                            Color(hex: "#06090E")
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                // High-resolution scenic coastal winding highway at sunset with green neon road trails
+                Image("track_bg_scenic")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height * 0.72, alignment: .top)
+                    .clipped()
+                    .ignoresSafeArea(edges: .top)
+                    .overlay(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.clear, location: 0.0),
+                                .init(color: Color.clear, location: 0.22),
+                                .init(color: Color(hex: "#06090E").opacity(0.18), location: 0.40),
+                                .init(color: Color(hex: "#06090E").opacity(0.68), location: 0.62),
+                                .init(color: Color(hex: "#06090E").opacity(0.96), location: 0.82),
+                                .init(color: Color(hex: "#06090E"), location: 1.0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
 
-            // Top ambient neon aurora glow
-            RadialGradient(
-                colors: [Color(hex: "#00E5FF").opacity(0.15), Color.clear],
-                center: .top,
-                startRadius: 0,
-                endRadius: 340
-            )
-            .ignoresSafeArea()
+                // Top ambient cyan aurora bloom
+                RadialGradient(
+                    colors: [Color(hex: "#00E5FF").opacity(0.18), Color.clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 280
+                )
+                .ignoresSafeArea()
+
+                // Road curve ambient emerald highlight
+                RadialGradient(
+                    colors: [Color(hex: "#00FF88").opacity(0.12), Color.clear],
+                    center: .center,
+                    startRadius: 20,
+                    endRadius: 200
+                )
+                .offset(y: -60)
+            }
         }
+        .ignoresSafeArea()
     }
 
     // MARK: - Top Header Bar
@@ -134,11 +149,11 @@ struct TrackView: View {
                                     lineWidth: 1.5
                                 )
                         )
-                        .frame(width: 38, height: 38)
-                        .shadow(color: Color(hex: "#00E5FF").opacity(0.3), radius: 6)
+                        .frame(width: 40, height: 40)
+                        .shadow(color: Color(hex: "#00E5FF").opacity(0.35), radius: 8)
 
                     Image(systemName: "safari.fill")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
@@ -148,10 +163,10 @@ struct TrackView: View {
                         )
                 }
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 5) {
                         Text("MileageTax")
-                            .font(.system(size: 16.5, weight: .bold, design: .rounded))
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
 
                         Text("PRO")
@@ -161,48 +176,53 @@ struct TrackView: View {
                             .padding(.vertical, 2)
                             .background(Color(hex: "#00E5FF").opacity(0.12))
                             .clipShape(Capsule())
-                            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1))
+                            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.45), lineWidth: 1))
                     }
 
                     Text("SMART MILEAGE TRACKER")
                         .font(.system(size: 8, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
-                        .tracking(1.2)
+                        .tracking(1.4)
                 }
             }
 
             Spacer()
 
             // Right: Sliders & Profile Buttons
-            HStack(spacing: 8) {
-                Button {} label: {
+            HStack(spacing: 10) {
+                Button {
+                    // Settings / preferences
+                } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 38, height: 38)
                         .background(Color(hex: "#0C1420").opacity(0.75))
                         .clipShape(Circle())
                         .overlay(Circle().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
                 }
 
-                Button {} label: {
+                Button {
+                    showProfileSheet = true
+                } label: {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 19))
+                        .font(.system(size: 20))
                         .foregroundStyle(Color(hex: "#00FF88"))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 38, height: 38)
                         .background(Color(hex: "#0C1420").opacity(0.75))
                         .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+                        .overlay(Circle().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
                 }
             }
         }
+        .padding(.top, Device.topSafeArea)
         .padding(.vertical, 4)
     }
 
     // MARK: - Live Telemetry Header Banner
 
     private var telemetryTopStatusBanner: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 9) {
             // REC dot + text
             HStack(spacing: 5) {
                 Circle()
@@ -238,23 +258,23 @@ struct TrackView: View {
             HStack(spacing: 3) {
                 Text("IRS")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.white.opacity(0.55))
                 Text(String(format: "$%.2f", displayDeduction))
                     .font(.system(size: 11, weight: .heavy, design: .monospaced))
                     .foregroundStyle(Color(hex: "#00FF88"))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(
             ZStack {
-                Color(hex: "#06101B").opacity(0.7)
-                Rectangle().fill(.ultraThinMaterial.opacity(0.5))
+                Color(hex: "#06101B").opacity(0.75)
+                Rectangle().fill(.ultraThinMaterial.opacity(0.45))
             }
         )
         .clipShape(Capsule())
-        .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
-        .shadow(color: Color.black.opacity(0.3), radius: 8, y: 4)
+        .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+        .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
     }
 
     // MARK: - Highway Vista Badges
@@ -313,7 +333,7 @@ struct TrackView: View {
             .shadow(color: Color.black.opacity(0.3), radius: 6)
         }
         .padding(.horizontal, 4)
-        .padding(.top, 4)
+        .padding(.top, 2)
     }
 
     // MARK: - Speed & Tax Cruising Ring Gauge
@@ -324,65 +344,86 @@ struct TrackView: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color(hex: "#00E5FF").opacity(0.2), Color(hex: "#00FF88").opacity(0.08), Color.clear],
+                        colors: [Color(hex: "#00E5FF").opacity(0.22), Color(hex: "#00FF88").opacity(0.08), Color.clear],
                         center: .center,
                         startRadius: 40,
-                        endRadius: 130
+                        endRadius: 135
                     )
                 )
-                .frame(width: 250, height: 250)
+                .frame(width: 260, height: 260)
 
-            // Outer gauge dial tick ring
-            Circle()
-                .stroke(Color.white.opacity(0.08), style: StrokeStyle(lineWidth: 1.5, dash: [2, 6]))
-                .frame(width: 224, height: 224)
+            // Outer gauge dial radial tick ring
+            ZStack {
+                ForEach(0..<29) { i in
+                    Rectangle()
+                        .fill(Color.white.opacity(i % 4 == 0 ? 0.45 : 0.18))
+                        .frame(width: 1.5, height: i % 4 == 0 ? 7 : 4)
+                        .offset(y: -110)
+                        .rotationEffect(.degrees(Double(i) * 6.5 - 91))
+                }
+            }
+            .frame(width: 226, height: 226)
 
-            // Neon glowing gauge ring
+            // Neon glowing gauge ring with smooth gradient
             Circle()
                 .trim(from: 0.12, to: 0.88)
                 .stroke(
-                    LinearGradient(
-                        colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            Color(hex: "#00E5FF"),
+                            Color(hex: "#00FFCC"),
+                            Color(hex: "#00FF88"),
+                            Color(hex: "#00E5FF")
+                        ]),
+                        center: .center,
+                        startAngle: .degrees(90),
+                        endAngle: .degrees(450)
                     ),
-                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    style: StrokeStyle(lineWidth: 6.5, lineCap: .round)
                 )
                 .frame(width: 210, height: 210)
                 .rotationEffect(.degrees(90))
-                .shadow(color: Color(hex: "#00E5FF").opacity(0.5), radius: 10)
-                .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 6)
+                .shadow(color: Color(hex: "#00E5FF").opacity(0.6), radius: 10)
+                .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 6)
 
             // Inner dark frosted disc
             Circle()
-                .fill(Color(hex: "#060E18").opacity(0.85))
-                .frame(width: 196, height: 196)
+                .fill(
+                    RadialGradient(
+                        colors: [Color(hex: "#081320").opacity(0.9), Color(hex: "#040910").opacity(0.96)],
+                        center: .center,
+                        startRadius: 20,
+                        endRadius: 100
+                    )
+                )
+                .frame(width: 194, height: 194)
                 .overlay(
                     Circle().strokeBorder(
                         LinearGradient(
-                            colors: [Color(hex: "#00E5FF").opacity(0.4), Color.white.opacity(0.06)],
+                            colors: [Color(hex: "#00E5FF").opacity(0.45), Color.white.opacity(0.08)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 1
                     )
                 )
+                .shadow(color: Color.black.opacity(0.5), radius: 12)
 
             // Dial Center Typography
             VStack(spacing: 3) {
                 Text("CRUISING")
                     .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .tracking(1.4)
+                    .foregroundStyle(.white.opacity(0.65))
+                    .tracking(1.8)
                     .padding(.top, 4)
 
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(String(format: "%.0f", displaySpeed))
-                        .font(.system(size: 46, weight: .black, design: .rounded))
+                        .font(.system(size: 48, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
 
                     Text("MPH")
-                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
 
@@ -390,26 +431,26 @@ struct TrackView: View {
                 Rectangle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.clear, Color(hex: "#00E5FF").opacity(0.6), Color.clear],
+                            colors: [Color.clear, Color(hex: "#00E5FF").opacity(0.7), Color.clear],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: 74, height: 1)
+                    .frame(width: 78, height: 1.5)
                     .padding(.vertical, 1)
 
                 Text(String(format: "$%.2f", displayDeduction))
-                    .font(.system(size: 26, weight: .black, design: .rounded))
+                    .font(.system(size: 28, weight: .black, design: .rounded))
                     .foregroundStyle(Color(hex: "#00FF88"))
-                    .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 6)
+                    .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 8)
 
                 Text("ACCRUED TAX YIELD")
                     .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.55))
-                    .tracking(0.6)
+                    .tracking(0.8)
             }
         }
-        .frame(height: 236)
+        .frame(height: 240)
         .padding(.vertical, 2)
     }
 
@@ -425,7 +466,7 @@ struct TrackView: View {
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("STANDARD RATE")
                         .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 Text(String(format: "%.1f ¢", irsRate * 100) + "/mi")
                     .font(.system(size: 13.5, weight: .black, design: .monospaced))
@@ -443,7 +484,7 @@ struct TrackView: View {
                         .foregroundStyle(Color(hex: "#00E5FF"))
                     Text("TRIP ELAPSED")
                         .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 Text(formatElapsed(tracker.liveDurationSeconds > 0 ? tracker.liveDurationSeconds : 1184))
                     .font(.system(size: 13.5, weight: .black, design: .monospaced))
@@ -461,7 +502,7 @@ struct TrackView: View {
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("TRIP PACE")
                         .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
                 let paceUSDPerMin = tracker.currentSpeedMph > 0 ? (tracker.currentSpeedMph * irsRate / 60) : 0.48
                 Text(String(format: "+$%.2f/m", paceUSDPerMin))
@@ -483,7 +524,7 @@ struct TrackView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
-                        colors: [Color(hex: "#00E5FF").opacity(0.35), Color(hex: "#00FF88").opacity(0.2), Color.white.opacity(0.06)],
+                        colors: [Color(hex: "#00E5FF").opacity(0.4), Color(hex: "#00FF88").opacity(0.2), Color.white.opacity(0.08)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -493,19 +534,19 @@ struct TrackView: View {
         .shadow(color: Color.black.opacity(0.4), radius: 10, y: 5)
     }
 
-    // MARK: - Waypoint Tracking Card
+    // MARK: - Waypoint Tracking Master Card
 
     private var waypointTrackingCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             // Header
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "location.north.fill")
-                        .font(.system(size: 13, weight: .black))
+                        .font(.system(size: 14, weight: .black))
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
                     Text("Waypoint Tracking")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: 15.5, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
 
@@ -515,15 +556,16 @@ struct TrackView: View {
                     Circle()
                         .fill(Color(hex: "#00FF88"))
                         .frame(width: 5, height: 5)
+                        .shadow(color: Color(hex: "#00FF88"), radius: 3)
                     Text("ACTIVE CADENCE")
                         .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Color(hex: "#00FF88"))
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(hex: "#00FF88").opacity(0.12))
+                .background(Color(hex: "#072018").opacity(0.9))
                 .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
             }
 
             Divider().background(Color.white.opacity(0.08))
@@ -542,19 +584,19 @@ struct TrackView: View {
                     }
                     .padding(.top, 2)
 
-                    VStack(alignment: .leading, spacing: 1) {
+                    VStack(alignment: .leading, spacing: 2) {
                         HStack {
                             Text("ORIGIN • 09:14 AM")
                                 .font(.system(size: 8.5, weight: .bold, design: .monospaced))
-                                .foregroundStyle(Color(hex: "#00E5FF").opacity(0.85))
+                                .foregroundStyle(Color(hex: "#00E5FF").opacity(0.9))
                             Spacer()
                             Text("0.0 mi")
                                 .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(.white.opacity(0.45))
                         }
 
                         Text("580 Market St, Financial Dist, SF")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white)
                     }
                 }
@@ -564,18 +606,18 @@ struct TrackView: View {
                     Rectangle()
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.6)],
+                                colors: [Color(hex: "#00E5FF").opacity(0.7), Color(hex: "#00FF88").opacity(0.7)],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
-                        .frame(width: 2, height: 38)
+                        .frame(width: 2, height: 42)
                         .padding(.leading, 6)
 
                     HStack(spacing: 6) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "signpost.right.and.left.fill")
-                                .font(.system(size: 8))
+                        HStack(spacing: 5) {
+                            Image(systemName: "road.lanes")
+                                .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
 
                             Text("US-101 S CORRIDOR")
@@ -583,7 +625,7 @@ struct TrackView: View {
                                 .foregroundStyle(Color(hex: "#00E5FF"))
 
                             Text("FREE FLOW")
-                                .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                         }
 
@@ -594,21 +636,21 @@ struct TrackView: View {
                             .foregroundStyle(.white.opacity(0.55))
                     }
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 7)
                     .background(Color(hex: "#091726").opacity(0.85))
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(hex: "#00E5FF").opacity(0.2), lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
                 }
 
                 // Node 2: Target Destination
                 HStack(alignment: .top, spacing: 10) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "#00FF88").opacity(0.25))
+                            .strokeBorder(Color(hex: "#00FF88"), lineWidth: 2)
                             .frame(width: 14, height: 14)
                         Circle()
                             .fill(Color(hex: "#00FF88"))
-                            .frame(width: 8, height: 8)
+                            .frame(width: 6, height: 6)
                     }
                     .padding(.top, 2)
 
@@ -619,12 +661,12 @@ struct TrackView: View {
                                 .foregroundStyle(Color(hex: "#00FF88"))
                             Spacer()
                             Image(systemName: "mappin.circle.fill")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                         }
 
                         Text("Palo Alto Tech Campus, Building B")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white)
 
                         Text("18.2 mi remaining  •  24 mins left")
@@ -633,17 +675,124 @@ struct TrackView: View {
                     }
                 }
             }
+
+            // Trio Telemetry Performance Cards
+            HStack(spacing: 8) {
+                // 1. Motion Smooth
+                telemetryPillCard(
+                    icon: "waveform",
+                    value: String(format: "%.1f%%", tracker.motionSmoothnessScore),
+                    label: "MOTION SMOOTH",
+                    color: Color(hex: "#00E5FF")
+                )
+
+                // 2. RTK Precision
+                telemetryPillCard(
+                    icon: "scope",
+                    value: String(format: "±%.1fm", tracker.horizontalAccuracyMeters),
+                    label: "RTK PRECISION",
+                    color: Color(hex: "#00FF88")
+                )
+
+                // 3. Drain / Hour
+                telemetryPillCard(
+                    icon: "bolt.batteryblock.fill",
+                    value: String(format: "-%.1f%%", tracker.currentDrainRatePerHour),
+                    label: "DRAIN / HOUR",
+                    color: Color(hex: "#00FF88")
+                )
+            }
+
+            // Live Drive Tags & Classification
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("LIVE DRIVE TAGS & CLASSIFICATION")
+                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+
+                    Spacer()
+
+                    HStack(spacing: 2) {
+                        Text("Swipeable")
+                            .font(.system(size: 8.5, weight: .medium))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 7, weight: .bold))
+                    }
+                    .foregroundStyle(Color(hex: "#00E5FF"))
+                }
+
+                HStack(spacing: 8) {
+                    // Tag 1 (Active Selected)
+                    HStack(spacing: 5) {
+                        Image(systemName: "briefcase.fill")
+                            .font(.system(size: 10))
+                        Text("Acme Client Meeting")
+                            .font(.system(size: 10.5, weight: .bold))
+                    }
+                    .foregroundStyle(Color(hex: "#061A13"))
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 7)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(Capsule())
+                    .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 6)
+
+                    // Tag 2
+                    HStack(spacing: 5) {
+                        Image(systemName: "tag.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                        Text("Billable Project")
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 7)
+                    .background(
+                        ZStack {
+                            Color(hex: "#0B1522").opacity(0.85)
+                            Rectangle().fill(.ultraThinMaterial.opacity(0.4))
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+
+                    // Tag 3 (Car)
+                    HStack(spacing: 4) {
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(
+                        ZStack {
+                            Color(hex: "#0B1522").opacity(0.85)
+                            Rectangle().fill(.ultraThinMaterial.opacity(0.4))
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+
+                    Spacer()
+                }
+            }
         }
         .padding(14)
         .background(
             ZStack {
-                Color(hex: "#07111C").opacity(0.85)
+                Color(hex: "#07111C").opacity(0.88)
                 Rectangle().fill(.ultraThinMaterial.opacity(0.5))
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
                         colors: [Color(hex: "#00E5FF").opacity(0.35), Color(hex: "#00FF88").opacity(0.2), Color.white.opacity(0.06)],
@@ -653,37 +802,7 @@ struct TrackView: View {
                     lineWidth: 1
                 )
         )
-        .shadow(color: Color.black.opacity(0.4), radius: 12, y: 6)
-    }
-
-    // MARK: - Trio Telemetry Performance Cards
-
-    private var trioTelemetryCards: some View {
-        HStack(spacing: 8) {
-            // 1. Motion Smooth
-            telemetryPillCard(
-                icon: "waveform",
-                value: String(format: "%.1f%%", tracker.motionSmoothnessScore),
-                label: "MOTION SMOOTH",
-                color: Color(hex: "#00E5FF")
-            )
-
-            // 2. RTK Precision
-            telemetryPillCard(
-                icon: "scope",
-                value: String(format: "±%.1fm", tracker.horizontalAccuracyMeters),
-                label: "RTK PRECISION",
-                color: Color(hex: "#00FF88")
-            )
-
-            // 3. Drain / Hour
-            telemetryPillCard(
-                icon: "bolt.batteryblock.fill",
-                value: String(format: "<%.1f%%", tracker.currentDrainRatePerHour),
-                label: "DRAIN / HOUR",
-                color: Color(hex: "#00FF88")
-            )
-        }
+        .shadow(color: Color.black.opacity(0.45), radius: 14, y: 7)
     }
 
     private func telemetryPillCard(icon: String, value: String, label: String, color: Color) -> some View {
@@ -715,89 +834,6 @@ struct TrackView: View {
         )
     }
 
-    // MARK: - Live Drive Tags
-
-    private var liveDriveTagsSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("LIVE DRIVE TAGS & CLASSIFICATION")
-                    .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.5))
-
-                Spacer()
-
-                HStack(spacing: 2) {
-                    Text("Swipeable")
-                        .font(.system(size: 8.5, weight: .medium))
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 7, weight: .bold))
-                }
-                .foregroundStyle(Color(hex: "#00E5FF"))
-            }
-
-            HStack(spacing: 8) {
-                // Tag 1 (Active)
-                HStack(spacing: 5) {
-                    Image(systemName: "briefcase.fill")
-                        .font(.system(size: 10))
-                    Text("Acme Client Meeting")
-                        .font(.system(size: 10.5, weight: .bold))
-                }
-                .foregroundStyle(Color(hex: "#061A13"))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    LinearGradient(
-                        colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .clipShape(Capsule())
-                .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 6)
-
-                // Tag 2
-                HStack(spacing: 5) {
-                    Image(systemName: "tag.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
-                    Text("Billable Project")
-                        .font(.system(size: 10.5, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    ZStack {
-                        Color(hex: "#0B1522").opacity(0.85)
-                        Rectangle().fill(.ultraThinMaterial.opacity(0.4))
-                    }
-                )
-                .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
-
-                // Tag 3 (Car)
-                HStack(spacing: 4) {
-                    Image(systemName: "car.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    ZStack {
-                        Color(hex: "#0B1522").opacity(0.85)
-                        Rectangle().fill(.ultraThinMaterial.opacity(0.4))
-                    }
-                )
-                .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
-
-                Spacer()
-            }
-        }
-    }
-
     // MARK: - Primary Action CTA Button
 
     private var primaryActionCTA: some View {
@@ -809,19 +845,19 @@ struct TrackView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(Color(hex: "#061A13"))
-                        .frame(width: 20, height: 20)
+                        .frame(width: 22, height: 22)
 
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .fill(Color(hex: "#00FF88"))
-                        .frame(width: 9, height: 9)
+                        .frame(width: 10, height: 10)
                 }
 
                 Text("Stop & Classify Drive")
-                    .font(.system(size: 15.5, weight: .heavy, design: .rounded))
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
                     .foregroundStyle(Color(hex: "#061A13"))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, 15)
             .background(
                 LinearGradient(
                     colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
@@ -830,8 +866,8 @@ struct TrackView: View {
                 )
             )
             .clipShape(Capsule())
-            .shadow(color: Color(hex: "#00E5FF").opacity(0.5), radius: 12, x: 0, y: 4)
-            .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8, x: 0, y: 2)
+            .shadow(color: Color(hex: "#00E5FF").opacity(0.55), radius: 12, x: 0, y: 4)
+            .shadow(color: Color(hex: "#00FF88").opacity(0.45), radius: 8, x: 0, y: 2)
         }
         .buttonStyle(.plain)
         .padding(.top, 4)
@@ -845,3 +881,4 @@ struct TrackView: View {
         return String(format: "%02d:%02d:%02d", h, m, sec)
     }
 }
+

@@ -365,6 +365,7 @@ struct RulesView: View {
     // MARK: - Card Background with Precise Trailing Alignment
     struct RulesCardBackground: View {
         let imageName: String
+        var aspectRatio: Double = 1024.0 / 377.0
         var trailingOffset: CGFloat = 0
 
         var body: some View {
@@ -375,7 +376,7 @@ struct RulesView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(
-                            width: max(geo.size.width, geo.size.height * (1024.0 / 377.0)),
+                            width: max(geo.size.width, geo.size.height * aspectRatio),
                             height: geo.size.height,
                             alignment: .trailing
                         )
@@ -528,7 +529,7 @@ struct RulesView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RulesCardBackground(imageName: "rules_workshift_bg", trailingOffset: 25))
+        .background(RulesCardBackground(imageName: "rules_workshift_bg"))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -622,7 +623,7 @@ struct RulesView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RulesCardBackground(imageName: "rules_bluetooth_bg", trailingOffset: 15))
+        .background(RulesCardBackground(imageName: "rules_bluetooth_bg"))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -732,7 +733,7 @@ struct RulesView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RulesCardBackground(imageName: "rules_geofence_bg", trailingOffset: 95))
+        .background(RulesCardBackground(imageName: "rules_geofence_bg"))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -919,7 +920,7 @@ struct RulesView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RulesCardBackground(imageName: "rules_coremotion_bg", trailingOffset: 25))
+        .background(RulesCardBackground(imageName: "rules_coremotion_bg"))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
