@@ -275,7 +275,7 @@ struct RadarView: View {
             }
         }
         .padding(.top, Device.topSafeArea)
-        .padding(.vertical, 4)
+        .padding(.bottom, 4)
     }
 
     // MARK: - 3. Tagline Section ("Smarter Miles. Bigger Savings.")

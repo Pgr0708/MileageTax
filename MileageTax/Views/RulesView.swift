@@ -35,8 +35,15 @@ struct RulesView: View {
     }
     @State private var showAddRuleSheet = false
     @State private var showPinGeofenceSheet = false
+    @State private var showNotificationSheet: Bool = false
+    @State private var showProfile: Bool = false
 
-    @State private var showProfileSheet = false
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
+        predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
+        animation: .default)
+    private var pendingTrips: FetchedResults<TripEntity>
+    private var pendingCount: Int { pendingTrips.count }
 
     var body: some View {
         NavigationStack {
@@ -75,17 +82,21 @@ struct RulesView: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showAddRuleSheet) {
+                AddRuleModalView()
+            }
+            .sheet(isPresented: $showPinGeofenceSheet) {
+                PinGeofenceModalView()
+            }
+            .sheet(isPresented: $showNotificationSheet) {
+                NotificationsSheetView(pendingCount: pendingCount)
+            }
+            .navigationDestination(isPresented: $showProfile) {
+                ProfileView()
+            }
         }
         .preferredColorScheme(.dark)
-        .sheet(isPresented: $showAddRuleSheet) {
-            AddRuleModalView()
-        }
-        .sheet(isPresented: $showPinGeofenceSheet) {
-            PinGeofenceModalView()
-        }
-        .sheet(isPresented: $showProfileSheet) {
-            ProfileView()
-        }
     }
 
     // MARK: - Background Scene
@@ -196,23 +207,35 @@ struct RulesView: View {
 
             Spacer()
 
-            // Right: Sliders & Profile Buttons
+            // Right: Notification Bell & Profile Avatar Buttons
             HStack(spacing: 10) {
-                Button {} label: {
-                    ZStack {
+                Button {
+                    showNotificationSheet = true
+                } label: {
+                    ZStack(alignment: .topTrailing) {
                         Circle()
                             .fill(Color(hex: "#0E1622").opacity(0.85))
                             .frame(width: 40, height: 40)
-                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+                            .overlay(Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
 
-                        Image(systemName: "slider.horizontal.3")
+                        Image(systemName: "bell")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .frame(width: 40, height: 40)
+
+                        if pendingCount > 0 {
+                            Circle()
+                                .fill(Color(hex: "#00FF88"))
+                                .frame(width: 8, height: 8)
+                                .overlay(Circle().stroke(Color(hex: "#0C141E"), lineWidth: 1.5))
+                                .shadow(color: Color(hex: "#00FF88"), radius: 4)
+                                .offset(x: -3, y: 3)
+                        }
                     }
                 }
 
                 Button {
-                    showProfileSheet = true
+                    showProfile = true
                 } label: {
                     ZStack {
                         Circle()
@@ -234,7 +257,7 @@ struct RulesView: View {
             }
         }
         .padding(.top, Device.topSafeArea)
-        .padding(.vertical, 4)
+        .padding(.bottom, 4)
     }
 
     // MARK: - Screen Title Section

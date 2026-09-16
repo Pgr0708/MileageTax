@@ -36,47 +36,46 @@ struct ProfileView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Background
-                Color(hex: "#06090E").ignoresSafeArea()
+        ZStack {
+            // Background
+            Color(hex: "#06090E").ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        // Header
-                        headerBar
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    // Header
+                    headerBar
 
-                        // Avatar & Identity Hero
-                        identitySection
+                    // Avatar & Identity Hero
+                    identitySection
 
-                        // Hardware & Telemetry Card
-                        hardwareTelemetryCard
+                    // Hardware & Telemetry Card
+                    hardwareTelemetryCard
 
-                        // IRS Compliance Engine Card
-                        irsComplianceCard
+                    // IRS Compliance Engine Card
+                    irsComplianceCard
 
-                        // CoreMotion Gating Card
-                        coreMotionGatingCard
+                    // CoreMotion Gating Card
+                    coreMotionGatingCard
 
-                        // Accounting Integrations Card
-                        accountingIntegrationsCard
+                    // Accounting Integrations Card
+                    accountingIntegrationsCard
 
-                        // Biometrics & Vault Lock Card
-                        biometricsCard
+                    // Biometrics & Vault Lock Card
+                    biometricsCard
 
-                        // Sign Out Button
-                        signOutButton
+                    // Sign Out Button
+                    signOutButton
 
-                        // Footer Version
-                        footerMetadata
+                    // Footer Version
+                    footerMetadata
 
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    Spacer(minLength: 40)
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
         }
+        .navigationBarBackButtonHidden(true)
         .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
@@ -88,56 +87,43 @@ struct ProfileView: View {
     // MARK: - Header Bar
 
     private var headerBar: some View {
-        HStack {
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(hex: "#0C141E"))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
-                        )
-                        .frame(width: 36, height: 36)
+        HStack(alignment: .center) {
+            Button {
+                dismiss()
+            } label: {
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#0E1622").opacity(0.85))
+                            .frame(width: 38, height: 38)
+                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
 
-                    Image(systemName: "m.circle.fill")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 4) {
-                        Text("MileageTax")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("PRO")
-                            .font(.system(size: 8, weight: .heavy))
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color(hex: "#00E5FF"))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: "#00E5FF").opacity(0.12))
-                            .clipShape(Capsule())
                     }
-                    Text("● 1.1%/HR COREMOTION")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
+
+                    Text("Back")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.85))
                 }
             }
 
             Spacer()
 
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.white.opacity(0.6))
+            HStack(spacing: 6) {
+                Image(systemName: "shield.checkmark.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+                Text("VERIFIED PROFILE")
+                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Color(hex: "#00FF88"))
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color(hex: "#072018").opacity(0.9))
+            .clipShape(Capsule())
+            .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
         }
         .padding(.vertical, 4)
     }

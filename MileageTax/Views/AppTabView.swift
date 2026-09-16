@@ -98,7 +98,7 @@ private struct CustomTabBar: View {
     private var pendingTrips: FetchedResults<TripEntity>
 
     private let items: [(icon: String, label: String)] = [
-        ("safari", "Radar"),
+        ("safari.fill", "Radar"),
         ("tag.fill", "Classify"),
         ("bolt.fill", "TRACK"),
         ("building.columns.fill", "Vault"),
@@ -106,44 +106,53 @@ private struct CustomTabBar: View {
     ]
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 0) {
+        HStack(alignment: .center, spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                Spacer()
+                Spacer(minLength: 0)
                 if index == 2 {
                     // Center Elevated Neon TRACK Button
                     centerTrackButton(icon: item.icon, label: item.label)
                 } else {
                     regularTabButton(index: index, icon: item.icon, label: item.label)
                 }
-                Spacer()
+                Spacer(minLength: 0)
             }
         }
-        .padding(.top, 8)
-//        .padding(.bottom, 20)
+        .padding(.horizontal, 10)
+        .padding(.top, 10)
+//        .padding(.bottom, Device.bottomSafeArea > 0 ? Device.bottomSafeArea - 8 : 12)
         .background(
             ZStack {
-                Rectangle()
+                // Glassmorphic background
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
                     .fill(.ultraThinMaterial)
-                Rectangle()
-                    .fill(Color(hex: "#060A10").opacity(0.72))
-                
-                // Subtle bottom emerald aurora glow
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(Color(hex: "#05080E").opacity(0.82))
+
+                // Bottom subtle emerald atmospheric glow
                 RadialGradient(
                     colors: [Color(hex: "#00FF88").opacity(0.12), Color.clear],
                     center: .bottom,
                     startRadius: 0,
-                    endRadius: 180
+                    endRadius: 160
                 )
             }
             .overlay(
-                LinearGradient(
-                    colors: [Color(hex: "#00E5FF").opacity(0.35), Color(hex: "#00FF88").opacity(0.2), Color.white.opacity(0.06)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(height: 1),
-                alignment: .top
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#00E5FF").opacity(0.45),
+                                Color(hex: "#00FF88").opacity(0.25),
+                                Color.white.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.2
+                    )
             )
+            .shadow(color: Color.black.opacity(0.6), radius: 20, x: 0, y: -4)
             .ignoresSafeArea(edges: .bottom)
         )
     }
@@ -152,19 +161,21 @@ private struct CustomTabBar: View {
     @ViewBuilder
     private func regularTabButton(index: Int, icon: String, label: String) -> some View {
         let isSelected = selected == index
-        let pendingCount = pendingTrips.count  // real count only, no dummy fallback
+        let pendingCount = pendingTrips.count
 
         Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
                 selected = index
             }
         } label: {
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: icon)
                         .font(.system(size: 19, weight: isSelected ? .bold : .medium))
                         .foregroundStyle(
-                            isSelected ? Color(hex: "#00E5FF") : Color.white.opacity(0.45)
+                            isSelected ?
+                                AnyShapeStyle(LinearGradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")], startPoint: .topLeading, endPoint: .bottomTrailing)) :
+                                AnyShapeStyle(Color.white.opacity(0.45))
                         )
                         .scaleEffect(isSelected ? 1.08 : 1.0)
                         .frame(width: 32, height: 26)
@@ -172,22 +183,31 @@ private struct CustomTabBar: View {
                     // Badge for Classify tab (Index 1)
                     if index == 1 && pendingCount > 0 {
                         Text("\(pendingCount)")
-                            .font(.system(size: 9, weight: .heavy))
+                            .font(.system(size: 8.5, weight: .heavy))
                             .foregroundStyle(Color(hex: "#061A13"))
                             .frame(width: 15, height: 15)
                             .background(Color(hex: "#00FF88"))
                             .clipShape(Circle())
-                            .offset(x: 8, y: -4)
-                            .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 4)
+                            .offset(x: 8, y: -3)
+                            .shadow(color: Color(hex: "#00FF88").opacity(0.6), radius: 4)
                     }
                 }
 
                 Text(label)
-                    .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .rounded))
                     .foregroundStyle(
                         isSelected ? Color(hex: "#00E5FF") : Color.white.opacity(0.45)
                     )
+
+                // Active glowing bottom pill indicator
+                Capsule()
+                    .fill(Color(hex: "#00E5FF"))
+                    .frame(width: isSelected ? 12 : 0, height: 2.5)
+                    .shadow(color: Color(hex: "#00E5FF").opacity(0.8), radius: 3)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
             }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -198,18 +218,22 @@ private struct CustomTabBar: View {
         let isLive = trackerState == .activeTracking
 
         Button {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.65)) {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.68)) {
                 selected = 2
             }
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 ZStack {
-                    // Outer pulsing glowing ring
+                    // Outer subtle glowing aura ring
                     Circle()
-                        .strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 2)
-                        .frame(width: 52, height: 52)
+                        .strokeBorder(
+                            isLive ? Color(hex: "#FF3B30").opacity(0.45) : Color(hex: "#00FF88").opacity(0.4),
+                            lineWidth: 2
+                        )
+                        .frame(width: 50, height: 50)
+                        .scaleEffect(isLive ? 1.08 : 1.0)
 
-                    // Glowing green elevated disc
+                    // Glowing green/red elevated disc
                     Circle()
                         .fill(
                             LinearGradient(
@@ -220,22 +244,27 @@ private struct CustomTabBar: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 44, height: 44)
-                        .shadow(color: isLive ? Color(hex: "#FF3B30").opacity(0.5) : Color(hex: "#00FF88").opacity(0.55), radius: 10, x: 0, y: 3)
+                        .frame(width: 42, height: 42)
+                        .shadow(
+                            color: isLive ? Color(hex: "#FF3B30").opacity(0.65) : Color(hex: "#00FF88").opacity(0.6),
+                            radius: 10, x: 0, y: 3
+                        )
 
-                    // Bolt icon
+                    // Bolt or Pulse Waveform icon
                     Image(systemName: isLive ? "waveform.path.ecg" : "bolt.fill")
-                        .font(.system(size: 20, weight: .black))
+                        .font(.system(size: 19, weight: .black))
                         .foregroundStyle(Color(hex: "#041B12"))
                 }
-                .offset(y: -8)
+                .offset(y: -10)
 
                 Text(isLive ? "LIVE" : "TRACK")
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: 9.5, weight: .heavy, design: .rounded))
                     .foregroundStyle(isLive ? Color(hex: "#FF3B30") : Color(hex: "#00FF88"))
-                    .tracking(0.5)
-                    .offset(y: -6)
+                    .tracking(0.6)
+                    .offset(y: -8)
             }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

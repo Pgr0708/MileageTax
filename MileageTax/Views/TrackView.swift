@@ -18,7 +18,15 @@ struct TrackView: View {
     @State private var dialPulse = false
     @State private var isPaused = false
     @State private var showCameraSheet = false
-    @State private var showProfileSheet = false
+    @State private var showNotificationSheet = false
+    @State private var showProfile = false
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
+        predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
+        animation: .default)
+    private var pendingTrips: FetchedResults<TripEntity>
+    private var pendingCount: Int { pendingTrips.count }
 
     // Real dynamic metrics from TripTrackerService
     private var displaySpeed: Double {
@@ -34,22 +42,25 @@ struct TrackView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background Scenic Highway with Atmospheric Gradient
+                // Background Scene (Alpine coastal sunset with winding neon highway)
                 scenicBackground
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         // Top Header Bar
                         topHeaderBar
 
-                        // Live Telemetry Header Banner
+                        // Live Telemetry Banner (REC · 0.0 MI · 0 MPH · $0.00)
                         telemetryTopStatusBanner
 
                         // Highway Vista Badges (Floating over road scene)
                         highwayVistaBadges
 
+                        Spacer()
+                        
                         // Cruising Speed & Tax Yield Circular HUD Dial
                         speedTaxCruisingDial
+//                            .padding(.top, 16)
 
                         // 3-Column Horizontal Metrics Glass Bar
                         threeColumnMetricsBar
@@ -66,11 +77,15 @@ struct TrackView: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showNotificationSheet) {
+                NotificationsSheetView(pendingCount: pendingCount)
+            }
+            .navigationDestination(isPresented: $showProfile) {
+                ProfileView()
+            }
         }
         .preferredColorScheme(.dark)
-        .sheet(isPresented: $showProfileSheet) {
-            ProfileView()
-        }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 dialPulse = true
@@ -98,32 +113,22 @@ struct TrackView: View {
                                 .init(color: Color.clear, location: 0.0),
                                 .init(color: Color.clear, location: 0.22),
                                 .init(color: Color(hex: "#06090E").opacity(0.18), location: 0.40),
-                                .init(color: Color(hex: "#06090E").opacity(0.68), location: 0.62),
-                                .init(color: Color(hex: "#06090E").opacity(0.96), location: 0.82),
-                                .init(color: Color(hex: "#06090E"), location: 1.0)
+                                .init(color: Color(hex: "#06090E").opacity(0.70), location: 0.65),
+                                .init(color: Color(hex: "#06090E"), location: 0.90)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
 
-                // Top ambient cyan aurora bloom
+                // Atmospheric cyan/emerald ambient aura
                 RadialGradient(
-                    colors: [Color(hex: "#00E5FF").opacity(0.18), Color.clear],
-                    center: .top,
+                    colors: [Color(hex: "#00E5FF").opacity(0.12), Color.clear],
+                    center: .topLeading,
                     startRadius: 0,
-                    endRadius: 280
+                    endRadius: 300
                 )
                 .ignoresSafeArea()
-
-                // Road curve ambient emerald highlight
-                RadialGradient(
-                    colors: [Color(hex: "#00FF88").opacity(0.12), Color.clear],
-                    center: .center,
-                    startRadius: 20,
-                    endRadius: 200
-                )
-                .offset(y: -60)
             }
         }
         .ignoresSafeArea()
@@ -132,27 +137,27 @@ struct TrackView: View {
     // MARK: - Top Header Bar
 
     private var topHeaderBar: some View {
-        HStack(spacing: 10) {
-            // Left: Glowing Compass Logo
-            HStack(spacing: 9) {
+        HStack(alignment: .center, spacing: 12) {
+            // Left: Logo & Brand
+            HStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(hex: "#09121D").opacity(0.9))
+                        .fill(Color(hex: "#0C141E"))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .strokeBorder(
                                     LinearGradient(
-                                        colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
+                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.2)],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
-                                    lineWidth: 1.5
+                                    lineWidth: 1.2
                                 )
                         )
-                        .frame(width: 40, height: 40)
-                        .shadow(color: Color(hex: "#00E5FF").opacity(0.35), radius: 8)
+                        .frame(width: 42, height: 42)
+                        .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
 
-                    Image(systemName: "safari.fill")
+                    Image(systemName: "m.circle.fill")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(
                             LinearGradient(
@@ -164,59 +169,86 @@ struct TrackView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 5) {
-                        Text("MileageTax")
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                    HStack(spacing: 6) {
+                        Text("Mileage")
+                            .font(.system(size: 19, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
+                        + Text("Tax")
+                            .font(.system(size: 19, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color(hex: "#00FF88"))
 
                         Text("PRO")
-                            .font(.system(size: 8.5, weight: .black))
+                            .font(.system(size: 8.5, weight: .heavy))
                             .foregroundStyle(Color(hex: "#00E5FF"))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color(hex: "#00E5FF").opacity(0.12))
                             .clipShape(Capsule())
-                            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.45), lineWidth: 1))
+                            .overlay(
+                                Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
+                            )
                     }
 
-                    Text("SMART MILEAGE TRACKER")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                    Text("TRACK  /  LOG  /  SAVE")
+                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
-                        .tracking(1.4)
+                        .tracking(1.6)
                 }
             }
 
             Spacer()
 
-            // Right: Sliders & Profile Buttons
+            // Right: Notification Bell & Profile Avatar Buttons
             HStack(spacing: 10) {
                 Button {
-                    // Settings / preferences
+                    showNotificationSheet = true
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .frame(width: 38, height: 38)
-                        .background(Color(hex: "#0C1420").opacity(0.75))
-                        .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+                    ZStack(alignment: .topTrailing) {
+                        Circle()
+                            .fill(Color(hex: "#0E1622").opacity(0.85))
+                            .frame(width: 40, height: 40)
+                            .overlay(Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
+
+                        Image(systemName: "bell")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .frame(width: 40, height: 40)
+
+                        if pendingCount > 0 {
+                            Circle()
+                                .fill(Color(hex: "#00FF88"))
+                                .frame(width: 8, height: 8)
+                                .overlay(Circle().stroke(Color(hex: "#0C141E"), lineWidth: 1.5))
+                                .shadow(color: Color(hex: "#00FF88"), radius: 4)
+                                .offset(x: -3, y: 3)
+                        }
+                    }
                 }
 
                 Button {
-                    showProfileSheet = true
+                    showProfile = true
                 } label: {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                        .frame(width: 38, height: 38)
-                        .background(Color(hex: "#0C1420").opacity(0.75))
-                        .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#0E1622").opacity(0.85))
+                            .frame(width: 40, height: 40)
+                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                 }
             }
         }
-        .padding(.top, Device.topSafeArea)
-        .padding(.vertical, 4)
+//        .padding(.top, Device.topSafeArea)
+        .padding(.bottom, 4)
     }
 
     // MARK: - Live Telemetry Header Banner

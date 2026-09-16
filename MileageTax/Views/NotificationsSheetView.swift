@@ -19,37 +19,54 @@ struct NotificationsSheetView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Handle
+                // Sleek drag handle
                 Capsule()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(width: 38, height: 4)
-                    .padding(.top, 14)
-                    .padding(.bottom, 10)
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 36, height: 4)
+                    .padding(.top, 10)
+                    .padding(.bottom, 12)
 
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                // Compact Header Row
+                HStack(alignment: .center) {
+                    HStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#00E5FF").opacity(0.12))
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "bell.badge.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Color(hex: "#00E5FF"))
+                        }
+
                         Text("Notifications")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
-                        Text("Recent activity from MileageTax")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.45))
+
+                        if pendingCount > 0 {
+                            Text("\(pendingCount) NEW")
+                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color(hex: "#00FF88").opacity(0.12))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
+                        }
                     }
+
                     Spacer()
+
                     Button { dismiss() } label: {
-                        Text("Dismiss")
+                        Image(systemName: "xmark")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Color(hex: "#00E5FF").opacity(0.10))
-                            .clipShape(Capsule())
-                            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .frame(width: 28, height: 28)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Circle())
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 18)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
 
                 // Content
                 if pendingCount > 0 {
