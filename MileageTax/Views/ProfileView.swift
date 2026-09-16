@@ -423,7 +423,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Toggle("", isOn: $cpaAuditShieldEnabled)
-                    .tint(Color(hex: "#00FF88"))
+                    .toggleStyle(ObsidianToggleStyle())
                     .labelsHidden()
             }
         }
@@ -599,7 +599,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Toggle("", isOn: $icloudBackupEnabled)
-                    .tint(Color(hex: "#00FF88"))
+                    .toggleStyle(ObsidianToggleStyle())
                     .labelsHidden()
             }
         }
@@ -629,7 +629,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Toggle("", isOn: $faceIDLockEnabled)
-                    .tint(Color(hex: "#00FF88"))
+                    .toggleStyle(ObsidianToggleStyle())
                     .labelsHidden()
             }
 

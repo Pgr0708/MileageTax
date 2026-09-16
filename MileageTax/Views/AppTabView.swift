@@ -30,6 +30,7 @@ struct AppTabView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
 
             // ── Custom Tab Bar ────────────────────────────────────────────────
             CustomTabBar(selected: $selectedTab, trackerState: tracker.state)
@@ -117,14 +118,14 @@ private struct CustomTabBar: View {
                 Spacer()
             }
         }
-        .padding(.top, 10)
-        .padding(.bottom, 18)
+        .padding(.top, 8)
+//        .padding(.bottom, 20)
         .background(
             ZStack {
                 Rectangle()
-                    .fill(Color(hex: "#060A10").opacity(0.94))
+                    .fill(.ultraThinMaterial)
                 Rectangle()
-                    .fill(.ultraThinMaterial.opacity(0.3))
+                    .fill(Color(hex: "#060A10").opacity(0.72))
                 
                 // Subtle bottom emerald aurora glow
                 RadialGradient(
@@ -135,8 +136,12 @@ private struct CustomTabBar: View {
                 )
             }
             .overlay(
-                Divider()
-                    .background(Color.white.opacity(0.08)),
+                LinearGradient(
+                    colors: [Color(hex: "#00E5FF").opacity(0.35), Color(hex: "#00FF88").opacity(0.2), Color.white.opacity(0.06)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: 1),
                 alignment: .top
             )
             .ignoresSafeArea(edges: .bottom)
@@ -147,7 +152,7 @@ private struct CustomTabBar: View {
     @ViewBuilder
     private func regularTabButton(index: Int, icon: String, label: String) -> some View {
         let isSelected = selected == index
-        let pendingCount = pendingTrips.count > 0 ? pendingTrips.count : 3
+        let pendingCount = pendingTrips.count  // real count only, no dummy fallback
 
         Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -230,6 +235,88 @@ private struct CustomTabBar: View {
                     .foregroundStyle(isLive ? Color(hex: "#FF3B30") : Color(hex: "#00FF88"))
                     .tracking(0.5)
                     .offset(y: -6)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Obsidian Precision Custom Toggle Style
+
+struct ObsidianToggleStyle: ToggleStyle {
+    var onColor: Color = Color(hex: "#00FF88")
+    var offColor: Color = Color(hex: "#1E293B")
+
+    func makeBody(configuration: Configuration) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                configuration.isOn.toggle()
+            }
+        } label: {
+            ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                // Outer Track
+                Capsule()
+                    .fill(
+                        configuration.isOn
+                            ? LinearGradient(
+                                colors: [Color(hex: "#003820"), Color(hex: "#002418")],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            : LinearGradient(
+                                colors: [Color(hex: "#0B1520"), Color(hex: "#070D14")],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                    )
+                    .frame(width: 48, height: 26)
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(
+                                configuration.isOn
+                                    ? LinearGradient(
+                                        colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF").opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                    : LinearGradient(
+                                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.08)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                lineWidth: 1.2
+                            )
+                    )
+                    .shadow(
+                        color: configuration.isOn ? Color(hex: "#00FF88").opacity(0.4) : Color.clear,
+                        radius: 6,
+                        x: 0,
+                        y: 0
+                    )
+
+                // Glowing Thumb Knob
+                Circle()
+                    .fill(
+                        configuration.isOn
+                            ? LinearGradient(
+                                colors: [Color(hex: "#00FFCC"), Color(hex: "#00FF88")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [Color(hex: "#718096"), Color(hex: "#4A5568")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                    )
+                    .frame(width: 20, height: 20)
+                    .padding(.horizontal, 3)
+                    .shadow(
+                        color: configuration.isOn ? Color(hex: "#00FF88").opacity(0.7) : Color.black.opacity(0.4),
+                        radius: configuration.isOn ? 5 : 2,
+                        x: 0,
+                        y: 1
+                    )
             }
         }
         .buttonStyle(.plain)

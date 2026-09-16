@@ -22,7 +22,7 @@ struct RadarView: View {
     @State private var radarPulse: Bool = false
     @State private var borderGlowPhase: Double = 0
     @State private var showNotificationSheet: Bool = false
-    @State private var showProfileSheet: Bool = false
+    @State private var showProfile: Bool = false  // full-screen push, not sheet
     @State private var isRadarPaused: Bool = false
 
     // Real Metrics calculated live from CoreData Single Source of Truth
@@ -42,7 +42,7 @@ struct RadarView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // MARK: Cinematic Background Layer
+                // MARK: Cinematic Background Layer extending to top of screen behind Dynamic Island
                 backgroundScene
 
                 // MARK: Main Scroll View
@@ -69,29 +69,36 @@ struct RadarView: View {
                         // 7. Action Controls Bar (Pause & End & Classify)
                         actionControlsCard
 
-                        // 8. Drives Pending Review Banner
-                        pendingReviewBanner
+                        // 8. Drives Pending Review Banner (only if real trips pending)
+                        if pendingCount > 0 {
+                            pendingReviewBanner
+                        }
 
                         // 9. Telemetry Log Stream
                         telemetryLogStream
 
-                        Spacer(minLength: 110)
+                        Spacer(minLength: 120)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 4)
                 }
             }
-        }
-        .sheet(isPresented: $showProfileSheet) {
-            ProfileView()
-        }
-        .preferredColorScheme(.dark)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-                radarPulse = true
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showNotificationSheet) {
+                NotificationsSheetView(pendingCount: pendingCount)
             }
-            withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
-                borderGlowPhase = 1.0
+            // Profile as full-screen navigation push
+            .navigationDestination(isPresented: $showProfile) {
+                ProfileView()
+            }
+            .preferredColorScheme(.dark)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    radarPulse = true
+                }
+                withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                    borderGlowPhase = 1.0
+                }
             }
         }
     }
@@ -100,33 +107,29 @@ struct RadarView: View {
 
     private var backgroundScene: some View {
         ZStack {
-            // Deep base obsidian
             Color(hex: "#06090E").ignoresSafeArea()
 
-            // Mountain scenic wallpaper at top
-            GeometryReader { geo in
-                Image("radar_bg_mountain")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height * 0.75, alignment: .top)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                Color(hex: "#06090E").opacity(0.2),
-                                Color(hex: "#06090E").opacity(0.8),
-                                Color(hex: "#06090E")
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+            // Mountain scenic wallpaper extending to top of screen behind Dynamic Island
+            Image("radar_bg_mountain")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color(hex: "#06090E").opacity(0.12),
+                            Color(hex: "#06090E").opacity(0.85),
+                            Color(hex: "#06090E")
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
-                    .ignoresSafeArea()
-            }
+                )
 
             // Top ambient teal/emerald aurora glow
             RadialGradient(
-                colors: [Color(hex: "#00E5FF").opacity(0.12), Color.clear],
+                colors: [Color(hex: "#00E5FF").opacity(0.14), Color.clear],
                 center: .topLeading,
                 startRadius: 0,
                 endRadius: 280
@@ -231,22 +234,24 @@ struct RadarView: View {
                             .foregroundStyle(.white.opacity(0.9))
                             .frame(width: 42, height: 42)
 
-                        // Glowing Notification Dot
-                        Circle()
-                            .fill(Color(hex: "#00FF88"))
-                            .frame(width: 8, height: 8)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color(hex: "#0C141E"), lineWidth: 1.5)
-                            )
-                            .shadow(color: Color(hex: "#00FF88"), radius: 4)
-                            .offset(x: -4, y: 4)
+                        // Glowing dot — only when there are real pending trips
+                        if pendingCount > 0 {
+                            Circle()
+                                .fill(Color(hex: "#00FF88"))
+                                .frame(width: 8, height: 8)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color(hex: "#0C141E"), lineWidth: 1.5)
+                                )
+                                .shadow(color: Color(hex: "#00FF88"), radius: 4)
+                                .offset(x: -4, y: 4)
+                        }
                     }
                 }
 
-                // Profile Avatar Button
+                // Profile Avatar Button — navigates to full screen
                 Button {
-                    showProfileSheet = true
+                    showProfile = true
                 } label: {
                     ZStack {
                         Circle()
@@ -269,6 +274,7 @@ struct RadarView: View {
                 }
             }
         }
+        .padding(.top, Device.topSafeArea)
         .padding(.vertical, 4)
     }
 
@@ -302,87 +308,97 @@ struct RadarView: View {
     // MARK: - 4. YTD Verified Deduction (Hero Card with Rising Chart)
 
     private var ytdHeroCard: some View {
-        ZStack(alignment: .topLeading) {
-            // Rising Chart High-Tech Card Background
-            Image("radar_ytd_chart_card")
-                .resizable()
-                .scaledToFill()
-                .frame(height: 155)
-                .clipped()
-
-            VStack(alignment: .leading, spacing: 12) {
-                // Top Row: Title + Growth vs Q3 Pill
-                HStack(alignment: .top) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-
-                        Text("YTD VERIFIED DEDUCTION")
-                            .font(.system(size: 10.5, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.75))
-                            .tracking(0.6)
-                    }
-
-                    Spacer()
-
-                    // +18.4% vs Q3 Pill
-                    HStack(spacing: 5) {
-                        VStack(alignment: .trailing, spacing: 1) {
-                            Text("+18.4% vs")
-                                .font(.system(size: 11, weight: .black, design: .rounded))
-                                .foregroundStyle(Color(hex: "#00FF88"))
-                            Text("Q3")
-                                .font(.system(size: 10, weight: .heavy))
-                                .foregroundStyle(Color(hex: "#00FF88").opacity(0.85))
-                        }
-
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 13, weight: .black))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color(hex: "#06221A").opacity(0.85))
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1)
-                    )
-                }
-
-                // Center: Big Hero Number
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("$")
-                        .font(.system(size: 32, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                        .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 8)
-
-                    Text(ytdDeduction > 0 ? String(format: "%.2f", ytdDeduction) : "1,482.90")
-                        .font(.system(size: 38, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-
-                // Bottom Row: Business Miles Logged
+        VStack(alignment: .leading, spacing: 12) {
+            // Top Row: Title + Growth vs Q3 Pill
+            HStack(alignment: .top) {
                 HStack(spacing: 6) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text((ytdMiles > 0 ? String(format: "%.1f", ytdMiles) : "2,213.2") + "  BUSINESS MILES")
-                            .font(.system(size: 11, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white)
+                    Text("YTD VERIFIED DEDUCTION")
+                        .font(.system(size: 10.5, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .tracking(0.6)
+                }
 
-                        Text("LOGGED")
-                            .font(.system(size: 8.5, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.45))
+                Spacer()
+
+                // +18.4% vs Q3 Pill
+                HStack(spacing: 5) {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text("+18.4% vs")
+                            .font(.system(size: 11, weight: .black, design: .rounded))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+                        Text("Q3")
+                            .font(.system(size: 10, weight: .heavy))
+                            .foregroundStyle(Color(hex: "#00FF88").opacity(0.85))
                     }
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 13, weight: .black))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color(hex: "#06221A").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1)
+                )
+            }
+
+            // Center: Big Hero Number
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("$")
+                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 8)
+
+                Text(String(format: "%.2f", ytdDeduction))
+                    .font(.system(size: 38, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+
+            // Bottom Row: Business Miles Logged
+            HStack(spacing: 6) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(String(format: "%.1f", ytdMiles) + "  BUSINESS MILES")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+
+                    Text("LOGGED")
+                        .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
                 }
             }
-            .padding(16)
         }
-        .frame(height: 155)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Image("radar_ytd_chart_card")
+                .resizable()
+        )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "#00E5FF").opacity(0.6),
+                            Color(hex: "#00FF88").opacity(0.3),
+                            Color.white.opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.2
+                )
+        )
         .shadow(color: Color.black.opacity(0.5), radius: 14, x: 0, y: 7)
     }
 
@@ -436,10 +452,14 @@ struct RadarView: View {
 
             // Mini 3D Map Route View with Overlays
             ZStack(alignment: .bottom) {
-                Image("radar_live_map_route")
-                    .resizable()
-                    .scaledToFill()
+                Rectangle()
+                    .fill(Color.clear)
                     .frame(height: 140)
+                    .overlay(
+                        Image("radar_live_map_route")
+                            .resizable()
+                            .scaledToFill()
+                    )
                     .clipped()
                     .overlay(
                         LinearGradient(
@@ -617,29 +637,29 @@ struct RadarView: View {
 
     private var telemetryTrioGrid: some View {
         HStack(spacing: 8) {
-            // 1. Distance
+            // 1. Distance — real value or 0.0 default
             metricBox(
                 icon: "point.topleft.down.to.point.bottomright.curvepath.fill",
                 label: "DISTANCE",
-                value: tracker.liveDistanceMiles > 0 ? String(format: "%.1f", tracker.liveDistanceMiles) : "14.2",
+                value: String(format: "%.1f", tracker.liveDistanceMiles),
                 unit: "MILES",
                 accent: Color(hex: "#00FF88")
             )
 
-            // 2. Speed
+            // 2. Speed — real value or 0 default
             metricBox(
                 icon: "speedometer",
                 label: "SPEED",
-                value: tracker.currentSpeedMph > 0 ? String(format: "%.0f", tracker.currentSpeedMph) : "42",
-                unit: "MPH CRUISE",
+                value: String(format: "%.0f", tracker.currentSpeedMph),
+                unit: "MPH",
                 accent: Color.white
             )
 
-            // 3. Tax Yield
+            // 3. Tax Yield — real value or $0.00 default
             metricBox(
                 icon: "banknote.fill",
                 label: "TAX YIELD",
-                value: tracker.liveDeductionUSD > 0 ? String(format: "+$%.2f", tracker.liveDeductionUSD) : "+$9.51",
+                value: String(format: "+$%.2f", tracker.liveDeductionUSD),
                 unit: "WRITE-OFF",
                 accent: Color(hex: "#00FF88")
             )
@@ -783,12 +803,12 @@ struct RadarView: View {
                             .fill(Color(hex: "#00FF88"))
                             .frame(width: 6, height: 6)
 
-                        Text("\(pendingCount > 0 ? pendingCount : 3) Drives Pending")
+                        Text("\(pendingCount) Drive\(pendingCount == 1 ? "" : "s") Pending")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                     }
 
-                    Text(String(format: "+$%.2f Unclaimed Write Off", pendingDeduction > 0 ? pendingDeduction : 28.40))
+                    Text(String(format: "+$%.2f Unclaimed Write Off", pendingDeduction))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color(hex: "#00E5FF").opacity(0.85))
                 }

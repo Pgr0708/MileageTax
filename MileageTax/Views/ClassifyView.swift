@@ -327,17 +327,19 @@ struct ClassifyView: View {
             Image("classify_spatial_route_bg")
                 .resizable()
                 .scaledToFill()
-                .frame(height: 124)
+                .frame(height: 128)
                 .clipped()
                 .overlay(
+                    // Deep gradient protection on the left where text sits, fading toward the luminous right
                     LinearGradient(
                         colors: [
-                            Color(hex: "#06090E").opacity(0.75),
-                            Color(hex: "#06090E").opacity(0.2),
-                            Color(hex: "#06090E").opacity(0.8)
+                            Color(hex: "#06090E").opacity(0.95),
+                            Color(hex: "#06090E").opacity(0.85),
+                            Color(hex: "#06090E").opacity(0.40),
+                            Color(hex: "#06090E").opacity(0.65)
                         ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -353,96 +355,87 @@ struct ClassifyView: View {
                         )
                 )
 
-            // Glowing bezier path ribbon overlay
-            Canvas { context, size in
-                var path = Path()
-                path.move(to: CGPoint(x: 34, y: size.height * 0.72))
-                path.addCurve(
-                    to: CGPoint(x: size.width - 44, y: size.height * 0.32),
-                    control1: CGPoint(x: size.width * 0.35, y: size.height * 0.60),
-                    control2: CGPoint(x: size.width * 0.65, y: size.height * 0.22)
-                )
-
-                // Outer ambient glow path
-                context.stroke(
-                    path,
-                    with: .linearGradient(
-                        Gradient(colors: [Color(hex: "#00E5FF").opacity(0.5), Color(hex: "#00FF88").opacity(0.6)]),
-                        startPoint: CGPoint(x: 34, y: size.height * 0.72),
-                        endPoint: CGPoint(x: size.width - 44, y: size.height * 0.32)
-                    ),
-                    lineWidth: 6
-                )
-
-                // Sharp core glowing path
-                context.stroke(
-                    path,
-                    with: .linearGradient(
-                        Gradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")]),
-                        startPoint: CGPoint(x: 34, y: size.height * 0.72),
-                        endPoint: CGPoint(x: size.width - 44, y: size.height * 0.32)
-                    ),
-                    lineWidth: 3
-                )
-            }
-            .frame(height: 124)
-
-            // Departure & Arrival Labels with pulsing nodes
-            VStack(alignment: .leading, spacing: 32) {
-                // Departure Origin
-                HStack(spacing: 8) {
+            // Departure & Arrival Timeline and Text
+            HStack(alignment: .top, spacing: 12) {
+                // Vertical Timeline Route Line with Nodes
+                VStack(spacing: 0) {
+                    // Departure pulsing cyan node
                     ZStack {
                         Circle()
                             .stroke(Color(hex: "#00E5FF").opacity(radarPulse ? 0.0 : 0.8), lineWidth: 1.5)
-                            .frame(width: radarPulse ? 22 : 10, height: radarPulse ? 22 : 10)
+                            .frame(width: radarPulse ? 20 : 10, height: radarPulse ? 20 : 10)
                         Circle()
                             .fill(Color(hex: "#00E5FF"))
                             .frame(width: 8, height: 8)
                             .shadow(color: Color(hex: "#00E5FF"), radius: 5)
                     }
-                    .frame(width: 22, height: 22)
+                    .frame(width: 20, height: 20)
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("DEPARTURE ORIGIN")
-                            .font(.system(size: 8, weight: .black, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00E5FF").opacity(0.9))
-                        Text(departure)
-                            .font(.system(size: 11.5, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                    }
-                }
-                .padding(.leading, 12)
+                    // Vertical glowing connector line
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "#00E5FF").opacity(0.8), Color(hex: "#00FF88").opacity(0.8)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 2, height: 28)
+                        .padding(.vertical, 2)
 
-                // Arrival Destination
-                HStack(spacing: 8) {
+                    // Arrival emerald pin
                     ZStack {
                         Circle()
                             .fill(Color(hex: "#00FF88").opacity(0.2))
-                            .frame(width: 22, height: 22)
+                            .frame(width: 20, height: 20)
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color(hex: "#00FF88"))
                             .shadow(color: Color(hex: "#00FF88"), radius: 6)
                     }
-                    .frame(width: 22, height: 22)
+                    .frame(width: 20, height: 20)
+                }
+                .padding(.top, 4)
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("ARRIVAL DESTINATION")
-                            .font(.system(size: 8, weight: .black, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00FF88").opacity(0.9))
-                        Text(arrival)
-                            .font(.system(size: 11.5, weight: .bold))
+                // Departure & Arrival Labels
+                VStack(alignment: .leading, spacing: 14) {
+                    // Departure Origin
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("DEPARTURE ORIGIN")
+                            .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                            .tracking(0.6)
+
+                        Text(departure)
+                            .font(.system(size: 12.5, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
+                            .shadow(color: Color.black.opacity(0.9), radius: 4)
+                    }
+
+                    // Arrival Destination
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ARRIVAL DESTINATION")
+                            .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+                            .tracking(0.6)
+
+                        Text(arrival)
+                            .font(.system(size: 12.5, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .shadow(color: Color.black.opacity(0.9), radius: 4)
                     }
                 }
-                .padding(.leading, 12)
+
+                Spacer()
             }
-            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
-        .frame(height: 124)
+        .frame(height: 128)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
     }
 
     private func irsWriteOffBox(deduction: Double) -> some View {

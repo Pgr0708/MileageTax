@@ -71,7 +71,9 @@ struct RulesView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 4)
+                    .frame(maxWidth: .infinity)
                 }
+                .scrollBounceBehavior(.basedOnSize)
             }
         }
         .preferredColorScheme(.dark)
@@ -93,25 +95,22 @@ struct RulesView: View {
             Color(hex: "#06090E").ignoresSafeArea()
 
             // Mountain scenic wallpaper at top fading into deep obsidian
-            GeometryReader { geo in
-                Image("radar_bg_mountain")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height * 0.65, alignment: .top)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                Color(hex: "#06090E").opacity(0.3),
-                                Color(hex: "#06090E").opacity(0.85),
-                                Color(hex: "#06090E")
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+            Image("radar_bg_mountain")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color(hex: "#06090E").opacity(0.2),
+                            Color(hex: "#06090E").opacity(0.85),
+                            Color(hex: "#06090E")
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
-                    .ignoresSafeArea()
-            }
+                )
 
             // Top ambient teal aurora glow
             RadialGradient(
@@ -204,11 +203,11 @@ struct RulesView: View {
                         Circle()
                             .fill(Color(hex: "#0E1622").opacity(0.85))
                             .frame(width: 40, height: 40)
-                            .overlay(Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
+                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
 
-                        Image(systemName: "slider.horizontal.2")
+                        Image(systemName: "slider.horizontal.3")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
                     }
                 }
 
@@ -234,6 +233,7 @@ struct RulesView: View {
                 }
             }
         }
+        .padding(.top, Device.topSafeArea)
         .padding(.vertical, 4)
     }
 
@@ -362,134 +362,173 @@ struct RulesView: View {
         .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
     }
 
-    // MARK: - Card 1: Work Shift Schedule
+    // MARK: - Card Background with Precise Trailing Alignment
+    struct RulesCardBackground: View {
+        let imageName: String
+        var trailingOffset: CGFloat = 0
 
-    private var workShiftScheduleCard: some View {
-        ZStack(alignment: .topLeading) {
-            // Background Artwork
-            Image("rules_workshift_bg")
-                .resizable()
-                .scaledToFill()
-                .overlay(
+        var body: some View {
+            GeometryReader { geo in
+                ZStack(alignment: .trailing) {
+                    // Background artwork image pinned to trailing edge so right-side subject is 100% visible
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: max(geo.size.width, geo.size.height * (1024.0 / 377.0)),
+                            height: geo.size.height,
+                            alignment: .trailing
+                        )
+                        .offset(x: trailingOffset)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .trailing)
+                        .clipped()
+
+                    // Protective obsidian glass gradient on left for crystal clear readability
                     LinearGradient(
-                        colors: [
-                            Color(hex: "#060B12").opacity(0.88),
-                            Color(hex: "#060B12").opacity(0.45),
-                            Color.clear
+                        stops: [
+                            .init(color: Color(hex: "#060B14"), location: 0.0),
+                            .init(color: Color(hex: "#060B14").opacity(0.96), location: 0.45),
+                            .init(color: Color(hex: "#060B14").opacity(0.70), location: 0.58),
+                            .init(color: Color.clear, location: 0.78)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                )
-
-            // Content Overlay
-            VStack(alignment: .leading, spacing: 10) {
-                // Header Row
-                HStack(alignment: .center) {
-                    // Glowing Clock Icon
-                    ZStack {
-                        Circle()
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.5
-                            )
-                            .frame(width: 38, height: 38)
-
-                        Image(systemName: "clock")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                    }
-
-                    Text("Work Shift\nSchedule")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-
-                    Spacer()
-
-                    // SMART TIPS Pill
-                    HStack(spacing: 4) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("SMART\nTIPS")
-                            .font(.system(size: 7.5, weight: .black, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                            .multilineTextAlignment(.leading)
-                    }
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color(hex: "#072018").opacity(0.9))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
-
-                    // Toggle Switch
-                    Toggle("", isOn: $autoClassifyWorkHours)
-                        .tint(Color(hex: "#00FF88"))
-                        .labelsHidden()
-                }
-
-                // Schedule Days & Times
-                HStack(spacing: 5) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                    Text(workShiftHoursFormatted)
-                        .font(.system(size: 11.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                }
-
-                // Description
-                Text("Automatically classifies all drives initiated during registered shift hours as 100% Tax-Deductible Business with verified timestamp telemetry.")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineSpacing(2)
-                    .padding(.trailing, 20)
-
-                // Bottom Pills Row
-                HStack(spacing: 8) {
-                    // Tags Pill
-                    HStack(spacing: 4) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.white.opacity(0.6))
-                        Text("Tags: #Consulting #ClientRuns")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(Color(hex: "#08141F").opacity(0.8))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
-
-                    Spacer()
-
-                    // Avg per week pill
-                    HStack(spacing: 3) {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 9, weight: .bold))
-                        Text("Avg: +$142.80/wk")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    }
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(Color(hex: "#072018").opacity(0.85))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00E5FF").opacity(0.6))
                 }
             }
-            .padding(14)
         }
+    }
+
+    // MARK: - Card 1: Work Shift Schedule
+
+    private var workShiftScheduleCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header Row
+            HStack(alignment: .center, spacing: 8) {
+                // Glowing Clock Icon
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#061A14").opacity(0.8))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF").opacity(0.6)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                        )
+
+                    Image(systemName: "clock")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Work Shift")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Schedule")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .fixedSize()
+
+                Spacer()
+
+                // SMART TIPS Pill
+                HStack(spacing: 4) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Text("SMART\nTIPS")
+                        .font(.system(size: 7.5, weight: .black, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Color(hex: "#072018").opacity(0.9))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+
+                // Toggle Switch
+                Toggle("", isOn: $autoClassifyWorkHours)
+                    .toggleStyle(ObsidianToggleStyle())
+                    .labelsHidden()
+            }
+
+            // Schedule Days & Times
+            HStack(spacing: 5) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+                Text(workShiftHoursFormatted)
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Color(hex: "#00FF88"))
+            }
+
+            // Description — constrained to left side (~58% width) so the road/car on the right is fully visible
+            (
+                Text("Automatically classifies all drives initiated during registered shift hours as 100% ")
+                    .foregroundStyle(.white.opacity(0.85))
+                + Text("Tax-Deductible Business")
+                    .foregroundStyle(Color(hex: "#00E5FF"))
+                    .bold()
+                + Text(" with verified timestamp telemetry.")
+                    .foregroundStyle(.white.opacity(0.85))
+            )
+            .font(.system(size: 11, weight: .medium))
+            .lineSpacing(2)
+            .frame(maxWidth: 205, alignment: .leading)
+
+            // Bottom Pills Row
+            HStack(spacing: 8) {
+                // Tags Pill
+                HStack(spacing: 4) {
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 8.5))
+                        .foregroundStyle(.white.opacity(0.6))
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Tags: #Consulting")
+                        Text("#ClientRuns")
+                    }
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.75))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#08141F").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+
+                Spacer()
+
+                // Avg per week pill
+                HStack(spacing: 4) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("Avg: +$142.80/wk")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                }
+                .foregroundStyle(Color(hex: "#00FF88"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color(hex: "#072018").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00E5FF").opacity(0.6))
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RulesCardBackground(imageName: "rules_workshift_bg", trailingOffset: 25))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -508,91 +547,82 @@ struct RulesView: View {
     // MARK: - Card 2: CarPlay & Bluetooth Sync
 
     private var carPlayBluetoothCard: some View {
-        ZStack(alignment: .topLeading) {
-            // Background Artwork
-            Image("rules_bluetooth_bg")
-                .resizable()
-                .scaledToFill()
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "#060B12").opacity(0.88),
-                            Color(hex: "#060B12").opacity(0.4),
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+        VStack(alignment: .leading, spacing: 10) {
+            // Header Row
+            HStack(alignment: .center, spacing: 8) {
+                // Glowing Car Icon
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#061520").opacity(0.8))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color(hex: "#00E5FF").opacity(0.6), lineWidth: 1.5)
+                        )
 
-            // Content Overlay
-            VStack(alignment: .leading, spacing: 10) {
-                // Header Row
-                HStack(alignment: .center) {
-                    // Glowing Car Icon
-                    ZStack {
-                        Circle()
-                            .strokeBorder(Color(hex: "#00E5FF").opacity(0.6), lineWidth: 1.5)
-                            .frame(width: 38, height: 38)
-
-                        Image(systemName: "car.fill")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("CarPlay & Bluetooth\nSync")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
-
-                        Text("Prius 2024 CarPlay [98:21]")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: $btGatingEnabled)
-                        .tint(Color(hex: "#00FF88"))
-                        .labelsHidden()
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
                 }
 
-                // Description
-                Text("Strict hardware gate: only records mileage while connected to vehicle telemetry. Eliminates 100% of false positives from bus rides, trains, Uber trips, or walking.")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineSpacing(2)
-                    .padding(.trailing, 40)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("CarPlay & Bluetooth")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Sync")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
 
-                // Bottom Row
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: "point.3.connected.trianglepath.dotted")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("BT Beacon Latency")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
-                        Text("14ms • Standby")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color(hex: "#071B24").opacity(0.85))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00E5FF").opacity(0.6))
+                    Text("Prius 2024 CarPlay [98:21]")
+                        .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+                        .padding(.top, 1)
                 }
+                .fixedSize()
+
+                Spacer()
+
+                Toggle("", isOn: $btGatingEnabled)
+                    .toggleStyle(ObsidianToggleStyle())
+                    .labelsHidden()
             }
-            .padding(14)
+
+            // Description — constrained to left side (~58% width) so steering wheel & Bluetooth HUD shine through
+            Text("Strict hardware gate: only records mileage while connected to vehicle telemetry. Eliminates 100% of false positives from bus rides, trains, Uber trips, or walking.")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.85))
+                .lineSpacing(2)
+                .frame(maxWidth: 205, alignment: .leading)
+
+            // Bottom Row
+            HStack {
+                HStack(spacing: 5) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+                    Text("BT Beacon Latency")
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                    Text("14ms • Standby")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#071B24").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00E5FF").opacity(0.6))
+            }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RulesCardBackground(imageName: "rules_bluetooth_bg", trailingOffset: 15))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -611,106 +641,98 @@ struct RulesView: View {
     // MARK: - Card 3: Frequent Places Geofence
 
     private var frequentPlacesGeofenceCard: some View {
-        ZStack(alignment: .topLeading) {
-            // Background Artwork
-            Image("rules_geofence_bg")
-                .resizable()
-                .scaledToFill()
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "#060B12").opacity(0.92),
-                            Color(hex: "#060B12").opacity(0.5),
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-
-            // Content Overlay
-            VStack(alignment: .leading, spacing: 10) {
-                // Header Row
-                HStack(alignment: .center) {
-                    // Glowing Pin Icon
-                    ZStack {
-                        Circle()
-                            .strokeBorder(Color(hex: "#00FF88").opacity(0.6), lineWidth: 1.5)
-                            .frame(width: 38, height: 38)
-
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Frequent Places\nGeofence")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
-
-                        Text("Proximity-triggered ledger tagging")
-                            .font(.system(size: 10.5, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 8) {
-                        HStack(spacing: 3) {
-                            Image(systemName: "mappin.fill")
-                                .font(.system(size: 8))
-                            Text("\(geofenceManager.savedZones.count) SAVED")
-                                .font(.system(size: 8, weight: .black, design: .monospaced))
-                        }
-                        .foregroundStyle(Color(hex: "#00E5FF"))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(Color(hex: "#0B1D2C").opacity(0.85))
-                        .clipShape(Capsule())
-                        .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
-
-                        Toggle("", isOn: $geofenceEnabled)
-                            .tint(Color(hex: "#00FF88"))
-                            .labelsHidden()
-                    }
-                }
-
-                // Places List (positioned cleanly on the left 70% to let the 3D map pins show on the right)
-                VStack(spacing: 8) {
-                    ForEach(geofenceManager.savedZones) { zone in
-                        geofencePlaceRow(
-                            icon: zone.icon,
-                            title: zone.title,
-                            perimeter: "\(Int(zone.perimeterMeters))m perimeter",
-                            tag: zone.tag,
-                            tagColor: Color(hex: zone.tagColorHex)
+        VStack(alignment: .leading, spacing: 10) {
+            // Header Row
+            HStack(alignment: .center, spacing: 8) {
+                // Glowing Pin Icon
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#061A14").opacity(0.8))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color(hex: "#00FF88").opacity(0.6), lineWidth: 1.5)
                         )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Pin New Geofence Zone Button
-                Button {
-                    showPinGeofenceSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "scope")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("Pin New Geofence Zone")
-                            .font(.system(size: 11.5, weight: .bold))
-                            .foregroundStyle(.white)
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Frequent Places")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Geofence")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Text("Proximity-triggered ledger tagging")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .padding(.top, 1)
+                }
+                .fixedSize()
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "mappin.fill")
+                            .font(.system(size: 8))
+                        Text("\(geofenceManager.savedZones.count) SAVED")
+                            .font(.system(size: 8, weight: .black, design: .monospaced))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color(hex: "#0A1724").opacity(0.85))
+                    .foregroundStyle(Color(hex: "#00E5FF"))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 4)
+                    .background(Color(hex: "#0B1D2C").opacity(0.85))
                     .clipShape(Capsule())
                     .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
+                    .fixedSize()
+
+                    Toggle("", isOn: $geofenceEnabled)
+                        .toggleStyle(ObsidianToggleStyle())
+                        .labelsHidden()
                 }
             }
-            .padding(14)
+
+            // Places List — constrained to left side (~60% width) so the 3D map & glowing pins on the right show through
+            VStack(spacing: 6) {
+                ForEach(geofenceManager.savedZones) { zone in
+                    geofencePlaceRow(
+                        icon: zone.icon,
+                        title: zone.title,
+                        perimeterMeters: zone.perimeterMeters,
+                        tag: zone.tag,
+                        tagColor: Color(hex: zone.tagColorHex)
+                    )
+                }
+            }
+            .frame(maxWidth: 215, alignment: .leading)
+
+            // Pin New Geofence Zone Button
+            Button {
+                showPinGeofenceSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "scope")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Text("Pin New Geofence Zone")
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(Color(hex: "#0A1724").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+            }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RulesCardBackground(imageName: "rules_geofence_bg", trailingOffset: 95))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -726,112 +748,112 @@ struct RulesView: View {
         .shadow(color: Color.black.opacity(0.5), radius: 14, x: 0, y: 7)
     }
 
-    private func geofencePlaceRow(icon: String, title: String, perimeter: String, tag: String, tagColor: Color) -> some View {
-        HStack(spacing: 10) {
+    private func geofencePlaceRow(icon: String, title: String, perimeterMeters: Double, tag: String, tagColor: Color) -> some View {
+        HStack(spacing: 8) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color(hex: "#081E22").opacity(0.8))
-                    .frame(width: 32, height: 32)
+                    .frame(width: 28, height: 28)
                     .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#00FF88").opacity(0.25), lineWidth: 1))
 
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Color(hex: "#00FF88"))
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 12.5, weight: .bold))
+                    .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
 
                 HStack(spacing: 4) {
-                    Text(perimeter)
-                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                    Text("\(Int(perimeterMeters))m zone")
+                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(1)
+
                     Text("•")
-                        .font(.system(size: 9))
+                        .font(.system(size: 7))
                         .foregroundStyle(.white.opacity(0.3))
+
                     Text(tag)
-                        .font(.system(size: 9.5, weight: .bold))
+                        .font(.system(size: 8.5, weight: .bold))
                         .foregroundStyle(tagColor)
+                        .lineLimit(1)
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 4)
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.white.opacity(0.35))
         }
-        .padding(8)
-        .background(Color(hex: "#080F17").opacity(0.75))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.06), lineWidth: 1))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color(hex: "#080F17").opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.white.opacity(0.06), lineWidth: 1))
     }
 
     // MARK: - Card 4: CoreMotion Intelligent Gating
 
     private var coreMotionGatingCard: some View {
-        ZStack(alignment: .topLeading) {
-            // Background Artwork
-            Image("rules_coremotion_bg")
-                .resizable()
-                .scaledToFill()
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color(hex: "#060B12").opacity(0.9),
-                            Color(hex: "#060B12").opacity(0.45),
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+        VStack(alignment: .leading, spacing: 12) {
+            // Header Row
+            HStack(alignment: .center, spacing: 8) {
+                // Glowing Motion Phone Icon
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#061520").opacity(0.8))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color(hex: "#00E5FF").opacity(0.6), lineWidth: 1.5)
+                        )
 
-            // Content Overlay
-            VStack(alignment: .leading, spacing: 12) {
-                // Header Row
-                HStack(alignment: .center) {
-                    // Glowing Motion Phone Icon
-                    ZStack {
-                        Circle()
-                            .strokeBorder(Color(hex: "#00E5FF").opacity(0.6), lineWidth: 1.5)
-                            .frame(width: 38, height: 38)
-
-                        Image(systemName: "iphone.motion")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("CoreMotion Intelligent\nGating")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
-
-                        Text("Sub-Centimeter Hardware Telemetry")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-
-                    Spacer()
-
-                    Text("iOS 18\nAPI")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color.white.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+                    Image(systemName: "iphone.motion")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
                 }
 
-                // Comparison Bars
-                VStack(spacing: 8) {
-                    // MileageTax PRO
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("CoreMotion Intelligent")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Gating")
+                        .font(.system(size: 14.5, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Text("Sub-Centimeter Hardware Telemetry")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+                        .padding(.top, 1)
+                }
+                .fixedSize()
+
+                Spacer()
+
+                VStack(spacing: 1) {
+                    Text("iOS 18")
+                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                    Text("API")
+                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                }
+                .foregroundStyle(.white.opacity(0.7))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.white.opacity(0.15), lineWidth: 1))
+            }
+
+            // Comparison Bars — constrained to left side (~58% width) so 3D Holographic Chipset on the right shows through
+            VStack(spacing: 8) {
+                // MileageTax PRO
+                VStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         HStack(spacing: 5) {
                             Circle().fill(Color(hex: "#00FF88")).frame(width: 6, height: 6)
                             Text("MileageTax PRO")
@@ -842,60 +864,62 @@ struct RulesView: View {
                         Spacer()
 
                         Text("1.1% / day")
-                            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                            .font(.system(size: 10.5, weight: .heavy, design: .monospaced))
                             .foregroundStyle(Color(hex: "#00FF88"))
                     }
 
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.08))
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.08)).frame(height: 5)
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
                                 )
-                                .frame(width: geo.size.width * 0.2)
-                        }
+                            )
+                            .frame(width: 120, height: 5)
+                            .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 3)
                     }
-                    .frame(height: 6)
+                }
 
-                    // Legacy Tracking Apps
-                    HStack(spacing: 8) {
+                // Legacy Tracking Apps
+                VStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         HStack(spacing: 5) {
                             Circle().fill(Color.white.opacity(0.4)).frame(width: 6, height: 6)
                             Text("Legacy Tracking Apps")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(.white.opacity(0.6))
                         }
 
                         Spacer()
 
                         Text("8.0% – 12.0% / day")
-                            .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.45))
                     }
 
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.08))
-                            Capsule()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: geo.size.width * 0.75)
-                        }
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.08)).frame(height: 5)
+                        Capsule()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 175, height: 5)
                     }
-                    .frame(height: 6)
                 }
-
-                Text("GPS chips remain completely unpowered until on-device accelerometer & gyroscope detect sustained vehicular acceleration patterns (>15 mph).")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .lineSpacing(2)
             }
-            .padding(14)
+            .frame(maxWidth: 215, alignment: .leading)
+
+            // Bottom explanation — constrained to left so it doesn't overlap the chip base
+            Text("GPS chips remain completely unpowered until on-device accelerometer & gyroscope detect sustained vehicular acceleration patterns (>15 mph).")
+                .font(.system(size: 9.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.75))
+                .lineSpacing(2)
+                .frame(maxWidth: 205, alignment: .leading)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RulesCardBackground(imageName: "rules_coremotion_bg", trailingOffset: 25))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
