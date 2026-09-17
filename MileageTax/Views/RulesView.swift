@@ -35,15 +35,6 @@ struct RulesView: View {
     }
     @State private var showAddRuleSheet = false
     @State private var showPinGeofenceSheet = false
-    @State private var showNotificationSheet: Bool = false
-    @State private var showProfile: Bool = false
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
-        predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
-        animation: .default)
-    private var pendingTrips: FetchedResults<TripEntity>
-    private var pendingCount: Int { pendingTrips.count }
 
     var body: some View {
         NavigationStack {
@@ -53,9 +44,6 @@ struct RulesView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // Top Header Bar
-                        topHeaderBar
-
                         // Title & Add Rule Header
                         screenTitleSection
 
@@ -77,7 +65,7 @@ struct RulesView: View {
                         Spacer(minLength: 110)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.top, Device.topSafeArea + 58) // safe area + header height
                     .frame(maxWidth: .infinity)
                 }
                 .scrollBounceBehavior(.basedOnSize)
@@ -88,12 +76,6 @@ struct RulesView: View {
             }
             .sheet(isPresented: $showPinGeofenceSheet) {
                 PinGeofenceModalView()
-            }
-            .sheet(isPresented: $showNotificationSheet) {
-                NotificationsSheetView(pendingCount: pendingCount)
-            }
-            .navigationDestination(isPresented: $showProfile) {
-                ProfileView()
             }
         }
         .preferredColorScheme(.dark)
@@ -141,123 +123,6 @@ struct RulesView: View {
             )
             .ignoresSafeArea()
         }
-    }
-
-    // MARK: - Top Header Bar
-
-    private var topHeaderBar: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // Left: Logo & Brand
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(hex: "#0C141E"))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.2)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.2
-                                )
-                        )
-                        .frame(width: 42, height: 42)
-                        .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
-
-                    Image(systemName: "m.circle.fill")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text("Mileage")
-                            .font(.system(size: 19, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        + Text("Tax")
-                            .font(.system(size: 19, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-
-                        Text("PRO")
-                            .font(.system(size: 8.5, weight: .heavy))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: "#00E5FF").opacity(0.12))
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
-                            )
-                    }
-
-                    Text("1.1%/HR  CREATION")
-                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .tracking(1.4)
-                }
-            }
-
-            Spacer()
-
-            // Right: Notification Bell & Profile Avatar Buttons
-            HStack(spacing: 10) {
-                Button {
-                    showNotificationSheet = true
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Circle()
-                            .fill(Color(hex: "#0E1622").opacity(0.85))
-                            .frame(width: 40, height: 40)
-                            .overlay(Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
-
-                        Image(systemName: "bell")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
-                            .frame(width: 40, height: 40)
-
-                        if pendingCount > 0 {
-                            Circle()
-                                .fill(Color(hex: "#00FF88"))
-                                .frame(width: 8, height: 8)
-                                .overlay(Circle().stroke(Color(hex: "#0C141E"), lineWidth: 1.5))
-                                .shadow(color: Color(hex: "#00FF88"), radius: 4)
-                                .offset(x: -3, y: 3)
-                        }
-                    }
-                }
-
-                Button {
-                    showProfile = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: "#0E1622").opacity(0.85))
-                            .frame(width: 40, height: 40)
-                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
-
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-                }
-            }
-        }
-        .padding(.top, Device.topSafeArea)
-        .padding(.bottom, 4)
     }
 
     // MARK: - Screen Title Section

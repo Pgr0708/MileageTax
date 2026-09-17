@@ -39,6 +39,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // 2. Pass launch options to the engine so it knows if iOS woke the app in the background
         TripTrackerAppLifecycle.handleLaunch(launchOptions: launchOptions)
         // 3. Configure local notification categories and delegate
+        // 4. Backfill any trips missing reverse-geocoded addresses (one-time, async)
+        Task {
+            await CoreDataManager.shared.backfillMissingAddresses()
+        }
         NotificationManager.shared.configure()
         NotificationManager.shared.scheduleWeeklySummary()
         

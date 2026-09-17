@@ -21,8 +21,6 @@ struct RadarView: View {
     // Animation States
     @State private var radarPulse: Bool = false
     @State private var borderGlowPhase: Double = 0
-    @State private var showNotificationSheet: Bool = false
-    @State private var showProfile: Bool = false  // full-screen push, not sheet
     @State private var isRadarPaused: Bool = false
 
     // Real Metrics calculated live from CoreData Single Source of Truth
@@ -48,10 +46,7 @@ struct RadarView: View {
                 // MARK: Main Scroll View
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // 1. Header Bar
-                        topHeaderBar
-
-                        // 2. Tagline Section ("Smarter Miles. Bigger Savings.")
+                        // 1. Tagline Section ("Smarter Miles. Bigger Savings.")
                         taglineSection
 
                         // 3. YTD Verified Deduction Hero Card
@@ -80,17 +75,10 @@ struct RadarView: View {
                         Spacer(minLength: 120)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.top, Device.topSafeArea + 58) // safe area + header height
                 }
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showNotificationSheet) {
-                NotificationsSheetView(pendingCount: pendingCount)
-            }
-            // Profile as full-screen navigation push
-            .navigationDestination(isPresented: $showProfile) {
-                ProfileView()
-            }
             .preferredColorScheme(.dark)
             .onAppear {
                 withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
@@ -145,137 +133,6 @@ struct RadarView: View {
             )
             .ignoresSafeArea()
         }
-    }
-
-    // MARK: - 2. Top Header Bar
-
-    private var topHeaderBar: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // Left: Logo & Brand
-            HStack(spacing: 10) {
-                // High-tech rounded app icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(hex: "#0C141E"))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.2)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.2
-                                )
-                        )
-                        .frame(width: 44, height: 44)
-                        .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
-
-                    // Stylized M mark
-                    Image(systemName: "m.circle.fill")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text("Mileage")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        + Text("Tax")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-
-                        // PRO Badge
-                        Text("PRO")
-                            .font(.system(size: 9, weight: .heavy))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: "#00E5FF").opacity(0.12))
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
-                            )
-                    }
-
-                    Text("TRACK  /  LOG  /  SAVE")
-                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .tracking(1.8)
-                }
-            }
-
-            Spacer()
-
-            // Right: Notification Bell & Profile Avatar Buttons
-            HStack(spacing: 10) {
-                // Notification Button with live red/green indicator
-                Button {
-                    showNotificationSheet = true
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Circle()
-                            .fill(Color(hex: "#0E1622").opacity(0.85))
-                            .frame(width: 42, height: 42)
-                            .overlay(
-                                Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-                            )
-
-                        Image(systemName: "bell")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
-                            .frame(width: 42, height: 42)
-
-                        // Glowing dot — only when there are real pending trips
-                        if pendingCount > 0 {
-                            Circle()
-                                .fill(Color(hex: "#00FF88"))
-                                .frame(width: 8, height: 8)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color(hex: "#0C141E"), lineWidth: 1.5)
-                                )
-                                .shadow(color: Color(hex: "#00FF88"), radius: 4)
-                                .offset(x: -4, y: 4)
-                        }
-                    }
-                }
-
-                // Profile Avatar Button — navigates to full screen
-                Button {
-                    showProfile = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: "#0E1622").opacity(0.85))
-                            .frame(width: 42, height: 42)
-                            .overlay(
-                                Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1)
-                            )
-
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-                }
-            }
-        }
-        .padding(.top, Device.topSafeArea)
-        .padding(.bottom, 4)
     }
 
     // MARK: - 3. Tagline Section ("Smarter Miles. Bigger Savings.")
@@ -477,7 +334,7 @@ struct RadarView: View {
                             Image(systemName: "cellularbars")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
-                            Text(String(format: "GPS Fix: ±%.1fm", tracker.horizontalAccuracyMeters > 0 ? tracker.horizontalAccuracyMeters : 1.2))
+                            Text(tracker.state == .activeTracking ? String(format: "GPS Fix: ±%.1fm", tracker.horizontalAccuracyMeters) : "GPS Fix: —")
                                 .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
                                 .foregroundStyle(.white)
                         }
@@ -584,12 +441,18 @@ struct RadarView: View {
 
                     Spacer()
 
-                    Text("11:15 AM")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.5))
+                    Group {
+                        if tracker.state == .activeTracking {
+                            Text(Date(timeIntervalSinceNow: -tracker.liveDurationSeconds), style: .time)
+                        } else {
+                            Text("—")
+                        }
+                    }
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.5))
                 }
 
-                Text(tracker.startAddressString.isEmpty ? "580 Market St, Financial Dist" : tracker.startAddressString)
+                Text(tracker.startAddressString.isEmpty ? (tracker.state == .activeTracking ? "Resolving..." : "—") : tracker.startAddressString)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -606,14 +469,16 @@ struct RadarView: View {
                 }
 
                 HStack(spacing: 4) {
-                    Text(tracker.targetAddressString.isEmpty ? "Palo Alto Tech Campus" : tracker.targetAddressString)
+                    Text(tracker.targetAddressString.isEmpty ? (tracker.state == .activeTracking ? "In progress..." : "Waiting for trip") : tracker.targetAddressString)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
-                    Text("(En Route)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
+                    if tracker.state == .activeTracking {
+                        Text("(En Route)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                    }
 
                     Spacer()
 
@@ -674,6 +539,10 @@ struct RadarView: View {
             Button {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     isRadarPaused.toggle()
+                }
+                // Pause = stop tracking; resume = re-enable location updates via AppLifecycle
+                if isRadarPaused {
+                    tracker.stop()
                 }
             } label: {
                 HStack(spacing: 8) {

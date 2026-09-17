@@ -169,7 +169,7 @@ public enum TripTrackerConfig {
     static let motionVerificationSpeedMS: Double                   = 6.7  // 15 mph
     static let idleBufferGraceSeconds: TimeInterval                = 300  // 5 min
     static let idleBufferMaxExtensionSeconds: TimeInterval         = 600  // ferry/drawbridge cap
-    static let minimumTripDistanceMiles: Double                    = 0.5
+    static let minimumTripDistanceMiles: Double                    = 0.2
     static let waypointStopMaxSeconds: TimeInterval                = 300
     static let tripMergeGapSeconds: TimeInterval                   = 180
     static let tripMergeDistanceMeters: CLLocationDistance         = 300
@@ -461,8 +461,8 @@ final class TripTrackerService: NSObject, ObservableObject {
     @Published private(set) var horizontalAccuracyMeters: Double       = 1.1
     @Published private(set) var motionSmoothnessScore:     Double       = 99.4
     @Published private(set) var currentDrainRatePerHour:  Double       = 1.1
-    @Published private(set) var startAddressString:        String       = "580 Market St, Financial Dist"
-    @Published private(set) var targetAddressString:       String       = "Palo Alto Tech Campus, Building B"
+    @Published private(set) var startAddressString:        String       = ""
+    @Published private(set) var targetAddressString:       String       = ""
 
     var liveBannerText: String {
         switch state {
@@ -1153,7 +1153,7 @@ final class TripTrackerService: NSObject, ObservableObject {
         let distanceMiles = accumulatedMeters * 0.000621371
 
         guard distanceMiles >= TripTrackerConfig.minimumTripDistanceMiles else {
-            tripLogger.debug("Trip discarded — \(distanceMiles) mi < 0.5mi minimum.")
+            tripLogger.debug("Trip discarded — \(distanceMiles) mi < 0.2mi minimum.")
             discardAndReset(rearmAt: endLocation.coordinate)
             return
         }

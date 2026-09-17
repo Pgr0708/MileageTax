@@ -14,6 +14,17 @@ struct AppTabView: View {
     // Deep-link support from notification
     @State private var classifyTripID: UUID? = nil
 
+    // Centralized header state (shared across all tabs)
+    @State private var showNotificationSheet: Bool = false
+    @State private var showProfile: Bool = false
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
+        predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
+        animation: .default)
+    private var pendingTrips: FetchedResults<TripEntity>
+    private var pendingCount: Int { pendingTrips.count }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             // ── Content ──────────────────────────────────────────────────────
@@ -32,11 +43,42 @@ struct AppTabView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
 
+            // ── Centralized Top Header Bar (overlaid above all tab content) ──
+            VStack {
+                SharedHeaderBar(
+                    showNotificationSheet: $showNotificationSheet,
+                    showProfile: $showProfile,
+                    pendingCount: pendingCount
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, Device.topSafeArea)
+                .background(
+                    // Subtle gradient mask so header reads over any tab background
+                    LinearGradient(
+                        colors: [Color(hex: "#06090E").opacity(0.72), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                )
+                Spacer()
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(true)
+
             // ── Custom Tab Bar ────────────────────────────────────────────────
             CustomTabBar(selected: $selectedTab, trackerState: tracker.state)
         }
         .background(Color.obsidian.ignoresSafeArea())
         .preferredColorScheme(.dark)
+        // Notification Sheet
+        .sheet(isPresented: $showNotificationSheet) {
+            NotificationsSheetView(pendingCount: pendingCount)
+        }
+        // Profile as full-screen cover (outside individual NavigationStacks)
+        .fullScreenCover(isPresented: $showProfile) {
+            ProfileView()
+        }
         // Deep-link: open Classify tab for a specific trip
         .onReceive(NotificationCenter.default.publisher(for: .openClassifyForTrip)) { notif in
             classifyTripID = notif.object as? UUID

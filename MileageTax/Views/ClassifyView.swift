@@ -29,12 +29,12 @@ struct ClassifyView: View {
     @State private var swipeOpacity: Double = 1.0
     @State private var purposeTag: String = "#AcmeCorp"
     @State private var lastClassifiedTrip: (miles: Double, isBusiness: Bool, deduction: Double)? = nil
+    @State private var lastClassifiedTripID: NSManagedObjectID? = nil
+    @State private var showBatchSheet: Bool = false
     @State private var undoTimerCountdown: Int = 3
     @State private var showUndoBanner: Bool = false
     @State private var undoTimerTask: DispatchWorkItem? = nil
     @State private var radarPulse: Bool = false
-    @State private var showNotificationSheet: Bool = false
-    @State private var showProfile: Bool = false
 
     private var currentCardTrip: TripEntity? {
         if let pid = preselectedTripID, let match = pendingTrips.first(where: { $0.id == pid }) {
@@ -66,158 +66,39 @@ struct ClassifyView: View {
                 )
                 .ignoresSafeArea()
 
-                VStack(spacing: 12) {
-                    // Top App Header
-                    topHeaderBar
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        // Screen Title Row (Classify Drives + 1 OF 3 PENDING + BATCH)
+                        screenTitleRow
 
-                    // Screen Title Row (Classify Drives + 1 OF 3 PENDING + BATCH)
-                    screenTitleRow
+                        // Main Interactive Swipe Card
+                        mainSwipeDeckCard
 
-                    // Main Interactive Swipe Card
-                    mainSwipeDeckCard
+                        // Action Buttons (Personal vs Business)
+                        classificationActionButtons
 
-                    // Action Buttons (Personal vs Business)
-                    classificationActionButtons
+                        // Undo Banner (shown after categorizing or mock persistent preview)
+                        undoToastBanner
 
-                    // Undo Banner (shown after categorizing or mock persistent preview)
-                    undoToastBanner
-
-                    Spacer(minLength: 90)
+                        Spacer(minLength: 100)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, Device.topSafeArea + 58) // safe area + header height
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
+                .scrollBounceBehavior(.basedOnSize)
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showNotificationSheet) {
-                NotificationsSheetView(pendingCount: pendingCount)
-            }
-            .navigationDestination(isPresented: $showProfile) {
-                ProfileView()
-            }
         }
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showBatchSheet) {
+            BatchClassifySheet(pendingTrips: Array(pendingTrips), irsRate: irsRate)
+        }
         .onAppear {
             withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
                 radarPulse = true
             }
         }
-    }
-
-    // MARK: - Top Header Bar
-
-    private var topHeaderBar: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // Left: Logo & Brand
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(hex: "#0C141E"))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.2)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.2
-                                )
-                        )
-                        .frame(width: 42, height: 42)
-                        .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
-
-                    Image(systemName: "m.circle.fill")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text("Mileage")
-                            .font(.system(size: 19, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        + Text("Tax")
-                            .font(.system(size: 19, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-
-                        Text("PRO")
-                            .font(.system(size: 8.5, weight: .heavy))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: "#00E5FF").opacity(0.12))
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1)
-                            )
-                    }
-
-                    Text("TRACK  /  LOG  /  SAVE")
-                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .tracking(1.6)
-                }
-            }
-
-            Spacer()
-
-            // Right: Notification Bell & Profile Avatar Buttons
-            HStack(spacing: 10) {
-                Button {
-                    showNotificationSheet = true
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Circle()
-                            .fill(Color(hex: "#0E1622").opacity(0.85))
-                            .frame(width: 40, height: 40)
-                            .overlay(Circle().strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
-
-                        Image(systemName: "bell")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
-                            .frame(width: 40, height: 40)
-
-                        if pendingCount > 0 {
-                            Circle()
-                                .fill(Color(hex: "#00FF88"))
-                                .frame(width: 8, height: 8)
-                                .overlay(Circle().stroke(Color(hex: "#0C141E"), lineWidth: 1.5))
-                                .shadow(color: Color(hex: "#00FF88"), radius: 4)
-                                .offset(x: -3, y: 3)
-                        }
-                    }
-                }
-
-                Button {
-                    showProfile = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: "#0E1622").opacity(0.85))
-                            .frame(width: 40, height: 40)
-                            .overlay(Circle().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
-
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-                }
-            }
-        }
-        .padding(.top, 2)
-        .padding(.bottom, 4)
     }
 
     // MARK: - Screen Title Row
@@ -246,7 +127,7 @@ struct ClassifyView: View {
 
             Spacer()
 
-            Button {} label: {
+            Button { showBatchSheet = true } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .black))
@@ -572,18 +453,19 @@ struct ClassifyView: View {
             .background(Color.white.opacity(0.05))
             .clipShape(Capsule())
 
-            // Pill 3: Split Drive
+            // Pill 3: Split Drive (coming soon — non-interactive)
             HStack(spacing: 4) {
                 Image(systemName: "scissors")
                     .font(.system(size: 9))
                 Text("Split Drive")
                     .font(.system(size: 10, weight: .bold))
             }
-            .foregroundStyle(.white.opacity(0.6))
+            .foregroundStyle(.white.opacity(0.3))
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(Color.white.opacity(0.05))
+            .background(Color.white.opacity(0.03))
             .clipShape(Capsule())
+            .allowsHitTesting(false)
 
             Spacer()
         }
@@ -726,8 +608,9 @@ struct ClassifyView: View {
     // MARK: - Actions
 
     private func classifyActiveTrip(asBusiness: Bool) {
-        let miles = currentTrip?.totalDistanceMiles ?? 12.8
+        let miles = currentTrip?.totalDistanceMiles ?? 0.0
         let deduction = asBusiness ? (currentTrip?.taxDeductionValueUSD ?? (miles * irsRate)) : 0.0
+        let tripObjectID = currentTrip?.objectID
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             swipeOffset = asBusiness ? CGSize(width: 500, height: 0) : CGSize(width: -500, height: 0)
@@ -740,6 +623,7 @@ struct ClassifyView: View {
                 trip.needsReview = false
                 CoreDataManager.shared.save()
             }
+            lastClassifiedTripID = tripObjectID
             lastClassifiedTrip = (miles: miles, isBusiness: asBusiness, deduction: deduction)
             undoTimerCountdown = 3
             showUndoBanner = true
@@ -767,14 +651,144 @@ struct ClassifyView: View {
 
     private func undoLastClassification() {
         undoTimerTask?.cancel()
-        if let trip = allTrips.first {
-            trip.needsReview = true
-            trip.tripClassification = .unclassified
+        if let objectID = lastClassifiedTripID,
+           let obj = CoreDataManager.shared.fetchObjectById(id: objectID) as? TripEntity {
+            obj.needsReview = true
+            obj.tripClassification = .unclassified
             CoreDataManager.shared.save()
         }
         withAnimation {
             showUndoBanner = false
             lastClassifiedTrip = nil
+            lastClassifiedTripID = nil
         }
+    }
+}
+
+// MARK: - Batch Classify Sheet
+
+struct BatchClassifySheet: View {
+    let pendingTrips: [TripEntity]
+    let irsRate: Double
+    @Environment(\.dismiss) private var dismiss
+
+    private var totalMiles: Double { pendingTrips.reduce(0) { $0 + $1.totalDistanceMiles } }
+    private var totalDeduction: Double { pendingTrips.reduce(0) { $0 + $1.taxDeductionValueUSD } }
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#06090E").ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                // Handle
+                Capsule()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 36, height: 4)
+                    .padding(.top, 12)
+
+                // Title
+                VStack(spacing: 4) {
+                    Text("Batch Classify")
+                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text("\(pendingTrips.count) pending drive\(pendingTrips.count == 1 ? "" : "s")  •  \(String(format: "%.1f", totalMiles)) mi total")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+
+                // Summary card
+                VStack(spacing: 10) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("MAX POTENTIAL YIELD")
+                                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.45))
+                            Text(String(format: "+$%.2f", totalDeduction))
+                                .font(.system(size: 28, weight: .black, design: .rounded))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                        }
+                        Spacer()
+                        Image(systemName: "banknote.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(Color(hex: "#00FF88").opacity(0.3))
+                    }
+                    .padding(14)
+                    .background(Color(hex: "#0A1A12").opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#00FF88").opacity(0.25), lineWidth: 1))
+                }
+
+                Spacer()
+
+                // Action buttons
+                VStack(spacing: 10) {
+                    // Mark All Business
+                    Button {
+                        for trip in pendingTrips {
+                            trip.tripClassification = .business
+                            trip.needsReview = false
+                        }
+                        CoreDataManager.shared.save()
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Image(systemName: "briefcase.fill")
+                                .font(.system(size: 14, weight: .black))
+                            Text("Mark All as Business")
+                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                            Spacer()
+                            Text(String(format: "+$%.2f", totalDeduction))
+                                .font(.system(size: 13, weight: .black, design: .monospaced))
+                        }
+                        .foregroundStyle(Color(hex: "#061A13"))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(LinearGradient(colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")], startPoint: .leading, endPoint: .trailing))
+                        .clipShape(Capsule())
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 10, y: 4)
+                    }
+
+                    // Mark All Personal
+                    Button {
+                        for trip in pendingTrips {
+                            trip.tripClassification = .personal
+                            trip.needsReview = false
+                        }
+                        CoreDataManager.shared.save()
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Image(systemName: "house.fill")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("Mark All as Personal")
+                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                            Spacer()
+                            Text("$0.00")
+                                .font(.system(size: 13, weight: .black, design: .monospaced))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(Color(hex: "#161824").opacity(0.9))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().strokeBorder(Color(hex: "#7B4FFF").opacity(0.4), lineWidth: 1))
+                    }
+
+                    // Cancel
+                    Button { dismiss() } label: {
+                        Text("Cancel")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                }
+                .padding(.bottom, 32)
+            }
+            .padding(.horizontal, 20)
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.hidden)
+        .preferredColorScheme(.dark)
     }
 }

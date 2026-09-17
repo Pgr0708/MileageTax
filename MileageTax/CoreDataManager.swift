@@ -5,6 +5,7 @@
 
 import Foundation
 import CoreData
+import CoreLocation
 import SwiftUI
 
 final class CoreDataManager: NSObject {
@@ -306,6 +307,41 @@ final class CoreDataManager: NSObject {
         save()
         print("💾 CoreData SUCCESS: Auto-seeded initial IRS compliant ledger records.")
     }
+    // MARK: - Geocoding Backfill
+
+    /// One-time async pass: for any TripEntity that has GPS coordinates but is
+    /// missing startAddress or endAddress, reverse-geocode using the existing
+    /// GeocodeCache actor (CLGeocoder under the hood, free, no API key).
+    func backfillMissingAddresses() async {
+        let all = fetchAllTrips()
+        let needsBackfill = all.filter { trip in
+            let missingStart = (trip.startAddress == nil || trip.startAddress!.isEmpty)
+            let missingEnd   = (trip.endAddress   == nil || trip.endAddress!.isEmpty)
+            let hasStartCoord = trip.startLatitude != 0 || trip.startLongitude != 0
+            let hasEndCoord   = trip.endLatitude   != 0 || trip.endLongitude   != 0
+            return (missingStart && hasStartCoord) || (missingEnd && hasEndCoord)
+        }
+        guard !needsBackfill.isEmpty else { return }
+        print("💾 GeocodeBackfill: backfilling \(needsBackfill.count) trip(s)")
+
+        for trip in needsBackfill {
+            if (trip.startAddress == nil || trip.startAddress!.isEmpty),
+               (trip.startLatitude != 0 || trip.startLongitude != 0) {
+                let loc = CLLocation(latitude: trip.startLatitude, longitude: trip.startLongitude)
+                let addr = await GeocodeCache.shared.address(for: loc)
+                trip.startAddress = addr
+            }
+            if (trip.endAddress == nil || trip.endAddress!.isEmpty),
+               (trip.endLatitude != 0 || trip.endLongitude != 0) {
+                let loc = CLLocation(latitude: trip.endLatitude, longitude: trip.endLongitude)
+                let addr = await GeocodeCache.shared.address(for: loc)
+                trip.endAddress = addr
+            }
+        }
+        save()
+        print("💾 GeocodeBackfill: completed")
+    }
+
 }
 
 // MARK: - Single Source of Truth TripEntity Extensions
