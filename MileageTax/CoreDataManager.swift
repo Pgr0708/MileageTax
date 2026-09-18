@@ -343,7 +343,20 @@ final class CoreDataManager: NSObject {
         print("💾 GeocodeBackfill: completed")
     }
 
-}
+    // MARK: - Factory Reset
+
+    func deleteAllTrips() {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = TripEntity.fetchRequest()
+        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        do {
+            try context.execute(batchDeleteRequest)
+            try context.save()
+        } catch {
+            print("Failed to delete all trips: \(error)")
+        }
+    }
+
+} // end CoreDataManager
 
 // MARK: - Single Source of Truth TripEntity Extensions
 
@@ -357,4 +370,5 @@ extension TripEntity {
             classification = newValue.rawValue
         }
     }
+
 }

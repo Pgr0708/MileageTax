@@ -8,7 +8,7 @@
 
 import SwiftUI
 import MapKit
-import Combine
+internal import Combine
 
 // MARK: - Live Route Map (UIViewRepresentable)
 

@@ -507,7 +507,8 @@ final class TripTrackerService: NSObject, ObservableObject {
     private var accumulatedMeters:     Double = 0
     private var speedSamples:          [Double] = []
     private var maxObservedSpeedMps:   Double   = 0
-    private var tripStartDate:         Date?
+    @Published private(set) var tripStartDate: Date?
+    private(set) var isManualTripOverrideActive: Bool = false
     private var tripStartLocation:     CLLocation?
     private var inProgressRecord:      TripMemoryRecord?
     private var pendingWaypointStart:  CLLocation?
@@ -580,6 +581,68 @@ final class TripTrackerService: NSObject, ObservableObject {
         idleBufferWorkItem?.cancel()
         verifyingMotionWorkItem?.cancel()
         transition(to: .dormant)
+    }
+
+
+    // MARK: - Manual Trip Override
+    
+    /// Instantly bypasses the CoreMotion warm-up phase and forces the engine
+    /// into active tracking. Uses the last known GPS fix as the seed location.
+    /// If GPS is unavailable yet, it starts location updates and waits for the
+    /// first valid fix before promoting.
+    func manualStartTrip() {
+        guard state == .dormant || state == .verifyingMotion else {
+            let _stateVal = state.rawValue
+            tripLogger.debug("manualStartTrip called but state is \(_stateVal, privacy: .public) — ignoring.")
+            return
+        }
+        tripLogger.notice("⚡ Manual trip start triggered by user.")
+        
+        // Power on GPS immediately at full accuracy
+        locationManager.desiredAccuracy           = kCLLocationAccuracyBestForNavigation
+        locationManager.distanceFilter            = TripTrackerConfig.cityDistanceFilterM
+        locationManager.activityType              = .automotiveNavigation
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.allowsBackgroundLocationUpdates    = true
+        locationManager.startUpdatingLocation()
+        
+        if let seed = lastKnownAnyLocation ?? lastValidLocation {
+            // We already have a GPS fix — promote immediately
+            let syntheticConfirm = CLLocation(
+                coordinate: seed.coordinate,
+                altitude: seed.altitude,
+                horizontalAccuracy: seed.horizontalAccuracy,
+                verticalAccuracy: seed.verticalAccuracy,
+                timestamp: Date())
+            promoteToActiveTracking(seedLocation: seed, confirmingLocation: syntheticConfirm)
+            isManualTripOverrideActive = true
+        } else {
+            // No fix yet — enter verifying state and promote on first location update
+            isManualTripOverrideActive = true
+            transition(to: .verifyingMotion)
+            locationManager.requestLocation()
+        }
+    }
+    
+    /// Ends a manually started trip and fires a local notification, then
+    /// navigates to the classify tab via callback.
+    func manualStopTrip(onComplete: @escaping () -> Void) {
+        isManualTripOverrideActive = false
+        stop()
+        sendTripEndedNotification()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            onComplete()
+        }
+    }
+    
+    private func sendTripEndedNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Trip Recorded ✓"
+        content.body = String(format: "%.1f mi logged — Tap to classify your trip.", liveDistanceMiles)
+        content.sound = .default
+        let req = UNNotificationRequest(identifier: "tripEnded-\(UUID().uuidString)",
+                                        content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(req)
     }
 
     func resumeAnyInterruptedTripIfNeeded() {

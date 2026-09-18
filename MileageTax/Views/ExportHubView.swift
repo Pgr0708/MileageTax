@@ -111,7 +111,7 @@ struct ExportHubView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showShareSheet) {
                 if let url = shareItem {
-                    ShareSheet(url: url)
+                    ShareSheet(activityItems: [url])
                 }
             }
         }
@@ -314,12 +314,3 @@ struct ExportHubView: View {
     }
 }
 
-// MARK: - Share Sheet
-
-struct ShareSheet: UIViewControllerRepresentable {
-    let url: URL
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [url], applicationActivities: nil)
-    }
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}

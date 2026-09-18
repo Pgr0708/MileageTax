@@ -119,12 +119,6 @@ struct SharedHeaderBar: View {
                                 )
                             )
 
-                        Circle()
-                            .fill(Color(hex: "#00FF88"))
-                            .frame(width: 8, height: 8)
-                            .overlay(Circle().stroke(Color(hex: "#0C141E"), lineWidth: 1.5))
-                            .shadow(color: Color(hex: "#00FF88"), radius: 3)
-                            .offset(x: 12, y: 12)
                     }
                 }
             }

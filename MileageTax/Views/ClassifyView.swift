@@ -6,6 +6,8 @@
 
 import SwiftUI
 import CoreData
+import CoreLocation
+import MapKit
 
 struct ClassifyView: View {
     @Binding var preselectedTripID: UUID?
@@ -56,16 +58,28 @@ struct ClassifyView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
+                // Scenic background
                 Color(hex: "#06090E").ignoresSafeArea()
-
-                // Subtle ambient glow
-                RadialGradient(
-                    colors: [Color(hex: "#00E5FF").opacity(0.05), Color.clear],
-                    center: .topLeading,
-                    startRadius: 10,
-                    endRadius: 400
-                )
+                GeometryReader { geo in
+                    Image("classify_bg")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height * 0.55)
+                        .clipped()
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .ignoresSafeArea()
+                        .overlay(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .clear, location: 0),
+                                    .init(color: Color(hex: "#06090E").opacity(0.3), location: 0.25),
+                                    .init(color: Color(hex: "#06090E").opacity(0.8), location: 0.48),
+                                    .init(color: Color(hex: "#06090E"), location: 0.62)
+                                ],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+                }
                 .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
@@ -80,24 +94,99 @@ struct ClassifyView: View {
                             // Action Buttons (Personal vs Business)
                             classificationActionButtons
                         } else {
-                            VStack(spacing: 16) {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .font(.system(size: 64))
-                                    .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
-                                    .padding(.bottom, 8)
-                                Text("All caught up!")
-                                    .font(.system(size: 24, weight: .black, design: .rounded))
+                            VStack(spacing: 0) {
+                                Spacer().frame(height: 60)
+
+                                // Glowing seal with rings
+                                ZStack {
+                                    ForEach([1, 2, 3], id: \.self) { i in
+                                        Circle()
+                                            .strokeBorder(Color(hex: "#00FF88").opacity(0.07 / Double(i)), lineWidth: 1)
+                                            .frame(width: CGFloat(90 + i * 32), height: CGFloat(90 + i * 32))
+                                            .scaleEffect(radarPulse ? 1.0 + Double(i) * 0.04 : 1.0)
+                                            .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true).delay(Double(i) * 0.3), value: radarPulse)
+                                    }
+                                    ZStack {
+                                        Circle()
+                                            .fill(RadialGradient(colors: [Color(hex: "#0E2820"), Color(hex: "#06090E")], center: .center, startRadius: 10, endRadius: 56))
+                                            .frame(width: 108, height: 108)
+                                            .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 24)
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .font(.system(size: 48, weight: .black))
+                                            .foregroundStyle(
+                                                LinearGradient(colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                            )
+                                    }
+                                }
+                                .padding(.bottom, 28)
+
+                                Text("All Caught Up!")
+                                    .font(.system(size: 30, weight: .black, design: .rounded))
                                     .foregroundStyle(.white)
-                                Text("You have no pending drives to classify.")
-                                    .font(.system(size: 14, weight: .medium))
+
+                                Text("Every drive is classified.")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color(hex: "#00FF88"))
+                                    .padding(.top, 4)
+
+                                Text("New trips auto-appear here the moment\nyour engine stops.")
+                                    .font(.system(size: 13.5, weight: .medium))
                                     .foregroundStyle(.white.opacity(0.5))
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(3)
+                                    .padding(.top, 10)
+                                    .padding(.horizontal, 32)
+
+                                // Stats row
+                                HStack(spacing: 0) {
+                                    VStack(spacing: 4) {
+                                        Text("\(allTrips.filter { $0.tripClassification == .business }.count)")
+                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .foregroundStyle(Color(hex: "#00FF88"))
+                                        Text("BUSINESS")
+                                            .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                            .foregroundStyle(.white.opacity(0.4))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    Divider().background(Color.white.opacity(0.1)).frame(height: 32)
+                                    VStack(spacing: 4) {
+                                        Text("\(allTrips.filter { $0.tripClassification != .business }.count)")
+                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .foregroundStyle(Color(hex: "#00E5FF"))
+                                        Text("PERSONAL")
+                                            .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                            .foregroundStyle(.white.opacity(0.4))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    Divider().background(Color.white.opacity(0.1)).frame(height: 32)
+                                    VStack(spacing: 4) {
+                                        Text("\(allTrips.count)")
+                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .foregroundStyle(.white)
+                                        Text("TOTAL")
+                                            .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                            .foregroundStyle(.white.opacity(0.4))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .padding(.vertical, 18)
+                                .padding(.horizontal, 8)
+                                .background(Color(hex: "#0A1018").opacity(0.85))
+                                .clipShape(RoundedRectangle(cornerRadius: 18))
+                                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.white.opacity(0.08)))
+                                .padding(.horizontal, 16)
+                                .padding(.top, 32)
+
+                                Spacer()
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 120)
                         }
 
-                        // Undo Banner (shown after categorizing or mock persistent preview)
-                        undoToastBanner
+                        // Undo Banner (shown after categorizing)
+                        if showUndoBanner {
+                            undoToastBanner
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
 
                         Spacer(minLength: 100)
                     }
@@ -201,9 +290,47 @@ struct ClassifyView: View {
             cardMetadataTagsRow(purpose: purpose, vehicle: vehicle)
         }
         .padding(14)
-        .background(Color(hex: "#0A1018").opacity(0.95))
+        .background(
+            ZStack {
+                Color(hex: "#08121E").opacity(0.92)
+                LinearGradient(colors: [Color(hex: "#00E5FF").opacity(0.04), .clear], startPoint: .topLeading, endPoint: .bottomTrailing)
+            }
+        )
+        .background(.ultraThinMaterial.opacity(0.15))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(cardBorderOverlay)
+        .overlay(
+            HStack {
+                if swipeOffset.width > 40 {
+                    Text("✓ BUSINESS")
+                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color(hex: "#00FF88").opacity(0.15))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.5), lineWidth: 1.5))
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8)
+                        .transition(.scale.combined(with: .opacity))
+                        .padding(.leading, 12)
+                    Spacer()
+                } else if swipeOffset.width < -40 {
+                    Spacer()
+                    Text("PERSONAL ✕")
+                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#7B4FFF"))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color(hex: "#7B4FFF").opacity(0.15))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().strokeBorder(Color(hex: "#7B4FFF").opacity(0.5), lineWidth: 1.5))
+                        .shadow(color: Color(hex: "#7B4FFF").opacity(0.4), radius: 8)
+                        .transition(.scale.combined(with: .opacity))
+                        .padding(.trailing, 12)
+                }
+            }
+            .animation(.spring(response: 0.2), value: swipeOffset.width)
+        )
         .offset(swipeOffset)
         .opacity(swipeOpacity)
         .gesture(

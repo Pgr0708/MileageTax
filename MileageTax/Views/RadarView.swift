@@ -417,7 +417,10 @@ struct RadarView: View {
     // MARK: - 6. Route Details Card (Origin & Target)
 
     private var routeDetailsCard: some View {
-        HStack(spacing: 12) {
+        Button {
+            selectedTab?.wrappedValue = 2 // Navigate to Track tab
+        } label: {
+            HStack(spacing: 12) {
             // Left: Scenic Route Thumbnail
             Image("radar_route_thumbnail")
                 .resizable()
@@ -490,6 +493,8 @@ struct RadarView: View {
                 }
             }
         }
+        }
+        .buttonStyle(.plain)
         .padding(12)
         .background(Color(hex: "#0A1018").opacity(0.92))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -569,8 +574,10 @@ struct RadarView: View {
 
             // End & Classify Button (Primary Glowing Neon Emerald)
             Button {
-                tracker.stop()
-                selectedTab?.wrappedValue = 1
+                if tracker.state == .activeTracking {
+                    tracker.stop()
+                    selectedTab?.wrappedValue = 1
+                }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "flag.fill")
@@ -584,19 +591,20 @@ struct RadarView: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .black))
                 }
-                .foregroundStyle(Color(hex: "#061A13"))
+                .foregroundStyle(tracker.state == .activeTracking ? Color(hex: "#061A13") : Color(hex: "#061A13").opacity(0.4))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(
                     LinearGradient(
-                        colors: [Color(hex: "#00FF88"), Color(hex: "#00F076")],
+                        colors: tracker.state == .activeTracking ? [Color(hex: "#00FF88"), Color(hex: "#00F076")] : [Color.gray.opacity(0.5), Color.gray.opacity(0.4)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
                 .clipShape(Capsule())
-                .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 10, x: 0, y: 4)
+                .shadow(color: tracker.state == .activeTracking ? Color(hex: "#00FF88").opacity(0.35) : Color.clear, radius: 10, x: 0, y: 4)
             }
+            .disabled(tracker.state != .activeTracking)
         }
         .padding(8)
         .background(Color(hex: "#0C141E").opacity(0.85))

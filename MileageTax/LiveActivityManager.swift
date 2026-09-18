@@ -11,18 +11,32 @@ import Foundation
 import ActivityKit
 internal import Combine
 
-// MARK: - Shared Attributes (also used by the Widget Extension)
+// MARK: - Shared Attributes (must be byte-for-byte identical in MileageTaxLiveActivity.swift)
 
 public struct TripLiveActivityAttributes: ActivityAttributes {
     public typealias ContentState = TripLiveActivityContent
 
     public struct TripLiveActivityContent: Codable, Hashable {
-        public var distanceMiles: Double
-        public var speedMph:      Double
-        public var deductionUSD:  Double
+        public var distanceMiles:  Double
+        public var speedMph:       Double
+        public var deductionUSD:   Double
         public var elapsedSeconds: Int
-        public var startAddress:  String
-        public var statusLabel:   String    
+        public var startAddress:   String
+        public var statusLabel:    String
+
+        public init(distanceMiles: Double,
+                    speedMph: Double,
+                    deductionUSD: Double,
+                    elapsedSeconds: Int,
+                    startAddress: String,
+                    statusLabel: String) {
+            self.distanceMiles  = distanceMiles
+            self.speedMph       = speedMph
+            self.deductionUSD   = deductionUSD
+            self.elapsedSeconds = elapsedSeconds
+            self.startAddress   = startAddress
+            self.statusLabel    = statusLabel
+        }
     }
 
     public var tripID: String

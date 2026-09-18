@@ -20,6 +20,8 @@ struct TrackView: View {
     @State private var dialPulse = false
     @State private var isPaused = false
     @State private var showCameraSheet = false
+    @State private var liveClassification: String = "business"
+    @State private var showManualStartConfirm = false
 
     // Real dynamic metrics from TripTrackerService
     private var isTracking: Bool {
@@ -123,16 +125,16 @@ struct TrackView: View {
 
     private var telemetryTopStatusBanner: some View {
         HStack(spacing: 9) {
-            // REC dot + text
+            // REC / STANDBY indicator
             HStack(spacing: 5) {
                 Circle()
-                    .fill(Color(hex: "#00FF88"))
+                    .fill(isTracking ? Color(hex: "#00FF88") : Color.gray.opacity(0.5))
                     .frame(width: 7, height: 7)
-                    .shadow(color: Color(hex: "#00FF88"), radius: 4)
+                    .shadow(color: isTracking ? Color(hex: "#00FF88") : Color.clear, radius: 4)
 
-                Text("REC")
+                Text(isTracking ? "REC" : "STANDBY")
                     .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color.gray)
             }
 
             Text("|")
@@ -181,17 +183,14 @@ struct TrackView: View {
 
     private var highwayVistaBadges: some View {
         HStack {
-            // Left Pill: 3D RTK FIX ıl
+            // Left Pill: GPS accuracy
             HStack(spacing: 5) {
                 Image(systemName: "location.viewfinder")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00E5FF"))
-                Text("3D RTK FIX")
+                    .foregroundStyle(isTracking ? Color(hex: "#00E5FF") : Color.gray)
+                Text(isTracking ? String(format: "GPS ±%.0fm", tracker.horizontalAccuracyMeters) : "GPS: IDLE")
                     .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(.white)
-                Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .foregroundStyle(isTracking ? .white : .white.opacity(0.4))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -202,23 +201,23 @@ struct TrackView: View {
                 }
             )
             .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+            .overlay(Capsule().strokeBorder(isTracking ? Color(hex: "#00E5FF").opacity(0.35) : Color.white.opacity(0.1), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.3), radius: 6)
 
             Spacer()
 
-            // Right Pill: AUTO-TRIP LOGGED ●
+            // Right Pill: Auto-detect status
             HStack(spacing: 5) {
-                Image(systemName: "circle.circle")
+                Image(systemName: isTracking ? "record.circle" : "antenna.radiowaves.left.and.right")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00E5FF"))
-                Text("AUTO-TRIP LOGGED")
+                    .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"))
+                Text(isTracking ? "TRIP ACTIVE" : "AUTO-SCANNING")
                     .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                     .foregroundStyle(.white)
                 Circle()
-                    .fill(Color(hex: "#00FF88"))
+                    .fill(isTracking ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"))
                     .frame(width: 5, height: 5)
-                    .shadow(color: Color(hex: "#00FF88"), radius: 3)
+                    .shadow(color: isTracking ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"), radius: 3)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -229,7 +228,7 @@ struct TrackView: View {
                 }
             )
             .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+            .overlay(Capsule().strokeBorder(isTracking ? Color(hex: "#00FF88").opacity(0.35) : Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.3), radius: 6)
         }
         .padding(.horizontal, 4)
@@ -415,10 +414,10 @@ struct TrackView: View {
                         .font(.system(size: 8, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.5))
                 }
-                let paceUSDPerMin = tracker.currentSpeedMph > 0 ? (tracker.currentSpeedMph * irsRate / 60) : 0.48
-                Text(String(format: "+$%.2f/m", paceUSDPerMin))
+                let paceUSDPerMin = tracker.currentSpeedMph > 0 ? (tracker.currentSpeedMph * irsRate / 60) : 0.0
+                Text(isTracking && paceUSDPerMin > 0 ? String(format: "+%@%.2f/m", currencySymbol, paceUSDPerMin) : "—")
                     .font(.system(size: 13.5, weight: .black, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .foregroundStyle(isTracking ? Color(hex: "#00FF88") : .white.opacity(0.3))
             }
             .frame(maxWidth: .infinity)
         }
@@ -456,7 +455,7 @@ struct TrackView: View {
                         .font(.system(size: 14, weight: .black))
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
-                    Text("Waypoint Tracking")
+                    Text(isTracking ? "Live Waypoints" : "Trip Status")
                         .font(.system(size: 15.5, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
@@ -465,23 +464,23 @@ struct TrackView: View {
 
                 HStack(spacing: 4) {
                     Circle()
-                        .fill(Color(hex: "#00FF88"))
+                        .fill(isTracking ? Color(hex: "#00FF88") : Color.gray)
                         .frame(width: 5, height: 5)
-                        .shadow(color: Color(hex: "#00FF88"), radius: 3)
-                    Text("ACTIVE CADENCE")
+                        .shadow(color: isTracking ? Color(hex: "#00FF88") : Color.clear, radius: 3)
+                    Text(isTracking ? "ACTIVE CADENCE" : "STANDBY")
                         .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color.gray)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Color(hex: "#072018").opacity(0.9))
                 .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
+                .overlay(Capsule().strokeBorder(isTracking ? Color(hex: "#00FF88").opacity(0.35) : Color.gray.opacity(0.2), lineWidth: 1))
             }
 
             Divider().background(Color.white.opacity(0.08))
 
-            // Timeline Nodes
+            // Timeline Nodes — 100% real data
             VStack(alignment: .leading, spacing: 0) {
                 // Node 1: Origin
                 HStack(alignment: .top, spacing: 10) {
@@ -497,92 +496,78 @@ struct TrackView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            Text("ORIGIN • 09:14 AM")
+                            Text(isTracking ? "ORIGIN • \(tripStartTimeString)" : "ORIGIN")
                                 .font(.system(size: 8.5, weight: .bold, design: .monospaced))
                                 .foregroundStyle(Color(hex: "#00E5FF").opacity(0.9))
                             Spacer()
-                            Text("0.0 mi")
+                            Text(isTracking ? String(format: "%.2f \(distanceUnit)", displayMiles) : "—")
                                 .font(.system(size: 9.5, weight: .bold, design: .monospaced))
                                 .foregroundStyle(.white.opacity(0.45))
                         }
 
-                        Text("580 Market St, Financial Dist, SF")
+                        Text(tracker.startAddressString.isEmpty
+                             ? (isTracking ? "Resolving address..." : "—")
+                             : tracker.startAddressString)
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white)
                     }
                 }
 
-                // Connecting Corridor Line & Badge
-                HStack(spacing: 10) {
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF").opacity(0.7), Color(hex: "#00FF88").opacity(0.7)],
-                                startPoint: .top,
-                                endPoint: .bottom
+                if isTracking {
+                    // Connecting Corridor Line
+                    HStack(spacing: 10) {
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00E5FF").opacity(0.7), Color(hex: "#00FF88").opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
                             )
-                        )
-                        .frame(width: 2, height: 42)
-                        .padding(.leading, 6)
+                            .frame(width: 2, height: 36)
+                            .padding(.leading, 6)
 
-                    HStack(spacing: 6) {
                         HStack(spacing: 5) {
                             Image(systemName: "road.lanes")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
-
-                            Text("US-101 S CORRIDOR")
+                            Text("EN ROUTE")
                                 .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
-
-                            Text("FREE FLOW")
-                                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
-                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Spacer()
+                            Text(String(format: "%.2f \(distanceUnit) logged", displayMiles))
+                                .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.55))
                         }
-
-                        Spacer()
-
-                        Text("14.2 mi logged")
-                            .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.55))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Color(hex: "#091726").opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(Color(hex: "#091726").opacity(0.85))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(hex: "#00E5FF").opacity(0.25), lineWidth: 1))
-                }
 
-                // Node 2: Target Destination
-                HStack(alignment: .top, spacing: 10) {
-                    ZStack {
-                        Circle()
-                            .strokeBorder(Color(hex: "#00FF88"), lineWidth: 2)
-                            .frame(width: 14, height: 14)
-                        Circle()
-                            .fill(Color(hex: "#00FF88"))
-                            .frame(width: 6, height: 6)
-                    }
-                    .padding(.top, 2)
+                    // Node 2: Destination (unknown until trip ends)
+                    HStack(alignment: .top, spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .strokeBorder(Color(hex: "#00FF88"), lineWidth: 2)
+                                .frame(width: 14, height: 14)
+                            Circle()
+                                .fill(Color(hex: "#00FF88"))
+                                .frame(width: 6, height: 6)
+                        }
+                        .padding(.top, 2)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack {
-                            Text("TARGET DESTINATION • ETA 09:58 AM")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("DESTINATION")
                                 .font(.system(size: 8.5, weight: .bold, design: .monospaced))
                                 .foregroundStyle(Color(hex: "#00FF88"))
-                            Spacer()
-                            Image(systemName: "mappin.circle.fill")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Color(hex: "#00FF88"))
+
+                            Text("Recording in progress...")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.5))
+                                .italic()
                         }
-
-                        Text("Palo Alto Tech Campus, Building B")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-
-                        Text("18.2 mi remaining  •  24 mins left")
-                            .font(.system(size: 10.5, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.55))
                     }
                 }
             }
@@ -614,83 +599,46 @@ struct TrackView: View {
                 )
             }
 
-            // Live Drive Tags & Classification
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("LIVE DRIVE TAGS & CLASSIFICATION")
+            // Live Classification Picker (real — not dummy tags)
+            if isTracking {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("PRE-CLASSIFY THIS TRIP")
                         .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.5))
 
-                    Spacer()
-
-                    HStack(spacing: 2) {
-                        Text("Swipeable")
-                            .font(.system(size: 8.5, weight: .medium))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 7, weight: .bold))
-                    }
-                    .foregroundStyle(Color(hex: "#00E5FF"))
-                }
-
-                HStack(spacing: 8) {
-                    // Tag 1 (Active Selected)
-                    HStack(spacing: 5) {
-                        Image(systemName: "briefcase.fill")
-                            .font(.system(size: 10))
-                        Text("Acme Client Meeting")
-                            .font(.system(size: 10.5, weight: .bold))
-                    }
-                    .foregroundStyle(Color(hex: "#061A13"))
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 7)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(Capsule())
-                    .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 6)
-
-                    // Tag 2
-                    HStack(spacing: 5) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                        Text("Billable Project")
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 7)
-                    .background(
-                        ZStack {
-                            Color(hex: "#0B1522").opacity(0.85)
-                            Rectangle().fill(.ultraThinMaterial.opacity(0.4))
+                    HStack(spacing: 8) {
+                        ForEach(["business", "personal", "medical", "charity"], id: \.self) { cls in
+                            Button {
+                                liveClassification = cls
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: classIcon(for: cls))
+                                        .font(.system(size: 9))
+                                    Text(cls.capitalized)
+                                        .font(.system(size: 10.5, weight: .bold))
+                                }
+                                .foregroundStyle(liveClassification == cls ? Color(hex: "#061A13") : Color(hex: "#00FF88"))
+                                .padding(.horizontal, 11)
+                                .padding(.vertical, 7)
+                                .background(
+                                    Group {
+                                        if liveClassification == cls {
+                                            LinearGradient(colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")], startPoint: .leading, endPoint: .trailing)
+                                        } else {
+                                            LinearGradient(colors: [Color(hex: "#0B1522").opacity(0.85), Color(hex: "#0B1522").opacity(0.85)], startPoint: .leading, endPoint: .trailing)
+                                        }
+                                    }
+                                )
+                                .clipShape(Capsule())
+                                .overlay(Capsule().strokeBorder(
+                                    liveClassification == cls ? Color.clear : Color(hex: "#00FF88").opacity(0.3),
+                                    lineWidth: 1
+                                ))
+                            }
+                            .buttonStyle(.plain)
                         }
-                    )
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
-
-                    // Tag 3 (Car)
-                    HStack(spacing: 4) {
-                        Image(systemName: "car.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
+                        Spacer()
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(
-                        ZStack {
-                            Color(hex: "#0B1522").opacity(0.85)
-                            Rectangle().fill(.ultraThinMaterial.opacity(0.4))
-                        }
-                    )
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
-
-                    Spacer()
                 }
             }
         }
@@ -795,42 +743,111 @@ struct TrackView: View {
     // MARK: - Primary Action CTA Button
 
     private var primaryActionCTA: some View {
-        Button {
-            tracker.stop()
-            selectedTab?.wrappedValue = 1
-        } label: {
-            HStack(spacing: 9) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color(hex: "#061A13"))
-                        .frame(width: 22, height: 22)
-
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(Color(hex: "#00FF88"))
-                        .frame(width: 10, height: 10)
+        VStack(spacing: 12) {
+            if isTracking {
+                // ── Stop & Classify ───────────────────────────────────
+                Button {
+                    tracker.manualStopTrip {
+                        selectedTab?.wrappedValue = 1
+                    }
+                } label: {
+                    HStack(spacing: 9) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(Color(hex: "#061A13"))
+                                .frame(width: 22, height: 22)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Color(hex: "#00FF88"))
+                                .frame(width: 10, height: 10)
+                        }
+                        Text("Stop & Classify Drive")
+                            .font(.system(size: 16, weight: .heavy, design: .rounded))
+                            .foregroundStyle(Color(hex: "#061A13"))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(Capsule())
+                    .shadow(color: Color(hex: "#00E5FF").opacity(0.55), radius: 12, x: 0, y: 4)
                 }
-
-                Text("Stop & Classify Drive")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color(hex: "#061A13"))
+                .buttonStyle(.plain)
+            } else {
+                // ── Manual Start Trip ─────────────────────────────────
+                Button {
+                    tracker.manualStartTrip()
+                } label: {
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#00FF88").opacity(0.2))
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                        }
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Start Trip Manually")
+                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                            Text("Bypass auto-detection · GPS starts immediately")
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.7)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .background(
+                        ZStack {
+                            Color(hex: "#071A10").opacity(0.95)
+                            LinearGradient(
+                                colors: [Color(hex: "#00FF88").opacity(0.12), Color.clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.5), lineWidth: 1.5))
+                    .shadow(color: Color(hex: "#00FF88").opacity(0.2), radius: 10, y: 4)
+                }
+                .buttonStyle(.plain)
+                
+                Text("Auto-detection is also active in background")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 15)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(Capsule())
-            .shadow(color: Color(hex: "#00E5FF").opacity(0.55), radius: 12, x: 0, y: 4)
-            .shadow(color: Color(hex: "#00FF88").opacity(0.45), radius: 8, x: 0, y: 2)
         }
-        .buttonStyle(.plain)
         .padding(.top, 4)
     }
 
+    private var tripStartTimeString: String {
+        guard let start = tracker.tripStartDate else { return "" }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "hh:mm a"
+        return fmt.string(from: start)
+    }
+    
+    private func classIcon(for cls: String) -> String {
+        switch cls {
+        case "business":  return "briefcase.fill"
+        case "personal":  return "house.fill"
+        case "medical":   return "cross.fill"
+        case "charity":   return "heart.fill"
+        default:          return "tag.fill"
+        }
+    }
+    
     private func formatElapsed(_ seconds: TimeInterval) -> String {
         let s = Int(seconds)
         let h = s / 3600

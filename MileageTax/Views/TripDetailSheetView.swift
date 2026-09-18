@@ -203,4 +203,4 @@ struct TripDetailSheetView: View {
     }
 }
 
-extension TripEntity: Identifiable {}
+
