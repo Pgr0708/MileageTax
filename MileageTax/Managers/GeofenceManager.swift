@@ -17,7 +17,7 @@ final class GeofenceManager: NSObject, ObservableObject {
 
     @Published private(set) var savedZones: [GeofenceZone] = []
 
-    private let defaultsKey = "MT_GeofenceZones_v2"
+    private let defaultsKey = "MT_GeofenceZones_v4"
 
     private override init() {
         super.init()
@@ -52,34 +52,7 @@ final class GeofenceManager: NSObject, ObservableObject {
            !decoded.isEmpty {
             self.savedZones = decoded
         } else {
-            // Seed default zones matching UI Mockup exactly
-            self.savedZones = [
-                GeofenceZone(
-                    title: "Home (Residential)",
-                    perimeterMeters: 150,
-                    tag: "Auto-Origin / Personal",
-                    tagColorHex: "#A0AEC0",
-                    icon: "house.fill",
-                    isPersonal: true
-                ),
-                GeofenceZone(
-                    title: "Financial District HQ",
-                    perimeterMeters: 200,
-                    tag: "#Client Business",
-                    tagColorHex: "#00FF88",
-                    icon: "building.2.fill",
-                    isPersonal: false
-                ),
-                GeofenceZone(
-                    title: "Palo Alto Tech Hub",
-                    perimeterMeters: 200,
-                    tag: "#Client Business",
-                    tagColorHex: "#00E5FF",
-                    icon: "briefcase.fill",
-                    isPersonal: false
-                )
-            ]
-            persistZones()
+            self.savedZones = []
         }
     }
 

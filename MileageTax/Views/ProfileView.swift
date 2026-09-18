@@ -18,7 +18,7 @@ struct ProfileView: View {
 
     @StateObject private var bluetooth = BluetoothVehicleManager.shared
     @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
-    @AppStorage(AppStorageKeys.userName) private var userName: String = "Julian Vance"
+    @AppStorage(AppStorageKeys.userName) private var userName: String = ""
 
     // Toggles persisted to AppStorage
     @AppStorage("MT_cpaAuditShieldEnabled") private var cpaAuditShieldEnabled = true
@@ -110,20 +110,6 @@ struct ProfileView: View {
             }
 
             Spacer()
-
-            HStack(spacing: 6) {
-                Image(systemName: "shield.checkmark.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                Text("VERIFIED PROFILE")
-                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color(hex: "#072018").opacity(0.9))
-            .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1))
         }
         .padding(.vertical, 4)
     }
@@ -190,26 +176,11 @@ struct ProfileView: View {
                 .frame(width: 96, height: 96)
             }
 
-            // Status Pill: PRO SUBSCRIBER
-            HStack(spacing: 5) {
-                Circle()
-                    .fill(Color(hex: "#00FF88"))
-                    .frame(width: 6, height: 6)
 
-                Text("PRO SUBSCRIBER • LIFETIME TIER")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                    .tracking(0.5)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
-            .background(Color(hex: "#071F17"))
-            .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
 
             // Name & Title
             VStack(spacing: 3) {
-                Text(userName.isEmpty ? "Julian Vance" : userName)
+                Text(userName.isEmpty ? "Taxpayer" : userName)
                     .font(.system(size: 24, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
 
@@ -295,39 +266,7 @@ struct ProfileView: View {
                     .clipShape(Capsule())
             }
 
-            Divider().background(Color.white.opacity(0.06))
 
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("BLE Sensor Beacon")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
-                        Text("14ms Ultralow Latency")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                    }
-                }
-
-                Spacer()
-
-                HStack(spacing: 6) {
-                    Image(systemName: "externaldrive.connected.to.line.below.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("OBD-II Telemetry")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
-                        Text("Auto-Paired")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                    }
-                }
-            }
         }
         .padding(14)
         .background(Color(hex: "#0A1018").opacity(0.9))
@@ -444,68 +383,6 @@ struct ProfileView: View {
 
                 Spacer()
 
-                Text("1.1%/hr")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-            }
-
-            Divider().background(Color.white.opacity(0.06))
-
-            HStack {
-                Text("DRAIN VS TRADITIONAL TRACKERS")
-                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
-                Spacer()
-                Text("-87% Battery Impact")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-            }
-
-            // Bar comparisons
-            VStack(spacing: 8) {
-                // Pro HUD
-                HStack(spacing: 8) {
-                    Text("Pro HUD")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .frame(width: 70, alignment: .leading)
-
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.08))
-                            Capsule()
-                                .fill(Color(hex: "#00FF88"))
-                                .frame(width: geo.size.width * 0.15)
-                        }
-                    }
-                    .frame(height: 8)
-
-                    Text("1.1%/h")
-                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                }
-
-                // Legacy GPS
-                HStack(spacing: 8) {
-                    Text("Legacy GPS")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .frame(width: 70, alignment: .leading)
-
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.08))
-                            Capsule()
-                                .fill(Color(hex: "#FF6B6B").opacity(0.8))
-                                .frame(width: geo.size.width * 0.75)
-                        }
-                    }
-                    .frame(height: 8)
-
-                    Text("8.5%/h")
-                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#FF6B6B"))
-                }
             }
         }
         .padding(14)
@@ -540,39 +417,7 @@ struct ProfileView: View {
                 Spacer()
             }
 
-            HStack(spacing: 10) {
-                // QuickBooks
-                HStack(spacing: 5) {
-                    Image(systemName: "briefcase.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                    Text("QuickBooks ●")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.06))
-                .clipShape(Capsule())
 
-                // TurboTax
-                HStack(spacing: 5) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
-                    Text("TurboTax ●")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.06))
-                .clipShape(Capsule())
-
-                Spacer()
-            }
-
-            Divider().background(Color.white.opacity(0.06))
 
             HStack {
                 Image(systemName: "icloud.fill")

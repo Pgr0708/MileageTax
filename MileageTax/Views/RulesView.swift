@@ -5,6 +5,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 import CoreData
 import UserNotifications
 
@@ -35,6 +36,7 @@ struct RulesView: View {
     }
     @State private var showAddRuleSheet = false
     @State private var showPinGeofenceSheet = false
+    @State private var showWorkHoursSheet = false
 
     var body: some View {
         NavigationStack {
@@ -76,6 +78,10 @@ struct RulesView: View {
             }
             .sheet(isPresented: $showPinGeofenceSheet) {
                 PinGeofenceModalView()
+            }
+            .sheet(isPresented: $showWorkHoursSheet) {
+                WorkHoursModalView(startHour: $workHoursStart, endHour: $workHoursEnd)
+                    .presentationDetents([.height(360), .medium])
             }
         }
         .preferredColorScheme(.dark)
@@ -181,33 +187,39 @@ struct RulesView: View {
 
     // MARK: - Metrics Trio Row
 
+    private var isLocationAlwaysAllowed: Bool {
+        let status = CLLocationManager().authorizationStatus
+        return status == .authorizedAlways
+    }
+
     private var metricsTrioRow: some View {
         HStack(spacing: 8) {
             // 1. Passive State
             metricBadgeCard(
                 icon: "waveform.path.ecg",
                 header: "PASSIVE STATE",
-                value: "Active",
-                valueColor: Color(hex: "#00FF88"),
-                sub: "Zero manual tap"
+                value: isLocationAlwaysAllowed ? "Active" : "Disabled",
+                valueColor: isLocationAlwaysAllowed ? Color(hex: "#00FF88") : Color.red,
+                sub: isLocationAlwaysAllowed ? "Zero manual tap" : "Needs 'Always' Auth"
             )
 
             // 2. Classification
             metricBadgeCard(
                 icon: "chart.bar.fill",
                 header: "CLASSIFICATION",
-                value: "98.7%",
+                value: "Enabled",
                 valueColor: Color(hex: "#00E5FF"),
-                sub: "Auto-confidence"
+                sub: "Rule-based engine"
             )
 
             // 3. Sync Shield
+            let hasSavedVehicle = !bluetooth.knownVehicleList.isEmpty
             metricBadgeCard(
                 icon: "shield.lefthalf.filled",
                 header: "SYNC SHIELD",
-                value: "HW-Gated",
-                valueColor: .white,
-                sub: bluetooth.connectedVehicleName ?? "Prius 2024"
+                value: hasSavedVehicle ? "HW-Gated" : "Inactive",
+                valueColor: hasSavedVehicle ? .white : .gray,
+                sub: bluetooth.connectedVehicleName ?? bluetooth.knownVehicleList.first ?? "No vehicle linked"
             )
         }
     }
@@ -351,13 +363,22 @@ struct RulesView: View {
             }
 
             // Schedule Days & Times
-            HStack(spacing: 5) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                Text(workShiftHoursFormatted)
-                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+            Button {
+                showWorkHoursSheet = true
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(workShiftHoursFormatted)
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    Image(systemName: "pencil")
+                        .font(.system(size: 9, weight: .bold))
+                }
+                .foregroundStyle(Color(hex: "#00FF88"))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#00FF88").opacity(0.1))
+                .clipShape(Capsule())
             }
 
             // Description — constrained to left side (~58% width) so the road/car on the right is fully visible
@@ -396,19 +417,19 @@ struct RulesView: View {
 
                 Spacer()
 
-                // Avg per week pill
+                // Avg per week pill (dynamic status)
                 HStack(spacing: 4) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Image(systemName: autoClassifyWorkHours ? "checkmark.circle.fill" : "circle.dashed")
                         .font(.system(size: 9, weight: .bold))
-                    Text("Avg: +$142.80/wk")
+                    Text(autoClassifyWorkHours ? "Status: Active" : "Status: Off")
                         .font(.system(size: 9, weight: .bold, design: .monospaced))
                 }
-                .foregroundStyle(Color(hex: "#00FF88"))
+                .foregroundStyle(autoClassifyWorkHours ? Color(hex: "#00FF88") : Color.white.opacity(0.4))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background(Color(hex: "#072018").opacity(0.85))
+                .background(autoClassifyWorkHours ? Color(hex: "#072018").opacity(0.85) : Color.white.opacity(0.05))
                 .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+                .overlay(Capsule().strokeBorder(autoClassifyWorkHours ? Color(hex: "#00FF88").opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1))
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11, weight: .bold))
@@ -462,9 +483,9 @@ struct RulesView: View {
                         .font(.system(size: 14.5, weight: .bold))
                         .foregroundStyle(.white)
 
-                    Text("Prius 2024 CarPlay [98:21]")
+                    Text(bluetooth.connectedVehicleName ?? "Not connected")
                         .font(.system(size: 10.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
+                        .foregroundStyle(bluetooth.connectedVehicleName != nil ? Color(hex: "#00E5FF") : Color.gray)
                         .padding(.top, 1)
                 }
                 .fixedSize()
@@ -492,9 +513,9 @@ struct RulesView: View {
                     Text("BT Beacon Latency")
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
-                    Text("14ms • Standby")
+                    Text(bluetooth.connectedVehicleName != nil ? "14ms • Active" : "Scanning...")
                         .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00E5FF"))
+                        .foregroundStyle(bluetooth.connectedVehicleName != nil ? Color(hex: "#00E5FF") : Color.gray)
                 }
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
@@ -836,20 +857,43 @@ struct AddRuleModalView: View {
         NavigationStack {
             ZStack {
                 Color(hex: "#06090E").ignoresSafeArea()
+                
+                // Subtle ambient glow
+                RadialGradient(
+                    colors: [Color(hex: "#00E5FF").opacity(0.15), Color.clear],
+                    center: .top,
+                    startRadius: 10,
+                    endRadius: 400
+                ).ignoresSafeArea()
 
-                VStack(spacing: 16) {
-                    TextField("Rule Name (e.g. Weekend Personal Drives)", text: $ruleName)
-                        .padding()
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .foregroundStyle(.white)
-
-                    Picker("Type", selection: $ruleType) {
-                        Text("Work Hours").tag("Work Hours")
-                        Text("Geofence Zone").tag("Geofence Zone")
-                        Text("Bluetooth Vehicle").tag("Bluetooth Vehicle")
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("RULE NAME")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                        
+                        TextField("e.g. Weekend Personal Drives", text: $ruleName)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.white)
+                            .padding()
+                            .background(Color(hex: "#0C141E"))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.1), lineWidth: 1))
                     }
-                    .pickerStyle(.segmented)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TRIGGER TYPE")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                            
+                        Picker("Type", selection: $ruleType) {
+                            Text("Work Hours").tag("Work Hours")
+                            Text("Geofence Zone").tag("Geofence Zone")
+                            Text("Bluetooth Vehicle").tag("Bluetooth Vehicle")
+                        }
+                        .pickerStyle(.segmented)
+                        .colorMultiply(Color(hex: "#00E5FF").opacity(0.8)) // Tint the segmented control
+                    }
 
                     Spacer()
 
@@ -860,24 +904,39 @@ struct AddRuleModalView: View {
                         }
                         dismiss()
                     } label: {
-                        Text("Save Automation Rule")
-                            .font(.headline)
-                            .foregroundStyle(Color(hex: "#061A13"))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(hex: "#00FF88"))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        HStack {
+                            Image(systemName: "bolt.fill")
+                            Text("Save Automation Rule")
+                        }
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#061A13"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
                     }
+                    .padding(.bottom, 8)
                 }
-                .padding(16)
+                .padding(20)
             }
-            .navigationTitle("New Automation Rule")
+            .navigationTitle("New Rule")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color(hex: "#00E5FF"))
                 }
             }
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
     }
 }
@@ -891,18 +950,40 @@ struct PinGeofenceModalView: View {
         NavigationStack {
             ZStack {
                 Color(hex: "#06090E").ignoresSafeArea()
+                
+                RadialGradient(
+                    colors: [Color(hex: "#00FF88").opacity(0.15), Color.clear],
+                    center: .top,
+                    startRadius: 10,
+                    endRadius: 400
+                ).ignoresSafeArea()
 
-                VStack(spacing: 16) {
-                    TextField("Place Name (e.g. Office, Client HQ)", text: $placeName)
-                        .padding()
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .foregroundStyle(.white)
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("PLACE NAME")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+                            
+                        TextField("e.g. Office, Client HQ", text: $placeName)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.white)
+                            .padding()
+                            .background(Color(hex: "#0C141E"))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.1), lineWidth: 1))
+                    }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Perimeter Radius: \(Int(radiusMeters)) meters")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.6))
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("PERIMETER RADIUS")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Spacer()
+                            Text("\(Int(radiusMeters)) meters")
+                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.white)
+                        }
+                        
                         Slider(value: $radiusMeters, in: 50...500, step: 25)
                             .tint(Color(hex: "#00FF88"))
                     }
@@ -922,23 +1003,116 @@ struct PinGeofenceModalView: View {
                         }
                         dismiss()
                     } label: {
-                        Text("Save Geofence")
-                            .font(.headline)
-                            .foregroundStyle(Color(hex: "#061A13"))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(hex: "#00FF88"))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        HStack {
+                            Image(systemName: "mappin.and.ellipse")
+                            Text("Save Geofence")
+                        }
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#061A13"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color(hex: "#00FF88"))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
                     }
+                    .padding(.bottom, 8)
                 }
-                .padding(16)
+                .padding(20)
             }
-            .navigationTitle("Pin Geofence Zone")
+            .navigationTitle("Pin Geofence")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color(hex: "#00FF88"))
                 }
+            }
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+        }
+    }
+}
+
+struct WorkHoursModalView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var startHour: Double
+    @Binding var endHour: Double
+    
+    @State private var startDate = Date()
+    @State private var endDate = Date()
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(hex: "#06090E").ignoresSafeArea()
+                
+                VStack(spacing: 32) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        DatePicker("START TIME", selection: $startDate, displayedComponents: .hourAndMinute)
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+                            .colorScheme(.dark)
+                            .tint(Color(hex: "#00FF88"))
+                            .onChange(of: startDate) { newValue in
+                                let comps = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                                startHour = Double(comps.hour ?? 0) + Double(comps.minute ?? 0) / 60.0
+                            }
+                        
+                        Divider().background(Color.white.opacity(0.1))
+                        
+                        DatePicker("END TIME", selection: $endDate, displayedComponents: .hourAndMinute)
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00FF88"))
+                            .colorScheme(.dark)
+                            .tint(Color(hex: "#00FF88"))
+                            .onChange(of: endDate) { newValue in
+                                let comps = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                                endHour = Double(comps.hour ?? 0) + Double(comps.minute ?? 0) / 60.0
+                            }
+                    }
+                    .padding(20)
+                    .background(Color(hex: "#0A1018").opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+                    
+                    Spacer()
+                    
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Save Schedule")
+                        }
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#061A13"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color(hex: "#00FF88"))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
+                    }
+                    .padding(.bottom, 8)
+                }
+                .padding(24)
+                .padding(.top, 16)
+            }
+            .navigationTitle("Edit Shift Hours")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+            }
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear {
+                let cal = Calendar.current
+                startDate = cal.date(bySettingHour: Int(startHour), minute: Int((startHour.truncatingRemainder(dividingBy: 1)) * 60), second: 0, of: Date()) ?? Date()
+                endDate = cal.date(bySettingHour: Int(endHour), minute: Int((endHour.truncatingRemainder(dividingBy: 1)) * 60), second: 0, of: Date()) ?? Date()
             }
         }
     }

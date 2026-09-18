@@ -40,19 +40,33 @@ struct Device {
 struct MileageTaxApp: App {
     @StateObject private var settings = SettingsManager()
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
+    @Environment(\.scenePhase) var scenePhase
+    @StateObject private var authManager = BiometricAuthManager.shared
+    @AppStorage("MT_faceIDLockEnabled") private var faceIDLockEnabled = true
+    
     var body: some Scene {
         WindowGroup {
-            SplashScreenView()
-                .environmentObject(settings)
-                .environment(
-                    \.locale,
-                     Locale(identifier: settings.languageCode)
-                     )
-                .environment(
-                           \.managedObjectContext,
-                           CoreDataManager.shared.context
-                       )
-                .preferredColorScheme(settings.preferredColorScheme)
+            ZStack {
+                SplashScreenView()
+                    .environmentObject(settings)
+                    .environment(\.locale, Locale(identifier: settings.languageCode))
+                    .environment(\.managedObjectContext, CoreDataManager.shared.context)
+                    .preferredColorScheme(settings.preferredColorScheme)
+                
+                if faceIDLockEnabled && !authManager.isUnlocked {
+                    LockScreenView()
+                        .transition(.opacity)
+                        .zIndex(2)
+                }
+            }
+            .onChange(of: scenePhase) { newPhase in
+                if faceIDLockEnabled {
+                    if newPhase == .background {
+                        authManager.lock()
+                    }
+                }
+            }
         }
     }
 }

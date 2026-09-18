@@ -6,21 +6,23 @@
 	<array>
 		<string>com.mileagetax.heartbeat</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>MileageTax needs your location to track your route, record accurate mileage, and calculate real-time IRS tax deductions.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Used to detect your car and auto-start mileage tracking.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Used to detect your car and auto-start mileage tracking.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>MileageTax requires FaceID to secure your business ledger and tax data.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>MileageTax requires background location access to automatically detect and record your drives without opening the app, ensuring you never miss a tax write-off. Your route data remains 100% on-device.</string>
-	<key>NSMotionUsageDescription</key>
-	<string>MileageTax uses motion and fitness data to detect when you start driving and keeps GPS asleep while stationary or walking to minimize battery drain.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<dict>
 		<key>PreciseMileageTracking</key>
 		<string>MileageTax requires precise GPS accuracy to record exact odometer mileage and generate IRS-compliant audit logs.</string>
 	</dict>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Used to detect your car and auto-start mileage tracking.</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Used to detect your car and auto-start mileage tracking.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MileageTax needs your location to track your route, record accurate mileage, and calculate real-time IRS tax deductions.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>MileageTax uses motion and fitness data to detect when you start driving and keeps GPS asleep while stationary or walking to minimize battery drain.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIAppFonts</key>

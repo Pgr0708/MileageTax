@@ -68,14 +68,31 @@ struct ClassifyView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // Screen Title Row (Classify Drives + 1 OF 3 PENDING + BATCH)
-                        screenTitleRow
+                        if pendingCount > 0 {
+                            // Screen Title Row (Classify Drives + 1 OF 3 PENDING + BATCH)
+                            screenTitleRow
 
-                        // Main Interactive Swipe Card
-                        mainSwipeDeckCard
+                            // Main Interactive Swipe Card
+                            mainSwipeDeckCard
 
-                        // Action Buttons (Personal vs Business)
-                        classificationActionButtons
+                            // Action Buttons (Personal vs Business)
+                            classificationActionButtons
+                        } else {
+                            VStack(spacing: 16) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.system(size: 64))
+                                    .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
+                                    .padding(.bottom, 8)
+                                Text("All caught up!")
+                                    .font(.system(size: 24, weight: .black, design: .rounded))
+                                    .foregroundStyle(.white)
+                                Text("You have no pending drives to classify.")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 120)
+                        }
 
                         // Undo Banner (shown after categorizing or mock persistent preview)
                         undoToastBanner

@@ -70,7 +70,7 @@ final class CoreDataManager: NSObject {
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
 
-        seedInitialLedgerIfEmpty()
+        // seedInitialLedgerIfEmpty()
     }
 
     // MARK: - Generic Helpers

@@ -749,30 +749,26 @@ struct RadarView: View {
 
             // Log Items (show live trips if available, otherwise high-end mock telemetry rows)
             if trips.isEmpty {
-                // Mock Card 1: SFO Airport to Union Square
-                telemetryCard(
-                    imageName: "radar_route_thumbnail",
-                    timestamp: "Yesterday  •  16:40",
-                    icon: "airplane",
-                    title: "SFO Airport to Union Square",
-                    tag1: "#ClientMeeting",
-                    tag1Color: Color(hex: "#00E5FF"),
-                    tag2: "Auto-Matched 98%",
-                    yieldText: "+$12.20 YIELD",
-                    distanceText: "18.2 mi"
-                )
-
-                // Mock Card 2: Palo Alto to Mountain View
-                telemetryCard(
-                    imageName: "radar_route_thumbnail",
-                    timestamp: "Oct 24  •  09:12",
-                    icon: "car.fill",
-                    title: "Palo Alto to Mountain View",
-                    tag1: "CarPlay Integrated",
-                    tag1Color: Color(hex: "#00E5FF"),
-                    tag2: "Sand Hill Partners",
-                    yieldText: "+$4.28 YIELD",
-                    distanceText: "6.4 mi"
+                VStack(spacing: 12) {
+                    Image(systemName: "steeringwheel")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(Color(hex: "#00E5FF").opacity(0.5))
+                    
+                    Text("No trips logged yet")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        
+                    Text("Drives will appear here automatically.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 48)
+                .background(Color(hex: "#0A1018").opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
                 )
             } else {
                 ForEach(trips.prefix(5), id: \.objectID) { trip in
