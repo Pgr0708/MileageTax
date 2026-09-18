@@ -500,21 +500,35 @@ struct ProfileView: View {
 
     private var signOutButton: some View {
         Button {
-            isLoggedIn = false
-            dismiss()
+            showResetAlert = true
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
+                Image(systemName: "trash.fill")
                     .font(.system(size: 13, weight: .bold))
-                Text("Sign Out of Executive Workspace")
+                Text("Factory Reset App Data")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
             }
-            .foregroundStyle(.white.opacity(0.85))
+            .foregroundStyle(Color.red.opacity(0.85))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(Color(hex: "#101824").opacity(0.9))
+            .background(Color(hex: "#241010").opacity(0.9))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.red.opacity(0.2), lineWidth: 1))
+        }
+        .alert("Factory Reset", isPresented: $showResetAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset Everything", role: .destructive) {
+                // Wipe core data
+                CoreDataManager.shared.deleteAllTrips()
+                // Clear user defaults (using AppStorage keys)
+                if let bundleID = Bundle.main.bundleIdentifier {
+                    UserDefaults.standard.removePersistentDomain(forName: bundleID)
+                }
+                // Dismiss the view/app state could handle soft-reset
+                dismiss()
+            }
+        } message: {
+            Text("This will permanently delete all your trips, mileage logs, settings, and automation rules. This action cannot be undone.")
         }
     }
 

@@ -15,6 +15,8 @@ struct VaultView: View {
         animation: .default)
     private var allTrips: FetchedResults<TripEntity>
 
+    @State private var selectedVaultTrip: TripEntity? = nil
+    @State private var showExportHub = false
     @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
     @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
     @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
@@ -94,6 +96,14 @@ struct VaultView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .sheet(item: $selectedVaultTrip) { trip in
+            TripDetailSheetView(trip: trip)
+                .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showExportHub) {
+            ExportHubView()
+                .presentationDetents([.large])
+        }
     }
 
     // MARK: - Background Scene
@@ -689,8 +699,7 @@ struct VaultView: View {
 
                     // Export PDF Button (Bright Glowing Neon Emerald, Clear and High Contrast)
                     Button {
-                        exportURL = ExportEngine.exportPDF(trips: businessTrips)
-                        showExportShare = true
+                        showExportHub = true
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "square.and.arrow.down.fill")

@@ -686,6 +686,38 @@ struct ClassifyView: View {
 
 // MARK: - Batch Classify Sheet
 
+
+// MARK: - Breadcrumb Decode Helper
+
+private func decodeBreadcrumbs(_ entity: TripEntity) -> [TripBreadcrumb] {
+    guard let data = entity.breadcrumbsData,
+          let crumbs = try? JSONDecoder().decode([TripBreadcrumb].self, from: data)
+    else { return [] }
+    return crumbs
+}
+
+
+// MARK: - Classify Trip Route Map
+
+private func tripRouteMapSection(for trip: TripEntity) -> some View {
+    let crumbs = decodeBreadcrumbs(trip)
+    let start = CLLocationCoordinate2D(latitude: trip.startLatitude, longitude: trip.startLongitude)
+    let end   = CLLocationCoordinate2D(latitude: trip.endLatitude,   longitude: trip.endLongitude)
+    return TripRouteMapView(
+        breadcrumbs: crumbs,
+        startCoord: trip.startLatitude != 0 ? start : nil,
+        endCoord:   trip.endLatitude   != 0 ? end   : nil
+    )
+    .frame(height: 200)
+    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .overlay(
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1)
+    )
+    .shadow(color: Color(hex: "#00FF88").opacity(0.12), radius: 12, y: 4)
+}
+
+
 struct BatchClassifySheet: View {
     let pendingTrips: [TripEntity]
     let irsRate: Double

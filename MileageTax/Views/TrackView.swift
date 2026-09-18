@@ -49,6 +49,9 @@ struct TrackView: View {
                         speedTaxCruisingDial
 //                            .padding(.top, 16)
 
+                        // Live Route Map Card
+                        liveRouteMapCard
+
                         // 3-Column Horizontal Metrics Glass Bar
                         threeColumnMetricsBar
 
@@ -741,6 +744,53 @@ struct TrackView: View {
                 .strokeBorder(Color(hex: "#00E5FF").opacity(0.2), lineWidth: 1)
         )
     }
+
+    // MARK: - Live Route Map Card
+
+    private var liveRouteMapCard: some View {
+        ZStack(alignment: .topLeading) {
+            LiveRouteMapView(
+                breadcrumbs: tracker.liveBreadcrumbs,
+                startCoordinate: tracker.liveBreadcrumbs.first?.coordinate,
+                isTracking: isTracking
+            )
+            .frame(height: 220)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [Color(hex: "#00FF88").opacity(0.6), Color(hex: "#00E5FF").opacity(0.3)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: Color(hex: "#00FF88").opacity(0.15), radius: 16, y: 6)
+
+            // Status pill overlay
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(isTracking ? Color(hex: "#00FF88") : Color.gray)
+                    .frame(width: 8, height: 8)
+                    .overlay(
+                        Circle().stroke(isTracking ? Color(hex: "#00FF88") : Color.gray, lineWidth: 1)
+                            .scaleEffect(isTracking ? 1.6 : 1.0)
+                            .opacity(isTracking ? 0.4 : 0)
+                            .animation(.easeInOut(duration: 1).repeatForever(), value: isTracking)
+                    )
+                Text(isTracking ? "LIVE ROUTE" : "NO ACTIVE TRIP")
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color.white.opacity(0.5))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+            .padding(12)
+        }
+    }
+
 
     // MARK: - Primary Action CTA Button
 

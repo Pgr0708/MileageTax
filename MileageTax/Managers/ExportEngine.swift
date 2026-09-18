@@ -1,152 +1,418 @@
 // ExportEngine.swift — MileageTax
-// Generates IRS-compliant CSV and PDF mileage log files from TripEntity records.
+// Phase 5 & 6: Premium multi-page PDF + 20-field CSV export engine.
+// Sources: IRS Pub 463, HMRC record-keeping guidance, ATO requirements.
 
 import Foundation
 import PDFKit
 import UIKit
 import CoreData
+import MapKit
 
 enum ExportEngine {
 
-    // MARK: - CSV
+    // MARK: - Shared Settings
+
+    private static var currencySymbol: String {
+        UserDefaults.standard.string(forKey: AppStorageKeys.currencySymbol) ?? "$"
+    }
+    private static var distanceUnit: String {
+        UserDefaults.standard.string(forKey: AppStorageKeys.distanceUnit) ?? "mi"
+    }
+    private static var countryLabel: String {
+        UserDefaults.standard.string(forKey: AppStorageKeys.countryTaxLabel) ?? "IRS Standard (USA)"
+    }
+
+    // MARK: - Rate for a given trip date
+
+    private static func rate(for date: Date) -> Double {
+        let country = countryLabel
+        // Find the country in the rule engine by matching label or country name
+        let match = TaxRuleEngine.database.first { r in
+            country.contains(r.country) || country.contains(r.authority)
+        }
+        if let match = match {
+            // Check date range
+            let record = TaxRuleEngine.database
+                .filter { $0.country == match.country }
+                .first { r in r.effectiveFrom <= date && (r.effectiveTo == nil || r.effectiveTo! >= date) }
+            return record?.rate ?? match.rate
+        }
+        let saved = UserDefaults.standard.double(forKey: AppStorageKeys.irsRateOverride)
+        return saved > 0 ? saved : MileageTaxDefaults.irsRatePerMile
+    }
+
+    // MARK: ─── PHASE 6: Rich 20-Field CSV ────────────────────────────────
 
     static func exportCSV(trips: [TripEntity]) -> URL {
-        var rows: [String] = [
-            "Date,Start Address,End Address,Miles,Max Speed (mph),Deduction (USD),Classification,Purpose,Vehicle"
-        ]
-        let fmt = DateFormatter()
-        fmt.dateStyle = .short
-        fmt.timeStyle = .short
+        let header = [
+            "Trip ID", "Date", "Start Time", "End Time",
+            "Start Address", "End Address",
+            "Purpose", "Classification", "Vehicle",
+            "Start Latitude", "Start Longitude", "End Latitude", "End Longitude",
+            "Distance (\(distanceUnit))", "Tax Authority", "Rate Applied",
+            "Rate Effective Date", "Mileage Value (\(currencySymbol))",
+            "Parking (\(currencySymbol))", "Tolls (\(currencySymbol))",
+            "Total Value (\(currencySymbol))", "Track Method", "Breadcrumb Count", "Notes"
+        ].joined(separator: ",")
+
+        let dateFmt = DateFormatter(); dateFmt.dateFormat = "yyyy-MM-dd"
+        let timeFmt = DateFormatter(); timeFmt.dateFormat = "HH:mm"
+
+        var rows: [String] = [header]
 
         for trip in trips {
-            let row: [String] = [
-                fmt.string(from: trip.startDate ?? Date()),
+            let tripDate = trip.startDate ?? Date()
+            let appliedRate = rate(for: tripDate)
+            let deduction = trip.taxDeductionValueUSD > 0
+                ? trip.taxDeductionValueUSD
+                : trip.totalDistanceMiles * appliedRate
+
+            let breadcrumbCount: Int = {
+                guard let data = trip.breadcrumbsData,
+                      let crumbs = try? JSONDecoder().decode([TripBreadcrumb].self, from: data)
+                else { return 0 }
+                return crumbs.count
+            }()
+
+            let cells: [String] = [
+                escaped(trip.id?.uuidString ?? UUID().uuidString),
+                dateFmt.string(from: tripDate),
+                timeFmt.string(from: trip.startDate ?? Date()),
+                timeFmt.string(from: trip.endDate ?? Date()),
                 escaped(trip.startAddress ?? ""),
                 escaped(trip.endAddress ?? ""),
-                String(format: "%.2f", trip.totalDistanceMiles),
-                String(format: "%.1f", trip.maxSpeedMph),
-                String(format: "%.2f", trip.taxDeductionValueUSD),
-                trip.classification ?? "unclassified",
                 escaped(trip.businessPurpose ?? ""),
+                escaped(trip.classification ?? "unclassified"),
                 escaped(trip.vehicleName ?? ""),
+                String(format: "%.6f", trip.startLatitude),
+                String(format: "%.6f", trip.startLongitude),
+                String(format: "%.6f", trip.endLatitude),
+                String(format: "%.6f", trip.endLongitude),
+                String(format: "%.2f", trip.totalDistanceMiles),
+                escaped(countryLabel),
+                String(format: "%.4f", appliedRate),
+                dateFmt.string(from: tripDate),   // rate effective as of trip date
+                String(format: "%.2f", deduction),
+                "0.00",   // parking — field reserved
+                "0.00",   // tolls   — field reserved
+                String(format: "%.2f", deduction),
+                "GPS Automatic",
+                String(breadcrumbCount),
+                ""        // notes
             ]
-            rows.append(row.joined(separator: ","))
+            rows.append(cells.joined(separator: ","))
         }
 
-        let csv     = rows.joined(separator: "\n")
-        let dir     = FileManager.default.temporaryDirectory
-        let fileURL = dir.appendingPathComponent("MileageTax_Export_\(dateStamp()).csv")
-        try? csv.write(to: fileURL, atomically: true, encoding: .utf8)
-        return fileURL
+        let csv = rows.joined(separator: "\n")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MileageTax_Export_\(dateStamp()).csv")
+        try? csv.write(to: url, atomically: true, encoding: .utf8)
+        return url
     }
 
-    // MARK: - PDF
+    // MARK: ─── PHASE 5: Premium 3-Section PDF ────────────────────────────
 
-    static func exportPDF(trips: [TripEntity]) -> URL {
-        let pdfRenderer = UIGraphicsPDFRenderer(
-            bounds: CGRect(x: 0, y: 0, width: 612, height: 792)) // US Letter
+    static func exportPDF(trips: [TripEntity], userName: String = "Taxpayer") -> URL {
+        let pageW: CGFloat = 612
+        let pageH: CGFloat = 792
+        let margin: CGFloat = 44
 
-        let dir     = FileManager.default.temporaryDirectory
-        let fileURL = dir.appendingPathComponent("MileageTax_MileageLog_\(dateStamp()).pdf")
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pageW, height: pageH))
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MileageTax_Report_\(dateStamp()).pdf")
 
-        let data = pdfRenderer.pdfData { ctx in
+        let businessTrips = trips.filter { $0.classification == "business" }
+        let totalMiles    = businessTrips.reduce(0.0) { $0 + $1.totalDistanceMiles }
+        let totalDeduct   = businessTrips.reduce(0.0) { $0 + $1.taxDeductionValueUSD }
+
+        let data = renderer.pdfData { ctx in
+            // ── Page 1: Cover & Summary ──────────────────────────────────
             ctx.beginPage()
-            let context = ctx.cgContext
-            drawPDFPage(context: context, trips: trips)
+            let gc = ctx.cgContext
+            drawSummaryPage(gc: gc, pageW: pageW, margin: margin,
+                            trips: trips, businessTrips: businessTrips,
+                            totalMiles: totalMiles, totalDeduct: totalDeduct,
+                            userName: userName)
+
+            // ── Pages 2+: Detailed Trip Log ──────────────────────────────
+            var yPos: CGFloat = 0
+            var isFirstTripPage = true
+
+            for trip in businessTrips {
+                let blockHeight: CGFloat = 120
+                if yPos == 0 || yPos + blockHeight > pageH - margin {
+                    ctx.beginPage()
+                    yPos = isFirstTripPage
+                        ? drawDetailPageHeader(gc: ctx.cgContext, pageW: pageW, margin: margin)
+                        : drawDetailPageHeader(gc: ctx.cgContext, pageW: pageW, margin: margin)
+                    isFirstTripPage = false
+                }
+                yPos = drawTripRow(gc: ctx.cgContext, trip: trip,
+                                   yPos: yPos, margin: margin, pageW: pageW)
+            }
+
+            // ── Last Page: Certification Footer ──────────────────────────
+            ctx.beginPage()
+            drawCertificationPage(gc: ctx.cgContext, pageW: pageW, margin: margin,
+                                  totalMiles: totalMiles, totalDeduct: totalDeduct)
         }
 
-        try? data.write(to: fileURL)
-        return fileURL
+        try? data.write(to: url)
+        return url
     }
 
-    // MARK: - PDF Drawing
+    // MARK: - PDF Drawing Helpers
 
-    private static func drawPDFPage(context: CGContext, trips: [TripEntity]) {
-        let margin: CGFloat = 40
+    // Color constants
+    private static let green  = UIColor(red: 0.00, green: 1.00, blue: 0.53, alpha: 1)
+    private static let cyan   = UIColor(red: 0.00, green: 0.90, blue: 1.00, alpha: 1)
+    private static let dark   = UIColor(red: 0.02, green: 0.04, blue: 0.05, alpha: 1)
+    private static let grey   = UIColor(red: 0.40, green: 0.40, blue: 0.40, alpha: 1)
+
+    private static func drawSummaryPage(gc: CGContext, pageW: CGFloat, margin: CGFloat,
+                                        trips: [TripEntity], businessTrips: [TripEntity],
+                                        totalMiles: Double, totalDeduct: Double, userName: String) {
         var y: CGFloat = margin
 
-        // Title
+        // ── Header band ──────────────────────────────────────────────────
+        gc.setFillColor(dark.cgColor)
+        gc.fill(CGRect(x: 0, y: 0, width: pageW, height: 120))
+
+        // App name
         let titleAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
-            .foregroundColor: UIColor.black
+            .font: UIFont.systemFont(ofSize: 22, weight: .black),
+            .foregroundColor: UIColor.white
         ]
-        "MileageTax — IRS Mileage Log".draw(at: CGPoint(x: margin, y: y), withAttributes: titleAttr)
-        y += 30
+        "MILEAGETAX".draw(at: CGPoint(x: margin, y: 24), withAttributes: titleAttr)
 
-        // Subtitle
-        let subAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 11),
-            .foregroundColor: UIColor.gray
+        let subtitleAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10, weight: .medium),
+            .foregroundColor: green
         ]
-        "Generated: \(DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .short))"
-            .draw(at: CGPoint(x: margin, y: y), withAttributes: subAttr)
-        y += 20
+        "BUSINESS MILEAGE REPORT · TAX YEAR \(Calendar.current.component(.year, from: Date()))".draw(
+            at: CGPoint(x: margin, y: 50), withAttributes: subtitleAttr)
 
-        // Total deduction
-        let total = trips.reduce(0.0) { $0 + $1.taxDeductionValueUSD }
-        let totalMiles = trips.reduce(0.0) { $0 + $1.totalDistanceMiles }
-        let sumAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 13, weight: .semibold),
-            .foregroundColor: UIColor.black
+        let metaAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 9),
+            .foregroundColor: UIColor.lightGray
         ]
-        "Total Business Miles: \(String(format: "%.1f", totalMiles))   Est. Deduction: $\(String(format: "%.2f", total))"
-            .draw(at: CGPoint(x: margin, y: y), withAttributes: sumAttr)
-        y += 30
+        "Driver: \(userName)   |   Tax Authority: \(countryLabel)   |   Rate: \(currencySymbol)\(String(format: "%.3f", rate(for: Date())))/\(distanceUnit)".draw(
+            at: CGPoint(x: margin, y: 72), withAttributes: metaAttr)
+        "Generated: \(DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .short))".draw(
+            at: CGPoint(x: margin, y: 90), withAttributes: metaAttr)
 
-        // Draw divider
-        context.setStrokeColor(UIColor.lightGray.cgColor)
-        context.move(to: CGPoint(x: margin, y: y))
-        context.addLine(to: CGPoint(x: 612 - margin, y: y))
-        context.strokePath()
-        y += 10
+        y = 140
 
-        // Table header
-        let headerAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 9, weight: .bold),
-            .foregroundColor: UIColor.darkGray
+        // ── Summary Block ────────────────────────────────────────────────
+        drawSectionHeader(gc: gc, title: "BUSINESS MILEAGE SUMMARY", y: y, margin: margin, pageW: pageW)
+        y += 28
+
+        let summaryItems: [(String, String)] = [
+            ("Total Business \(distanceUnit.uppercased())", String(format: "%.1f \(distanceUnit)", totalMiles)),
+            ("Mileage Deduction", String(format: "\(currencySymbol)%.2f", totalDeduct)),
+            ("Rate Applied", "\(currencySymbol)\(String(format: "%.3f", rate(for: Date())))/\(distanceUnit)"),
+            ("Parking", "\(currencySymbol)0.00"),
+            ("Tolls", "\(currencySymbol)0.00"),
+            ("TOTAL BUSINESS TRAVEL VALUE", String(format: "\(currencySymbol)%.2f", totalDeduct)),
         ]
-        let columns: [(String, CGFloat)] = [
-            ("Date", 55), ("Start", 120), ("End", 120),
-            ("Miles", 45), ("Class.", 55), ("Deduction", 60)
-        ]
-        var x = margin
-        for (header, width) in columns {
-            header.draw(at: CGPoint(x: x, y: y), withAttributes: headerAttr)
-            x += width
+        for (i, item) in summaryItems.enumerated() {
+            let isBold = i == summaryItems.count - 1
+            drawKeyValueRow(gc: gc, key: item.0, value: item.1, y: y, margin: margin,
+                            pageW: pageW, bold: isBold, highlight: isBold)
+            y += 22
         }
+
         y += 16
 
-        // Table rows
+        // ── Trip Counts ──────────────────────────────────────────────────
+        drawSectionHeader(gc: gc, title: "TRIP SUMMARY", y: y, margin: margin, pageW: pageW)
+        y += 28
+
+        let biz  = trips.filter { $0.classification == "business" }.count
+        let pers = trips.filter { $0.classification == "personal" }.count
+        let unc  = trips.filter { $0.classification == "unclassified" }.count
+        let tripItems: [(String, String)] = [
+            ("Business Trips", String(biz)),
+            ("Personal Trips", String(pers)),
+            ("Unclassified Trips", String(unc)),
+            ("Total Trips Logged", String(trips.count)),
+        ]
+        for item in tripItems {
+            drawKeyValueRow(gc: gc, key: item.0, value: item.1, y: y, margin: margin,
+                            pageW: pageW, bold: false, highlight: false)
+            y += 22
+        }
+    }
+
+    private static func drawDetailPageHeader(gc: CGContext, pageW: CGFloat, margin: CGFloat) -> CGFloat {
+        var y: CGFloat = 40
+        let headerAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14, weight: .black),
+            .foregroundColor: dark
+        ]
+        "DETAILED MILEAGE LOG".draw(at: CGPoint(x: margin, y: y), withAttributes: headerAttr)
+        y += 20
+
+        // Column headers
+        let colAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 8, weight: .bold),
+            .foregroundColor: grey
+        ]
+        let columns: [(String, CGFloat)] = [
+            ("DATE", 60), ("FROM → TO", 200), ("\(distanceUnit.uppercased())", 45),
+            ("CLASS.", 60), ("RATE", 50), ("DEDUCTION", 65)
+        ]
+        var x = margin
+        for (title, width) in columns {
+            title.draw(at: CGPoint(x: x, y: y), withAttributes: colAttr)
+            x += width
+        }
+        y += 14
+
+        gc.setStrokeColor(UIColor.lightGray.cgColor)
+        gc.move(to: CGPoint(x: margin, y: y))
+        gc.addLine(to: CGPoint(x: pageW - margin, y: y))
+        gc.strokePath()
+
+        return y + 8
+    }
+
+    private static func drawTripRow(gc: CGContext, trip: TripEntity,
+                                    yPos: CGFloat, margin: CGFloat, pageW: CGFloat) -> CGFloat {
+        var y = yPos
+        let appliedRate = rate(for: trip.startDate ?? Date())
+        let deduction = trip.taxDeductionValueUSD > 0
+            ? trip.taxDeductionValueUSD
+            : trip.totalDistanceMiles * appliedRate
+
+        let dateFmt = DateFormatter(); dateFmt.dateFormat = "MM/dd/yy"
+        let timeFmt = DateFormatter(); dateFmt.dateFormat = "h:mm a"
+
         let rowAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 8),
+            .font: UIFont.systemFont(ofSize: 8.5),
             .foregroundColor: UIColor.black
         ]
-        let fmtShort = DateFormatter()
-        fmtShort.dateFormat = "MM/dd/yy"
+        let boldAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 8.5, weight: .semibold),
+            .foregroundColor: UIColor.black
+        ]
 
-        for (idx, trip) in trips.enumerated() {
-            if y > 750 { break } // simple overflow guard
-            // Zebra stripe
-            if idx % 2 == 1 {
-                context.setFillColor(UIColor(white: 0.96, alpha: 1).cgColor)
-                context.fill(CGRect(x: margin, y: y - 2, width: 612 - 2 * margin, height: 14))
-            }
+        let dateStr    = dateFmt.string(from: trip.startDate ?? Date())
+        let fromTo     = "\(String((trip.startAddress ?? "?").prefix(22)))\n→ \(String((trip.endAddress ?? "?").prefix(22)))"
+        let milesStr   = String(format: "%.1f", trip.totalDistanceMiles)
+        let classStr   = String((trip.classification ?? "").prefix(7))
+        let rateStr    = "\(currencySymbol)\(String(format: "%.3f", appliedRate))"
+        let deductStr  = String(format: "\(currencySymbol)%.2f", deduction)
 
-            x = margin
-            let cells: [String] = [
-                fmtShort.string(from: trip.startDate ?? Date()),
-                String((trip.startAddress ?? "").prefix(18)),
-                String((trip.endAddress ?? "").prefix(18)),
-                String(format: "%.1f", trip.totalDistanceMiles),
-                String((trip.classification ?? "").prefix(7)),
-                String(format: "$%.2f", trip.taxDeductionValueUSD),
-            ]
-            for (cell, width) in zip(cells, columns.map { $0.1 }) {
-                cell.draw(at: CGPoint(x: x, y: y), withAttributes: rowAttr)
-                x += width
-            }
-            y += 14
+        let cols: [(String, CGFloat, Bool)] = [
+            (dateStr, 60, false), (fromTo, 200, false), (milesStr, 45, false),
+            (classStr, 60, false), (rateStr, 50, false), (deductStr, 65, true)
+        ]
+
+        var x = margin
+        let rowH: CGFloat = trip.businessPurpose != nil ? 36 : 26
+        for (text, width, bold) in cols {
+            let attr = bold ? boldAttr : rowAttr
+            let rect = CGRect(x: x, y: y, width: width - 4, height: rowH)
+            text.draw(in: rect, withAttributes: attr)
+            x += width
         }
+
+        // Purpose sub-row
+        if let purpose = trip.businessPurpose, !purpose.isEmpty {
+            y += 20
+            let purposeAttr: [NSAttributedString.Key: Any] = [
+                .font: UIFont.italicSystemFont(ofSize: 7.5),
+                .foregroundColor: grey
+            ]
+            "Purpose: \(purpose)".draw(at: CGPoint(x: margin + 62, y: y), withAttributes: purposeAttr)
+        }
+
+        y += 20
+
+        // Divider
+        gc.setStrokeColor(UIColor(white: 0.92, alpha: 1).cgColor)
+        gc.move(to: CGPoint(x: margin, y: y))
+        gc.addLine(to: CGPoint(x: pageW - margin, y: y))
+        gc.strokePath()
+
+        return y + 6
+    }
+
+    private static func drawCertificationPage(gc: CGContext, pageW: CGFloat, margin: CGFloat,
+                                              totalMiles: Double, totalDeduct: Double) {
+        var y: CGFloat = margin
+
+        gc.setFillColor(dark.cgColor)
+        gc.fill(CGRect(x: 0, y: 0, width: pageW, height: 80))
+
+        let titleAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 16, weight: .black),
+            .foregroundColor: UIColor.white
+        ]
+        "MILEAGE RECORD CERTIFICATION".draw(at: CGPoint(x: margin, y: 24), withAttributes: titleAttr)
+
+        y = 110
+        let bodyAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10),
+            .foregroundColor: UIColor.darkGray
+        ]
+        let certText = """
+This document contains an automatically generated mileage log produced by the MileageTax application.
+
+Each trip record includes: date, start location, end location, business purpose, distance, and the \
+\(countryLabel) rate applied on the date of travel (\(currencySymbol)\(String(format: "%.3f", rate(for: Date())))/\(distanceUnit)).
+
+SUMMARY
+  Total Business \(distanceUnit.uppercased()): \(String(format: "%.1f", totalMiles)) \(distanceUnit)
+  Total Estimated Deduction: \(currencySymbol)\(String(format: "%.2f", totalDeduct))
+  Tax Authority: \(countryLabel)
+  Report Generated: \(DateFormatter.localizedString(from: Date(), dateStyle: .full, timeStyle: .medium))
+
+RECORD-KEEPING NOTICE
+This report is intended to assist with tax record-keeping. Please consult a qualified \
+tax professional or accountant to confirm the applicability of these records to your specific \
+tax situation. The app does not provide tax advice.
+
+For US taxpayers: Records should be maintained in compliance with IRS Publication 463, \
+which requires taxpayers to keep adequate records to establish the amount, time, place, \
+and business purpose of each vehicle expense claimed.
+"""
+        let rect = CGRect(x: margin, y: y, width: pageW - 2 * margin, height: 600)
+        certText.draw(in: rect, withAttributes: bodyAttr)
+    }
+
+    private static func drawSectionHeader(gc: CGContext, title: String, y: CGFloat,
+                                          margin: CGFloat, pageW: CGFloat) {
+        gc.setFillColor(UIColor(white: 0.95, alpha: 1).cgColor)
+        gc.fill(CGRect(x: margin, y: y, width: pageW - 2 * margin, height: 22))
+
+        let attr: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 9, weight: .black),
+            .foregroundColor: dark
+        ]
+        title.draw(at: CGPoint(x: margin + 8, y: y + 6), withAttributes: attr)
+    }
+
+    private static func drawKeyValueRow(gc: CGContext, key: String, value: String,
+                                        y: CGFloat, margin: CGFloat, pageW: CGFloat,
+                                        bold: Bool, highlight: Bool) {
+        if highlight {
+            gc.setFillColor(UIColor(red: 0, green: 0.3, blue: 0.2, alpha: 0.08).cgColor)
+            gc.fill(CGRect(x: margin, y: y - 2, width: pageW - 2 * margin, height: 20))
+        }
+
+        let keyAttr: [NSAttributedString.Key: Any] = [
+            .font: bold ? UIFont.systemFont(ofSize: 9, weight: .bold) : UIFont.systemFont(ofSize: 9),
+            .foregroundColor: bold ? dark : grey
+        ]
+        let valAttr: [NSAttributedString.Key: Any] = [
+            .font: bold ? UIFont.systemFont(ofSize: 10, weight: .black) : UIFont.systemFont(ofSize: 9, weight: .semibold),
+            .foregroundColor: bold ? dark : UIColor.black
+        ]
+        key.draw(at: CGPoint(x: margin + 8, y: y), withAttributes: keyAttr)
+        let valWidth = (value as NSString).size(withAttributes: valAttr).width
+        value.draw(at: CGPoint(x: pageW - margin - valWidth - 8, y: y), withAttributes: valAttr)
     }
 
     // MARK: - Helpers
@@ -158,8 +424,7 @@ enum ExportEngine {
     }
 
     private static func dateStamp() -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
         return fmt.string(from: Date())
     }
 }

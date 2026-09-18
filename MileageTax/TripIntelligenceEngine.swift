@@ -463,6 +463,8 @@ final class TripTrackerService: NSObject, ObservableObject {
     @Published private(set) var currentDrainRatePerHour:  Double       = 1.1
     @Published private(set) var startAddressString:        String       = ""
     @Published private(set) var targetAddressString:       String       = ""
+    @Published private(set) var liveBreadcrumbs:          [TripBreadcrumb] = []
+    @Published private(set) var currentLocation:         CLLocation?
 
     var liveBannerText: String {
         switch state {
@@ -1055,7 +1057,10 @@ final class TripTrackerService: NSObject, ObservableObject {
 
     /// FIX 4: throttle snapshot to every 30 breadcrumbs OR 60 seconds.
     private func appendBreadcrumb(_ location: CLLocation) {
-        breadcrumbs.append(TripBreadcrumb(location: location))
+        let crumb = TripBreadcrumb(location: location)
+        breadcrumbs.append(crumb)
+        liveBreadcrumbs.append(crumb)
+        currentLocation = location
         let byCount = breadcrumbs.count % TripTrackerConfig.persistSnapshotEveryNBreadcrumbs == 0
         let byTime  = Date().timeIntervalSince(lastPersistedAt) >= TripTrackerConfig.persistSnapshotMinIntervalSeconds
         if byCount || byTime { persistInProgressSnapshot() }
