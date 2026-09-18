@@ -13,7 +13,9 @@ struct TrackView: View {
 
     @StateObject private var tracker   = TripTrackerService.shared
     @StateObject private var bluetooth = BluetoothVehicleManager.shared
-    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
 
     @State private var dialPulse = false
     @State private var isPaused = false
@@ -374,7 +376,7 @@ struct TrackView: View {
                         .font(.system(size: 8, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.5))
                 }
-                Text(String(format: "%.1f ¢", irsRate * 100) + "/mi")
+                Text(String(format: "%.3f", irsRate) + currencySymbol + "/" + distanceUnit)
                     .font(.system(size: 13.5, weight: .black, design: .monospaced))
                     .foregroundStyle(.white)
             }

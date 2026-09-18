@@ -37,6 +37,11 @@ enum AppStorageKeys {
     static let btGatingEnabled             = "MT_btGatingEnabled"
     static let weeklyReportEnabled         = "MT_weeklyReportEnabled"
     static let knownVehicles               = "MTKnownVehicleBluetoothNames"
+
+    // MARK: MileageTax Global Tax & Currency
+    static let currencySymbol              = "MT_currencySymbol"
+    static let distanceUnit                = "MT_distanceUnit"  // "mi" or "km"
+    static let countryTaxLabel             = "MT_countryTaxLabel"
 }
 
 // MARK: - MileageTax Single Source of Truth Defaults
@@ -45,6 +50,9 @@ public enum MileageTaxDefaults {
     public static let irsRatePerMile: Double      = 0.67
     public static let defaultWorkStartHour: Double = 8.0
     public static let defaultWorkEndHour: Double   = 18.0
+    public static let defaultCurrencySymbol: String = "$"
+    public static let defaultDistanceUnit: String   = "mi"
+    public static let defaultCountryLabel: String   = "IRS Standard (USA)"
 }
 
 

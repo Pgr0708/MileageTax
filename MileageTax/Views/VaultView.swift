@@ -15,7 +15,9 @@ struct VaultView: View {
         animation: .default)
     private var allTrips: FetchedResults<TripEntity>
 
-    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
 
     @State private var selectedTaxYear: String = "Tax Year 2026"
     @State private var showExportShare = false
@@ -284,9 +286,9 @@ struct VaultView: View {
                     .tracking(0.6)
             }
 
-            // Big Hero Amount ($4,892.45)
+            // Big Hero Amount
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("$")
+                Text(currencySymbol)
                     .font(.system(size: 34, weight: .black, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
@@ -318,7 +320,7 @@ struct VaultView: View {
                     .font(.system(size: 11.5, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
 
-                Text(String(format: "@ %.0f¢/mi", irsRate * 100))
+                Text(String(format: "@ %.3f%@/%@", irsRate, currencySymbol, distanceUnit))
                     .font(.system(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundStyle(Color(hex: "#00E5FF"))
             }

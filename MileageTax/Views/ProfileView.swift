@@ -17,7 +17,10 @@ struct ProfileView: View {
     private var trips: FetchedResults<TripEntity>
 
     @StateObject private var bluetooth = BluetoothVehicleManager.shared
-    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
+    @AppStorage(AppStorageKeys.countryTaxLabel)   private var countryTaxLabel: String = MileageTaxDefaults.defaultCountryLabel
     @AppStorage(AppStorageKeys.userName) private var userName: String = ""
 
     // Toggles persisted to AppStorage
@@ -26,6 +29,7 @@ struct ProfileView: View {
     @AppStorage("MT_faceIDLockEnabled")      private var faceIDLockEnabled = true
     @AppStorage(AppStorageKeys.isLoggedIn)   private var isLoggedIn = true
     @State private var avatarGlowPhase = false
+    @State private var showTaxSettingsSheet = false
 
     // Real Metrics from CoreData
     private var totalMiles: Double {
@@ -52,7 +56,12 @@ struct ProfileView: View {
                     hardwareTelemetryCard
 
                     // IRS Compliance Engine Card
-                    irsComplianceCard
+                    Button { showTaxSettingsSheet = true } label: { irsComplianceCard }
+                    .buttonStyle(.plain)
+                    .sheet(isPresented: $showTaxSettingsSheet) {
+                        TaxSettingsModalView()
+                            .presentationDetents([.medium])
+                    }
 
                     // CoreMotion Gating Card
                     coreMotionGatingCard
@@ -218,7 +227,7 @@ struct ProfileView: View {
                         .font(.system(size: 9, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
 
-                    Text(String(format: "$%.0f", totalYield))
+                    Text(String(format: "%@%.0f", currencySymbol, totalYield))
                         .font(.system(size: 22, weight: .black, design: .rounded))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
@@ -292,7 +301,7 @@ struct ProfileView: View {
                     Text("IRS Compliance Engine")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Auto-updating standard mileage rates")
+                    Text("Tap to set your country's rate")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -521,5 +530,209 @@ struct ProfileView: View {
                 .foregroundStyle(.white.opacity(0.25))
         }
         .padding(.top, 6)
+    }
+}
+
+// MARK: - Tax & Currency Settings Modal
+
+struct TaxSettingsModalView: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)   private var currencySymbol: String = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)     private var distanceUnit: String   = MileageTaxDefaults.defaultDistanceUnit
+    @AppStorage(AppStorageKeys.countryTaxLabel)  private var countryTaxLabel: String = MileageTaxDefaults.defaultCountryLabel
+
+    @State private var rateInputText: String = ""
+
+    // Pre-defined country presets
+    private let presets: [(name: String, symbol: String, rate: Double, unit: String, label: String)] = [
+        ("🇺🇸 United States (IRS)", "$",  0.76, "mi", "IRS Standard (USA)"),
+        ("🇬🇧 United Kingdom (HMRC)", "£",  0.55, "mi", "HMRC Standard (UK)"),
+        ("🇨🇦 Canada (CRA)", "C$", 0.73, "km", "CRA Standard (CA)"),
+        ("🇦🇺 Australia (ATO)", "A$", 0.91, "km", "ATO Cents-per-km (AU)"),
+        ("🇳🇿 New Zealand (IRD)", "NZ$", 1.20, "km", "IRD Tier 1 Petrol (NZ)"),
+        ("🇫🇷 France (DGFiP)", "€",  0.529, "km", "DGFiP Base Scale (FR)"),
+        ("🇩🇪 Germany (BMF)", "€",  0.30, "km", "BMF Distance (DE)"),
+        ("🇦🇹 Austria (BMF)", "€", 0.50, "km", "BMF Kilometergeld (AT)"),
+        ("🇧🇪 Belgium (BOSA)", "€", 0.444, "km", "BOSA Allowance (BE)"),
+        ("🇳🇱 Netherlands (Belastingdienst)", "€", 0.25, "km", "Standard Deduction (NL)"),
+        ("🇪🇸 Spain (Agencia Tributaria)", "€", 0.26, "km", "Business Travel (ES)"),
+        ("🇮🇪 Ireland (Revenue)", "€", 0.418, "km", "Civil Service Base (IE)"),
+        ("🇳🇴 Norway (Skatteetaten)", "kr", 3.50, "km", "Tax-free Mileage (NO)"),
+        ("🇸🇪 Sweden (Skatteverket)", "kr", 2.50, "km", "Tax-free Mileage (SE)"),
+        ("🇨🇿 Czech Republic (SUIP)", "Kč", 5.90, "km", "Statutory Comp (CZ)")
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(hex: "#06090E").ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+
+                        // ── Country Presets ───────────────────────────────
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("COUNTRY PRESET")
+                                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+
+                            ForEach(presets, id: \.name) { preset in
+                                Button {
+                                    currencySymbol  = preset.symbol
+                                    irsRate         = preset.rate
+                                    distanceUnit    = preset.unit
+                                    countryTaxLabel = preset.label
+                                    rateInputText   = String(preset.rate)
+                                } label: {
+                                    HStack {
+                                        Text(preset.name)
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(.white)
+                                        Spacer()
+                                        VStack(alignment: .trailing, spacing: 2) {
+                                            Text("\(preset.symbol)\(String(format: "%.2f", preset.rate))/\(preset.unit)")
+                                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                                .foregroundStyle(Color(hex: "#00FF88"))
+                                        }
+                                        if countryTaxLabel == preset.label {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(Color(hex: "#00FF88"))
+                                                .padding(.leading, 6)
+                                        }
+                                    }
+                                    .padding(14)
+                                    .background(
+                                        countryTaxLabel == preset.label
+                                            ? Color(hex: "#00FF88").opacity(0.08)
+                                            : Color(hex: "#0A1018").opacity(0.9)
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .strokeBorder(
+                                                countryTaxLabel == preset.label
+                                                    ? Color(hex: "#00FF88").opacity(0.4)
+                                                    : Color.white.opacity(0.07),
+                                                lineWidth: 1
+                                            )
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        // ── Manual Override ───────────────────────────────
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("MANUAL OVERRIDE")
+                                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00E5FF"))
+
+                            VStack(spacing: 14) {
+                                HStack(spacing: 12) {
+                                    Text("Currency Symbol")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.7))
+                                    Spacer()
+                                    TextField("$", text: $currencySymbol)
+                                        .font(.system(size: 18, weight: .black, design: .monospaced))
+                                        .foregroundStyle(Color(hex: "#00FF88"))
+                                        .multilineTextAlignment(.trailing)
+                                        .frame(width: 50)
+                                        .padding(.horizontal, 8).padding(.vertical, 6)
+                                        .background(Color.white.opacity(0.06))
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+
+                                HStack(spacing: 12) {
+                                    Text("Rate per \(distanceUnit)")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.7))
+                                    Spacer()
+                                    TextField("0.67", text: $rateInputText)
+                                        .font(.system(size: 18, weight: .black, design: .monospaced))
+                                        .foregroundStyle(Color(hex: "#00FF88"))
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .frame(width: 80)
+                                        .padding(.horizontal, 8).padding(.vertical, 6)
+                                        .background(Color.white.opacity(0.06))
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .onChange(of: rateInputText) { newVal in
+                                            if let d = Double(newVal) { irsRate = d }
+                                        }
+                                }
+
+                                HStack(spacing: 12) {
+                                    Text("Distance Unit")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.7))
+                                    Spacer()
+                                    Picker("", selection: $distanceUnit) {
+                                        Text("mi").tag("mi")
+                                        Text("km").tag("km")
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 100)
+                                }
+                            }
+                            .padding(16)
+                            .background(Color(hex: "#0A1018").opacity(0.9))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+                        }
+
+                        // ── Live Preview ──────────────────────────────────
+                        HStack {
+                            Image(systemName: "eye.fill")
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Text("Live Preview:")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.6))
+                            Spacer()
+                            Text("\(currencySymbol)\(String(format: "%.2f", irsRate))/\(distanceUnit)")
+                                .font(.system(size: 16, weight: .black, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                        }
+                        .padding(14)
+                        .background(Color(hex: "#071F17"))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+
+                        Button {
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("Save & Apply Globally")
+                            }
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color(hex: "#061A13"))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(hex: "#00FF88"))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
+                        }
+                        .padding(.bottom, 16)
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle("Tax & Currency Engine")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+            }
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear {
+                rateInputText = String(irsRate)
+            }
+        }
     }
 }

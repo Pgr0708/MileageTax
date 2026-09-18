@@ -23,7 +23,9 @@ struct ClassifyView: View {
         animation: .default)
     private var pendingTrips: FetchedResults<TripEntity>
 
-    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
 
     @State private var swipeOffset: CGSize = .zero
     @State private var swipeOpacity: Double = 1.0
@@ -405,7 +407,7 @@ struct ClassifyView: View {
 
                 Spacer()
 
-                Text(String(format: "Standard %.0f¢/mi", irsRate * 100))
+                Text(String(format: "%.3f%@/%@", irsRate, currencySymbol, distanceUnit))
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .padding(.horizontal, 6)

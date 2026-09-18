@@ -16,7 +16,9 @@ struct RadarView: View {
     private var trips: FetchedResults<TripEntity>
 
     // Centralized IRS Rate (Single Source of Truth)
-    @AppStorage(AppStorageKeys.irsRateOverride) private var irsRate: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.irsRateOverride)  private var irsRate: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
 
     // Animation States
     @State private var radarPulse: Bool = false
@@ -207,7 +209,7 @@ struct RadarView: View {
 
             // Center: Big Hero Number
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("$")
+                Text(currencySymbol)
                     .font(.system(size: 32, weight: .black, design: .rounded))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 8)

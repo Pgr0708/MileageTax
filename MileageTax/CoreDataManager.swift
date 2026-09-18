@@ -214,7 +214,8 @@ final class CoreDataManager: NSObject {
             return // Database already populated
         }
 
-        let irsRate = MileageTaxDefaults.irsRatePerMile
+        let savedRate = UserDefaults.standard.double(forKey: "MT_irsRateOverride")
+        let irsRate = savedRate > 0 ? savedRate : MileageTaxDefaults.irsRatePerMile
         let calendar = Calendar.current
         let now = Date()
 

@@ -16,7 +16,9 @@ struct RulesView: View {
     @AppStorage(AppStorageKeys.autoClassifyWorkHours) private var autoClassifyWorkHours = true
     @AppStorage(AppStorageKeys.workHoursStart)        private var workHoursStart: Double = 8.5
     @AppStorage(AppStorageKeys.workHoursEnd)          private var workHoursEnd:   Double = 17.5
-    @AppStorage(AppStorageKeys.irsRateOverride)       private var irsRateOverride: Double = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.irsRateOverride)       private var irsRateOverride: Double        = MileageTaxDefaults.irsRatePerMile
+    @AppStorage(AppStorageKeys.currencySymbol)          private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
+    @AppStorage(AppStorageKeys.distanceUnit)            private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
     @AppStorage(AppStorageKeys.btGatingEnabled)       private var btGatingEnabled  = true
     @AppStorage(AppStorageKeys.notificationsEnabled)  private var notificationsOn  = true
     @AppStorage(AppStorageKeys.weeklyReportEnabled)   private var weeklyReportOn   = true
