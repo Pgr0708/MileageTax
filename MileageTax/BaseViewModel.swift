@@ -14,10 +14,9 @@ internal import Combine
 
 @MainActor
 class BaseViewModel: NSObject, ObservableObject {
-    @EnvironmentObject var settings: SettingsManager
     var isPro: Bool {
-        get { settings.isPremium }
-        set { settings.isPremium = newValue }
+        get { UserDefaults.standard.bool(forKey: AppStorageKeys.isPremium) }
+        set { UserDefaults.standard.set(newValue, forKey: AppStorageKeys.isPremium) }
     }
     @Published var isLoading = false
     @Published var isShowDataTransferSheet = false

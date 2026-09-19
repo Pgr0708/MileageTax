@@ -6,7 +6,7 @@
 import SwiftUI
 
 enum AppFlow {
-    case splash, language, onboarding, paywall, notification, customization, home
+    case splash, language, onboarding, paywall, customization, home
 }
 
 struct RootView: View {
@@ -16,20 +16,21 @@ struct RootView: View {
         if !settings.hasSeenLanguage         { return .language }
         if !settings.hasSeenOnboarding       { return .onboarding }
         if !settings.hasSeenPaywall          { return .paywall }
-        if !settings.hasSeenNotificationPrompt { return .notification }
         if !settings.hasSeenCustomization    { return .customization }
         return .home
     }
 
     var body: some View {
-        switch currentFlow {
-        case .language:      LanguageScreenView()
-        case .onboarding:    OnBoardingScreenView()
-        case .paywall:       PaywallScreenView()
-        case .notification:  NotificationScreenView()
-        case .customization: CustomizationScreenView()
-        case .home:          AppTabView()
-        default:             SplashScreenView()
+        Group {
+            switch currentFlow {
+            case .language:      LanguageScreenView()
+            case .onboarding:    OnBoardingScreenView()
+            case .paywall:       PaywallScreenView()
+            case .customization: CustomizationScreenView()
+            case .home:          AppTabView()
+            default:             SplashScreenView()
+            }
         }
+        .animation(.easeInOut(duration: 0.35), value: currentFlow)
     }
 }

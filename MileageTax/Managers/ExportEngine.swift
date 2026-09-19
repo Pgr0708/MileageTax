@@ -112,7 +112,7 @@ enum ExportEngine {
 
     // MARK: ─── PHASE 5: Premium 3-Section PDF ────────────────────────────
 
-    static func exportPDF(trips: [TripEntity], userName: String = "Taxpayer") -> URL {
+    static func exportPDF(trips: [TripEntity], userName: String = "Taxpayer", startDate: Date? = nil, endDate: Date? = nil) -> URL {
         let pageW: CGFloat = 612
         let pageH: CGFloat = 792
         let margin: CGFloat = 44
@@ -125,6 +125,15 @@ enum ExportEngine {
         let totalMiles    = businessTrips.reduce(0.0) { $0 + $1.totalDistanceMiles }
         let totalDeduct   = businessTrips.reduce(0.0) { $0 + $1.taxDeductionValueUSD }
 
+        let dateFmtLabel = DateFormatter()
+        dateFmtLabel.dateFormat = "MMM d, yyyy"
+        let rangeLabel: String = {
+            if let s = startDate, let e = endDate {
+                return "\(dateFmtLabel.string(from: s)) – \(dateFmtLabel.string(from: e))"
+            }
+            return "Tax Year \(Calendar.current.component(.year, from: Date()))"
+        }()
+
         let data = renderer.pdfData { ctx in
             // ── Page 1: Cover & Summary ──────────────────────────────────
             ctx.beginPage()
@@ -132,7 +141,7 @@ enum ExportEngine {
             drawSummaryPage(gc: gc, pageW: pageW, margin: margin,
                             trips: trips, businessTrips: businessTrips,
                             totalMiles: totalMiles, totalDeduct: totalDeduct,
-                            userName: userName)
+                            userName: userName, rangeLabel: rangeLabel)
 
             // ── Pages 2+: Detailed Trip Log ──────────────────────────────
             var yPos: CGFloat = 0
@@ -171,7 +180,8 @@ enum ExportEngine {
 
     private static func drawSummaryPage(gc: CGContext, pageW: CGFloat, margin: CGFloat,
                                         trips: [TripEntity], businessTrips: [TripEntity],
-                                        totalMiles: Double, totalDeduct: Double, userName: String) {
+                                        totalMiles: Double, totalDeduct: Double, userName: String,
+                                        rangeLabel: String = "") {
         var y: CGFloat = margin
 
         // ── Header band ──────────────────────────────────────────────────
@@ -189,8 +199,13 @@ enum ExportEngine {
             .font: UIFont.systemFont(ofSize: 10, weight: .medium),
             .foregroundColor: green
         ]
-        "BUSINESS MILEAGE REPORT · TAX YEAR \(Calendar.current.component(.year, from: Date()))".draw(
-            at: CGPoint(x: margin, y: 50), withAttributes: subtitleAttr)
+        let reportRangeText: String
+        if rangeLabel.isEmpty {
+            reportRangeText = "BUSINESS MILEAGE REPORT · TAX YEAR \(Calendar.current.component(.year, from: Date()))"
+        } else {
+            reportRangeText = "BUSINESS MILEAGE REPORT · \(rangeLabel.uppercased())"
+        }
+        reportRangeText.draw(at: CGPoint(x: margin, y: 50), withAttributes: subtitleAttr)
 
         let metaAttr: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 9),

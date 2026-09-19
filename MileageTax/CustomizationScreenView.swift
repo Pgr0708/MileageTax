@@ -62,6 +62,7 @@ private enum VehicleType: String, CaseIterable {
 }
 
 struct CustomizationScreenView: View {
+    @EnvironmentObject private var settings: SettingsManager
     @AppStorage(AppStorageKeys.hasSeenCustomization)  private var hasSeenCustomization = false
     @AppStorage(AppStorageKeys.irsRateOverride)       private var irsRate: Double       = MileageTaxDefaults.irsRatePerMile
     @AppStorage(AppStorageKeys.currencySymbol)        private var currencySymbol: String = MileageTaxDefaults.defaultCurrencySymbol
@@ -70,6 +71,10 @@ struct CustomizationScreenView: View {
     @AppStorage(AppStorageKeys.weeklyReportEnabled)   private var weeklyReport = true
     @AppStorage(AppStorageKeys.autoClassifyWorkHours) private var autoWorkHours = false
 
+    @AppStorage(AppStorageKeys.userName) private var userName: String = ""
+    @State private var profilePhotoData: Data? = UserDefaults.standard.data(forKey: "MT_userPhotoData")
+    @State private var showPhotoPicker = false
+    @State private var pickedImage: UIImage? = nil
     @State private var step = 0
     @State private var searchText = ""
     @State private var selectedCountry: CountryPreset? = countryPresets.first
@@ -100,9 +105,10 @@ struct CustomizationScreenView: View {
 
                 // Content
                 ZStack {
-                    if step == 0 { step0CountryPicker }
-                    if step == 1 { step1DistanceCurrency }
-                    if step == 2 { step2Preferences }
+                    if step == 0 { step0ProfileSetup }
+                    if step == 1 { step1CountryPicker }
+                    if step == 2 { step2DistanceCurrency }
+                    if step == 3 { step3Preferences }
                 }
                 .opacity(stepOpacity)
                 .offset(y: stepOffset)
@@ -120,10 +126,10 @@ struct CustomizationScreenView: View {
     private var headerBar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(["Your Location & Tax Rate", "Distance & Currency", "Driving Preferences"][step])
+                Text(["Who Are You?", "Your Location & Tax Rate", "Distance & Currency", "Driving Preferences"][step])
                     .font(.system(size: 20, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
-                Text("Step \(step + 1) of 3")
+                Text("Step \(step + 1) of 4")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.4))
             }
@@ -142,7 +148,7 @@ struct CustomizationScreenView: View {
     // MARK: - Step Indicator
     private var stepIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(0..<3) { i in
+            ForEach(0..<4) { i in
                 Capsule()
                     .fill(i <= step ? Color(hex: "#00FF88") : Color.white.opacity(0.12))
                     .frame(height: 4)
@@ -153,8 +159,123 @@ struct CustomizationScreenView: View {
         .padding(.bottom, 20)
     }
 
-    // MARK: - Step 0: Country Picker
-    private var step0CountryPicker: some View {
+    // MARK: - Step 0: Profile Setup
+
+    private var step0ProfileSetup: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 28) {
+                // Photo picker circle
+                Button { showPhotoPicker = true } label: {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "#102028"), Color(hex: "#0C121A")],
+                                    startPoint: .top, endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 110, height: 110)
+                            .overlay(
+                                Circle().strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.4)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    ), lineWidth: 2.5
+                                )
+                            )
+                            .shadow(color: Color(hex: "#00E5FF").opacity(0.2), radius: 16)
+
+                        if let img = pickedImage ?? (profilePhotoData.flatMap { UIImage(data: $0) }) {
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 104, height: 104)
+                                .clipShape(Circle())
+                        } else {
+                            VStack(spacing: 6) {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundStyle(Color(hex: "#00E5FF"))
+                                Text("Add Photo")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                        }
+
+                        // Edit badge
+                        Circle()
+                            .fill(Color(hex: "#00FF88"))
+                            .frame(width: 28, height: 28)
+                            .overlay(
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(Color(hex: "#041B12"))
+                            )
+                            .offset(x: 36, y: 36)
+                    }
+                }
+                .sheet(isPresented: $showPhotoPicker) {
+                    ImagePickerView { img in
+                        pickedImage = img
+                        if let d = img.jpegData(compressionQuality: 0.82) {
+                            profilePhotoData = d
+                            UserDefaults.standard.set(d, forKey: "MT_userPhotoData")
+                        }
+                    }
+                }
+
+                // Name field
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("YOUR NAME")
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
+                        .padding(.horizontal, 4)
+
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+
+                        TextField("Enter your name...", text: $userName)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .tint(Color(hex: "#00FF88"))
+                            .submitLabel(.done)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(Color(hex: "#0E1622"))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(
+                        userName.isEmpty ? Color.white.opacity(0.08) : Color(hex: "#00FF88").opacity(0.4),
+                        lineWidth: 1.5
+                    ))
+                }
+                .padding(.horizontal, 24)
+
+                // Tagline card
+                HStack(spacing: 10) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Text("Your name is stored only on this device — never shared.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+                .background(Color(hex: "#061A13").opacity(0.8))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color(hex: "#00FF88").opacity(0.15)))
+                .padding(.horizontal, 24)
+            }
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+        }
+    }
+
+    // MARK: - Step 1: Country Picker
+    private var step1CountryPicker: some View {
         VStack(spacing: 14) {
             // Search
             HStack(spacing: 10) {
@@ -238,8 +359,8 @@ struct CustomizationScreenView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Step 1: Distance & Currency
-    private var step1DistanceCurrency: some View {
+    // MARK: - Step 2: Distance & Currency
+    private var step2DistanceCurrency: some View {
         VStack(spacing: 24) {
             // Animated car indicator
             VStack(spacing: 16) {
@@ -317,8 +438,8 @@ struct CustomizationScreenView: View {
         .padding(.horizontal, 24)
     }
 
-    // MARK: - Step 2: Preferences
-    private var step2Preferences: some View {
+    // MARK: - Step 3: Preferences
+    private var step3Preferences: some View {
         VStack(spacing: 16) {
             // Vehicle type
             VStack(alignment: .leading, spacing: 12) {
@@ -444,18 +565,23 @@ struct CustomizationScreenView: View {
             }
 
             Button {
-                if step < 2 {
+                if step < 3 {
                     applyStepSettings()
                     withAnimation(.spring(response: 0.4)) { step += 1 }
                 } else {
                     applyStepSettings()
-                    hasSeenCustomization = true
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        hasSeenCustomization = true
+                        settings.hasSeenCustomization = true
+                        settings.hasSeenNotificationPrompt = true
+                    }
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text(step == 2 ? "Start Tracking" : "Next")
+                    Text(step == 3 ? "Start Tracking" : "Next")
                         .font(.system(size: 16, weight: .heavy, design: .rounded))
-                    Image(systemName: step == 2 ? "arrow.up.right" : "chevron.right")
+                    Image(systemName: step == 3 ? "arrow.up.right" : "chevron.right")
                         .font(.system(size: 13, weight: .black))
                 }
                 .foregroundStyle(Color(hex: "#06090E"))

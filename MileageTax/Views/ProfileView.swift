@@ -6,9 +6,11 @@
 
 import SwiftUI
 import CoreData
+import StoreKit
 
 struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
@@ -33,6 +35,8 @@ struct ProfileView: View {
     @State private var showResetAlert = false
     @State private var showSafariURL: URL? = nil
     @State private var showSafariSheet = false
+    @State private var showEditProfile = false
+    @State private var profilePhotoData: Data? = UserDefaults.standard.data(forKey: "MT_userPhotoData")
 
     // Real Metrics from CoreData
     private var totalMiles: Double {
@@ -91,7 +95,19 @@ struct ProfileView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .sheet(isPresented: $showSafariSheet) {
+            if let url = showSafariURL {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showEditProfile, onDismiss: {
+            profilePhotoData = UserDefaults.standard.data(forKey: "MT_userPhotoData")
+        }) {
+            EditProfileSheet(profilePhotoData: $profilePhotoData)
+                .presentationDetents([.medium, .large])
+        }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
                 avatarGlowPhase = true
@@ -125,6 +141,23 @@ struct ProfileView: View {
             }
 
             Spacer()
+
+            // Edit Profile
+            Button { showEditProfile = true } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Text("Edit")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Color(hex: "#061A13").opacity(0.85))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.3), lineWidth: 1))
+            }
         }
         .padding(.vertical, 4)
     }
@@ -151,29 +184,50 @@ struct ProfileView: View {
                     .strokeBorder(Color(hex: "#00FF88").opacity(0.2), lineWidth: 1)
                     .frame(width: 118, height: 118)
 
-                // Avatar Photo Placeholder / Image
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "#102028"), Color(hex: "#0C121A")],
-                                startPoint: .top,
-                                endPoint: .bottom
+                // Avatar Photo — real photo if available, else placeholder
+                Button { showEditProfile = true } label: {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "#102028"), Color(hex: "#0C121A")],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
                             )
-                        )
-                        .frame(width: 92, height: 92)
+                            .frame(width: 92, height: 92)
 
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 86, height: 86)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF").opacity(0.9), Color(hex: "#00FF88").opacity(0.9)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                        if let data = profilePhotoData, let img = UIImage(data: data) {
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 92, height: 92)
+                                .clipShape(Circle())
+                        } else {
+                            Image(systemName: "person.crop.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 86, height: 86)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color(hex: "#00E5FF").opacity(0.9), Color(hex: "#00FF88").opacity(0.9)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+
+                        // Camera badge
+                        Circle()
+                            .fill(Color(hex: "#00E5FF"))
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Color(hex: "#041620"))
                             )
-                        )
+                            .offset(x: 30, y: 30)
+                    }
                 }
                 .clipShape(Circle())
 
@@ -184,13 +238,14 @@ struct ProfileView: View {
 
             // Name & Title
             VStack(spacing: 3) {
-                Text(userName.isEmpty ? "Taxpayer" : userName)
+                Text(userName.isEmpty ? "Tap Edit to set your name" : userName)
                     .font(.system(size: 24, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(userName.isEmpty ? .white.opacity(0.4) : .white)
+                    .onTapGesture { showEditProfile = true }
 
-                Text("Senior Partner & Tech Founder")
+                Text("MileageTax Driver")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.white.opacity(0.5))
             }
 
             // Two Metric Cards (Tracked & Tax Yield)
@@ -533,9 +588,14 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             supportRow(icon: "star.fill", iconColor: "#FFD700",
                        title: "Rate MileageTax",
-                       subtitle: "Leave us a review on the App Store") {
-                if let url = URL(string: "https://apps.apple.com/app/idYOUR_APP_ID") {
-                    UIApplication.shared.open(url)
+                       subtitle: "Tap to rate us on the App Store") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                if let windowScene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive }) {
+                    SKStoreReviewController.requestReview(in: windowScene)
+                } else {
+                    requestReview()
                 }
             }
             sectionDivider
@@ -551,7 +611,8 @@ struct ProfileView: View {
                        title: "Privacy Policy",
                        subtitle: "How we protect your data") {
                 if let url = URL(string: "https://mileagetax.app/privacy") {
-                    UIApplication.shared.open(url)
+                    showSafariURL = url
+                    showSafariSheet = true
                 }
             }
             sectionDivider
@@ -559,7 +620,8 @@ struct ProfileView: View {
                        title: "Terms & Conditions",
                        subtitle: "Usage terms and agreements") {
                 if let url = URL(string: "https://mileagetax.app/terms") {
-                    UIApplication.shared.open(url)
+                    showSafariURL = url
+                    showSafariSheet = true
                 }
             }
             sectionDivider

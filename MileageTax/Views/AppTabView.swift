@@ -27,20 +27,29 @@ struct AppTabView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // ── Content ──────────────────────────────────────────────────────
-            TabView(selection: $selectedTab) {
+            // ── Content (Direct Switch with smooth crossfade animation) ──────
+            ZStack {
                 RadarView(selectedTab: $selectedTab)
-                    .tag(0)
+                    .opacity(selectedTab == 0 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 0)
+
                 ClassifyView(preselectedTripID: $classifyTripID)
-                    .tag(1)
+                    .opacity(selectedTab == 1 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 1)
+
                 TrackView(selectedTab: $selectedTab)
-                    .tag(2)
+                    .opacity(selectedTab == 2 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 2)
+
                 VaultView()
-                    .tag(3)
+                    .opacity(selectedTab == 3 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 3)
+
                 RulesView()
-                    .tag(4)
+                    .opacity(selectedTab == 4 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 4)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .animation(.easeInOut(duration: 0.22), value: selectedTab)
             .ignoresSafeArea()
 
             // ── Centralized Top Header Bar (overlaid above all tab content) ──
@@ -195,7 +204,7 @@ private struct CustomTabBar: View {
                     )
             )
             .shadow(color: Color.black.opacity(0.6), radius: 20, x: 0, y: -4)
-            .ignoresSafeArea(edges: .bottom)
+//            .ignoresSafeArea(edges: .bottom)
         )
     }
 
@@ -206,9 +215,8 @@ private struct CustomTabBar: View {
         let pendingCount = pendingTrips.count
 
         Button {
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
-                selected = index
-            }
+            UISelectionFeedbackGenerator().selectionChanged()
+            selected = index
         } label: {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
@@ -260,9 +268,8 @@ private struct CustomTabBar: View {
         let isLive = trackerState == .activeTracking
 
         Button {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.68)) {
-                selected = 2
-            }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            selected = 2
         } label: {
             VStack(spacing: 3) {
                 ZStack {

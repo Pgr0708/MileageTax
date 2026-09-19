@@ -45,34 +45,82 @@ struct ExportHubView: View {
         }
     }
 
+    // Quick preset chips inside the date range card
+    enum QuickPreset: String, CaseIterable {
+        case lastWeek    = "Last Week"
+        case lastMonth   = "Last Month"
+        case last6M      = "Last 6 Mo"
+        case lastYear    = "Last Year"
+        case ytd         = "YTD"
+
+        func dateRange() -> (start: Date, end: Date) {
+            let now = Date()
+            let cal = Calendar.current
+            switch self {
+            case .lastWeek:
+                return (cal.date(byAdding: .day, value: -7, to: now) ?? now, now)
+            case .lastMonth:
+                return (cal.date(byAdding: .day, value: -30, to: now) ?? now, now)
+            case .last6M:
+                return (cal.date(byAdding: .month, value: -6, to: now) ?? now, now)
+            case .lastYear:
+                return (cal.date(byAdding: .year, value: -1, to: now) ?? now, now)
+            case .ytd:
+                let year = cal.component(.year, from: now)
+                return (cal.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now, now)
+            }
+        }
+    }
+
     @State private var selectedType: ReportType = .taxReport
     @State private var includePersonal = false
     @State private var includeBusiness = true
-    @State private var startDate = Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()), month: 1, day: 1)) ?? Date()
-    @State private var endDate   = Date()
+    @State private var startDate: Date
+    @State private var endDate: Date
     @State private var isExporting = false
     @State private var shareItem: URL? = nil
     @State private var showShareSheet = false
 
+    // Pre-populate dates from VaultView filter
+    init(initialStart: Date? = nil, initialEnd: Date? = nil) {
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let defaultStart = cal.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
+        _startDate = State(initialValue: initialStart ?? defaultStart)
+        _endDate   = State(initialValue: initialEnd   ?? Date())
+    }
+
     private var filteredTrips: [TripEntity] {
         allTrips.filter { trip in
             guard let d = trip.startDate else { return false }
-            let inRange = d >= startDate && d <= endDate
+            let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+            let inRange = d >= startDate && d <= endOfDay
             let classOk = (includeBusiness && trip.classification == "business")
-                       || (includePersonal && trip.classification == "personal")
+                       || (includePersonal  && trip.classification == "personal")
                        || trip.classification == "unclassified"
             return inRange && classOk
         }
     }
 
-    private var businessTrips: [TripEntity] { filteredTrips.filter { $0.classification == "business" } }
-    private var totalMiles: Double { businessTrips.reduce(0) { $0 + $1.totalDistanceMiles } }
-    private var totalDeduction: Double { businessTrips.reduce(0) { $0 + $1.taxDeductionValueUSD } }
+    private var businessTrips: [TripEntity]  { filteredTrips.filter { $0.classification == "business" } }
+    private var totalMiles: Double            { businessTrips.reduce(0) { $0 + $1.totalDistanceMiles } }
+    private var totalDeduction: Double        { businessTrips.reduce(0) { $0 + $1.taxDeductionValueUSD } }
+
+    private var rangeLabelString: String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMM d, yyyy"
+        return "\(fmt.string(from: startDate)) – \(fmt.string(from: endDate))"
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(hex: "#06090E").ignoresSafeArea()
+
+                // Subtle ambient glows
+                RadialGradient(colors: [Color(hex: "#00FF88").opacity(0.06), .clear],
+                               center: .topTrailing, startRadius: 0, endRadius: 300)
+                .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
@@ -121,6 +169,21 @@ struct ExportHubView: View {
 
     private var previewHero: some View {
         VStack(spacing: 8) {
+            // Active date range pill
+            HStack(spacing: 5) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00E5FF"))
+                Text(rangeLabelString)
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Color(hex: "#00E5FF"))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(Color(hex: "#00E5FF").opacity(0.1))
+            .clipShape(Capsule())
+            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
+
             Text(countryLabel)
                 .font(.system(size: 10, weight: .heavy, design: .monospaced))
                 .foregroundStyle(Color(hex: "#00FF88"))
@@ -134,9 +197,18 @@ struct ExportHubView: View {
                     .foregroundStyle(.white)
             }
 
-            Text(String(format: "%.1f %@ • %d business trips", totalMiles, distanceUnit, businessTrips.count))
+            Text(String(format: "%.1f %@ • %d business trip%@",
+                        totalMiles, distanceUnit, businessTrips.count,
+                        businessTrips.count == 1 ? "" : "s"))
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.5))
+
+            if filteredTrips.isEmpty {
+                Text("No trips match this filter")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#F59E0B"))
+                    .padding(.top, 2)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(24)
@@ -149,6 +221,7 @@ struct ExportHubView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color(hex: "#00FF88").opacity(0.25), lineWidth: 1))
+        .animation(.easeInOut(duration: 0.2), value: totalDeduction)
     }
 
     // MARK: - Report Type Picker
@@ -159,43 +232,31 @@ struct ExportHubView: View {
                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .foregroundStyle(Color(hex: "#00FF88"))
 
-            VStack(spacing: 8) {
-                ForEach(ReportType.allCases, id: \.self) { type in
-                    Button { selectedType = type } label: {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(type.color.opacity(0.15))
-                                    .frame(width: 38, height: 38)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(ReportType.allCases, id: \.rawValue) { type in
+                        Button {
+                            selectedType = type
+                        } label: {
+                            HStack(spacing: 6) {
                                 Image(systemName: type.icon)
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(type.color)
+                                    .font(.system(size: 12, weight: .bold))
+                                Text(type.rawValue)
+                                    .font(.system(size: 12, weight: .semibold))
                             }
-                            Text(type.rawValue)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                            Spacer()
-                            if selectedType == type {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(type.color)
-                            }
+                            .foregroundStyle(selectedType == type ? Color(hex: "#06090E") : type.color)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(selectedType == type ? type.color : type.color.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(selectedType == type ? .clear : type.color.opacity(0.3), lineWidth: 1)
+                            )
                         }
-                        .padding(14)
-                        .background(
-                            selectedType == type
-                                ? type.color.opacity(0.08)
-                                : Color(hex: "#0A1018").opacity(0.9)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(
-                                    selectedType == type ? type.color.opacity(0.4) : Color.white.opacity(0.06),
-                                    lineWidth: 1
-                                )
-                        )
+                        .buttonStyle(.plain)
+                        .animation(.easeInOut(duration: 0.15), value: selectedType)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -209,18 +270,66 @@ struct ExportHubView: View {
                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .foregroundStyle(Color(hex: "#00E5FF"))
 
-            VStack(spacing: 12) {
-                DatePicker("Start", selection: $startDate, displayedComponents: .date)
-                    .colorScheme(.dark).tint(Color(hex: "#00FF88"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white)
-                Divider().background(Color.white.opacity(0.08))
-                DatePicker("End", selection: $endDate, displayedComponents: .date)
-                    .colorScheme(.dark).tint(Color(hex: "#00FF88"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white)
+            // Quick preset chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(QuickPreset.allCases, id: \.rawValue) { preset in
+                        Button {
+                            let range = preset.dateRange()
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                startDate = range.start
+                                endDate   = range.end
+                            }
+                        } label: {
+                            Text(preset.rawValue)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color(hex: "#00E5FF"))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color(hex: "#00E5FF").opacity(0.1))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
+                        }
+                    }
+                }
             }
-            .padding(16)
+
+            // Manual date pickers
+            VStack(spacing: 0) {
+                HStack {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                    Text("Start")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                    Spacer()
+                    DatePicker("", selection: $startDate, displayedComponents: .date)
+                        .labelsHidden()
+                        .colorScheme(.dark)
+                        .tint(Color(hex: "#00FF88"))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                Divider().background(Color.white.opacity(0.08))
+
+                HStack {
+                    Image(systemName: "calendar.badge.minus")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color(hex: "#00E5FF"))
+                    Text("End")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                    Spacer()
+                    DatePicker("", selection: $endDate, displayedComponents: .date)
+                        .labelsHidden()
+                        .colorScheme(.dark)
+                        .tint(Color(hex: "#00E5FF"))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
             .background(Color(hex: "#0A1018"))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
@@ -237,7 +346,7 @@ struct ExportHubView: View {
 
             VStack(spacing: 8) {
                 filterRow(label: "Business Trips", color: Color(hex: "#00FF88"), binding: $includeBusiness)
-                filterRow(label: "Personal Trips", color: Color(hex: "#00E5FF"), binding: $includePersonal)
+                filterRow(label: "Personal Trips",  color: Color(hex: "#00E5FF"), binding: $includePersonal)
             }
             .padding(16)
             .background(Color(hex: "#0A1018"))
@@ -261,26 +370,47 @@ struct ExportHubView: View {
 
     private var exportButtons: some View {
         VStack(spacing: 12) {
-            Button { doExport(format: "pdf") } label: {
+            // PDF Export
+            Button {
+                doExport(format: "pdf")
+            } label: {
                 HStack {
-                    Image(systemName: "doc.richtext.fill")
-                    Text("Generate PDF")
+                    if isExporting {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(Color(hex: "#041B12"))
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "doc.richtext.fill")
+                        Text("Export PDF Report")
+                    }
                     Spacer()
-                    if isExporting { ProgressView().tint(.black) }
+                    Text("\(filteredTrips.count) trips")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .opacity(0.7)
                 }
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(hex: "#061A13"))
+                .foregroundStyle(Color(hex: "#041B12"))
                 .padding(16)
                 .background(Color(hex: "#00FF88"))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
             }
             .buttonStyle(.plain)
+            .disabled(isExporting || filteredTrips.isEmpty)
+            .opacity(filteredTrips.isEmpty ? 0.5 : 1.0)
 
-            Button { doExport(format: "csv") } label: {
+            // CSV Export
+            Button {
+                doExport(format: "csv")
+            } label: {
                 HStack {
                     Image(systemName: "tablecells.fill")
                     Text("Export CSV (20 fields)")
+                    Spacer()
+                    Text("\(filteredTrips.count) trips")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .opacity(0.7)
                 }
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "#00E5FF"))
@@ -291,6 +421,19 @@ struct ExportHubView: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#00E5FF").opacity(0.4), lineWidth: 1))
             }
             .buttonStyle(.plain)
+            .disabled(isExporting || filteredTrips.isEmpty)
+            .opacity(filteredTrips.isEmpty ? 0.5 : 1.0)
+
+            if filteredTrips.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Color(hex: "#F59E0B"))
+                    Text("No trips found for this date range and filter")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .padding(.top, 4)
+            }
         }
     }
 
@@ -298,10 +441,12 @@ struct ExportHubView: View {
 
     private func doExport(format: String) {
         isExporting = true
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         DispatchQueue.global(qos: .userInitiated).async {
             let url: URL
             if format == "pdf" {
-                url = ExportEngine.exportPDF(trips: filteredTrips, userName: userName)
+                url = ExportEngine.exportPDF(trips: filteredTrips, userName: userName,
+                                             startDate: startDate, endDate: endDate)
             } else {
                 url = ExportEngine.exportCSV(trips: filteredTrips)
             }
@@ -313,4 +458,3 @@ struct ExportHubView: View {
         }
     }
 }
-

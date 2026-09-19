@@ -8,6 +8,51 @@ import SwiftUI
 import CoreData
 import UIKit
 
+// MARK: - Filter Preset
+
+enum VaultFilterPreset: String, CaseIterable, Identifiable {
+    case lastWeek    = "Last Week"
+    case lastMonth   = "Last Month"
+    case last6Months = "Last 6 Months"
+    case lastYear    = "Last Year"
+    case thisTaxYear = "This Tax Year"
+    case custom      = "Custom Range"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .lastWeek:    return "calendar"
+        case .lastMonth:   return "calendar.badge.clock"
+        case .last6Months: return "chart.bar.xaxis"
+        case .lastYear:    return "calendar.badge.checkmark"
+        case .thisTaxYear: return "dollarsign.circle"
+        case .custom:      return "slider.horizontal.3"
+        }
+    }
+
+    func dateRange(from now: Date = Date()) -> (start: Date, end: Date) {
+        let cal = Calendar.current
+        switch self {
+        case .lastWeek:
+            return (cal.date(byAdding: .day, value: -7, to: now) ?? now, now)
+        case .lastMonth:
+            return (cal.date(byAdding: .day, value: -30, to: now) ?? now, now)
+        case .last6Months:
+            return (cal.date(byAdding: .month, value: -6, to: now) ?? now, now)
+        case .lastYear:
+            return (cal.date(byAdding: .year, value: -1, to: now) ?? now, now)
+        case .thisTaxYear:
+            let year = cal.component(.year, from: now)
+            let jan1 = cal.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
+            return (jan1, now)
+        case .custom:
+            // caller provides custom dates; return full range as fallback
+            return (cal.date(byAdding: .year, value: -10, to: now) ?? now, now)
+        }
+    }
+}
+
 struct VaultView: View {
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
@@ -21,24 +66,59 @@ struct VaultView: View {
     @AppStorage(AppStorageKeys.currencySymbol)    private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
     @AppStorage(AppStorageKeys.distanceUnit)      private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
 
-    @State private var selectedTaxYear: String = "Tax Year 2026"
+    // Filter State
+    @State private var selectedFilter: VaultFilterPreset = .thisTaxYear
+    @State private var customStart: Date = {
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        return cal.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
+    }()
+    @State private var customEnd: Date = Date()
+    @State private var showCustomDateSheet = false
+
+    // Export State
     @State private var showExportShare = false
     @State private var exportURL: URL? = nil
 
-    private var businessTrips: [TripEntity] {
-        allTrips.filter { $0.tripClassification == .business }
+    // MARK: - Computed Filter Range
+
+    private var activeRange: (start: Date, end: Date) {
+        if selectedFilter == .custom {
+            return (customStart, customEnd)
+        }
+        return selectedFilter.dateRange()
+    }
+
+    private var filterLabel: String {
+        if selectedFilter == .custom {
+            let fmt = DateFormatter()
+            fmt.dateFormat = "MMM d"
+            return "\(fmt.string(from: customStart)) – \(fmt.string(from: customEnd))"
+        }
+        return selectedFilter.rawValue
+    }
+
+    // MARK: - Filtered Data
+
+    private var filteredBusinessTrips: [TripEntity] {
+        let (start, end) = activeRange
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: end) ?? end
+        return allTrips.filter {
+            guard $0.tripClassification == .business, let d = $0.startDate else { return false }
+            return d >= start && d <= endOfDay
+        }
     }
 
     private var totalBusinessMiles: Double {
-        businessTrips.reduce(0) { $0 + $1.totalDistanceMiles }
+        filteredBusinessTrips.reduce(0) { $0 + $1.totalDistanceMiles }
     }
 
     private var totalDeductionUSD: Double {
-        businessTrips.reduce(0) { $0 + $1.taxDeductionValueUSD }
+        filteredBusinessTrips.reduce(0) { $0 + $1.taxDeductionValueUSD }
     }
 
     private var totalDrivesCount: Int {
-        businessTrips.count
+        filteredBusinessTrips.count
     }
 
     private var currentQuarterSummary: (miles: Double, deduction: Double, status: QuarterStatus, count: Int) {
@@ -53,7 +133,7 @@ struct VaultView: View {
     }
 
     private var velocityPacingRatio: Double {
-        let targetPerQuarter = 1978.0 // Normalized Q3 target threshold
+        let targetPerQuarter = 1978.0
         return min(1.0, max(0.1, currentQuarterSummary.deduction / targetPerQuarter))
     }
 
@@ -65,7 +145,7 @@ struct VaultView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        // Security & Tax Year Selector Bar
+                        // Security & Filter Selector Bar
                         statusBadgesRow
 
                         // YTD Certified Write-Off Hero Card
@@ -83,7 +163,7 @@ struct VaultView: View {
                         Spacer(minLength: 130)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, Device.topSafeArea + 58) // safe area + header height
+                    .padding(.top, Device.topSafeArea + 58)
                     .frame(maxWidth: .infinity)
                 }
                 .scrollBounceBehavior(.basedOnSize)
@@ -94,6 +174,9 @@ struct VaultView: View {
                     ShareSheet(activityItems: [url])
                 }
             }
+            .sheet(isPresented: $showCustomDateSheet) {
+                customDatePickerSheet
+            }
         }
         .preferredColorScheme(.dark)
         .sheet(item: $selectedVaultTrip) { trip in
@@ -101,8 +184,131 @@ struct VaultView: View {
                 .presentationDetents([.large])
         }
         .sheet(isPresented: $showExportHub) {
-            ExportHubView()
+            ExportHubView(initialStart: activeRange.start, initialEnd: activeRange.end)
                 .presentationDetents([.large])
+        }
+    }
+
+    // MARK: - Custom Date Picker Sheet
+
+    private var customDatePickerSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color(hex: "#06090E").ignoresSafeArea()
+
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 6) {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(Color(hex: "#00E5FF"))
+                        Text("Custom Date Range")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("Filter trips for export and stats")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    .padding(.top, 24)
+
+                    // Quick Presets row
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("QUICK PRESETS")
+                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#00E5FF").opacity(0.7))
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach([VaultFilterPreset.lastWeek, .lastMonth, .last6Months, .lastYear, .thisTaxYear]) { preset in
+                                    Button {
+                                        let range = preset.dateRange()
+                                        customStart = range.start
+                                        customEnd   = range.end
+                                    } label: {
+                                        Text(preset.rawValue)
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundStyle(Color(hex: "#00E5FF"))
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 7)
+                                            .background(Color(hex: "#00E5FF").opacity(0.1))
+                                            .clipShape(Capsule())
+                                            .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.35), lineWidth: 1))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
+                    // Date Pickers
+                    VStack(spacing: 0) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("START")
+                                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.4))
+                                DatePicker("", selection: $customStart, displayedComponents: .date)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
+                                    .tint(Color(hex: "#00FF88"))
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 3) {
+                                Text("END")
+                                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.4))
+                                DatePicker("", selection: $customEnd, displayedComponents: .date)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
+                                    .tint(Color(hex: "#00FF88"))
+                            }
+                        }
+                        .padding(20)
+                        .background(Color(hex: "#0A1018"))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+                    }
+                    .padding(.horizontal, 20)
+
+                    // Preview count
+                    let previewCount = allTrips.filter {
+                        guard $0.tripClassification == .business, let d = $0.startDate else { return false }
+                        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: customEnd) ?? customEnd
+                        return d >= customStart && d <= endOfDay
+                    }.count
+
+                    Text("\(previewCount) business trip\(previewCount == 1 ? "" : "s") in range")
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .padding(.top, 4)
+
+                    Spacer()
+
+                    // Apply button
+                    Button {
+                        selectedFilter = .custom
+                        showCustomDateSheet = false
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Apply Filter")
+                        }
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "#041B12"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
+                                           startPoint: .leading, endPoint: .trailing)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 12, y: 4)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
+                }
+            }
+            .navigationBarHidden(true)
         }
     }
 
@@ -150,7 +356,7 @@ struct VaultView: View {
         }
     }
 
-    // MARK: - Status Badges Row
+    // MARK: - Status Badges Row (with Rich Filter Menu)
 
     private var statusBadgesRow: some View {
         HStack {
@@ -178,20 +384,37 @@ struct VaultView: View {
 
             Spacer()
 
-            // Right: Tax Year Selector
+            // Right: Rich Filter Menu
             Menu {
-                Button("Tax Year 2026") { selectedTaxYear = "Tax Year 2026" }
-                Button("Tax Year 2025") { selectedTaxYear = "Tax Year 2025" }
-                Button("Tax Year 2024") { selectedTaxYear = "Tax Year 2024" }
+                ForEach(VaultFilterPreset.allCases) { preset in
+                    if preset == .custom {
+                        Button {
+                            showCustomDateSheet = true
+                        } label: {
+                            Label(preset.rawValue, systemImage: preset.icon)
+                        }
+                    } else {
+                        Button {
+                            selectedFilter = preset
+                        } label: {
+                            Label {
+                                Text(preset.rawValue)
+                            } icon: {
+                                Image(systemName: selectedFilter == preset ? "checkmark" : preset.icon)
+                            }
+                        }
+                    }
+                }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "calendar")
+                    Image(systemName: selectedFilter.icon)
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
-                    Text(selectedTaxYear)
+                    Text(filterLabel)
                         .font(.system(size: 10.5, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
 
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
@@ -794,7 +1017,7 @@ struct VaultView: View {
 
                     // Export CSV Button (Bright Glowing Electric Cyan, Clear and High Contrast)
                     Button {
-                        exportURL = ExportEngine.exportCSV(trips: businessTrips)
+                        exportURL = ExportEngine.exportCSV(trips: filteredBusinessTrips)
                         showExportShare = true
                     } label: {
                         HStack(spacing: 6) {

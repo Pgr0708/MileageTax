@@ -59,26 +59,26 @@ struct OnBoardingScreenView: View {
         ZStack {
             Color(hex: "#06090E").ignoresSafeArea()
             GeometryReader { geo in
+                let topSafe = max(geo.safeAreaInsets.top, 50)
                 ZStack(alignment: .bottom) {
-                    // Hero image
+                    // Hero image with safe area headroom so logos never get cut off
                     Image(slide.imageName)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.height * 0.65)
-                        .scaleEffect(imageScale)
+                        .frame(width: geo.size.width, height: geo.size.height * 0.62)
                         .clipped()
                         .frame(maxHeight: .infinity, alignment: .top)
-                        .ignoresSafeArea(edges: .top)
-                        .animation(.easeInOut(duration: 0.5), value: currentPage)
+                        .padding(.top, topSafe + 6)
+                        .animation(.easeInOut(duration: 0.4), value: currentPage)
 
-                    // Gradient overlay
+                    // Gradient overlay fading seamlessly into background
                     VStack {
                         Spacer()
                         LinearGradient(
                             stops: [
                                 .init(color: .clear, location: 0),
-                                .init(color: Color(hex: "#06090E").opacity(0.5), location: 0.35),
-                                .init(color: Color(hex: "#06090E").opacity(0.92), location: 0.6),
+                                .init(color: Color(hex: "#06090E").opacity(0.45), location: 0.3),
+                                .init(color: Color(hex: "#06090E").opacity(0.92), location: 0.58),
                                 .init(color: Color(hex: "#06090E"), location: 0.75)
                             ],
                             startPoint: .top, endPoint: .bottom
@@ -182,14 +182,17 @@ struct OnBoardingScreenView: View {
                     Spacer()
                     Button { finish() } label: {
                         Text("Skip")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 9)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color(hex: "#06090E").opacity(0.65))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().strokeBorder(Color.white.opacity(0.2), lineWidth: 1))
                     }
                 }
-                .padding(.top, 56)
-                .padding(.trailing, 4)
+                .padding(.top, max(Device.topSafeArea, 50) + 8)
+                .padding(.trailing, 16)
                 Spacer()
             }
         }

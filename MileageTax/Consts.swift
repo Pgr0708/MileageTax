@@ -5,4 +5,4 @@
 //  Created by Minaxi on 16/08/26.
 //
 
-let revenueCatAPIKey = "........................"
+let revenueCatAPIKey = "appl_ROMQBjhJfloHvbgLtaUvSjnmAjt"

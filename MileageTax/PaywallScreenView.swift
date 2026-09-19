@@ -5,14 +5,17 @@
 
 import SwiftUI
 import RevenueCat
+import SafariServices
 
 struct PaywallScreenView: View {
+    @Environment(\.dismiss) private var dismiss
     @AppStorage(AppStorageKeys.hasSeenPaywall) private var hasSeenPaywall = false
     @StateObject private var vm = ProViewModel()
     @State private var counterValue: Double = 0
     @State private var heroScale: CGFloat = 0.92
     @State private var heroOpacity: Double = 0
     @State private var featuresVisible = false
+    @State private var safariURL: URL? = nil
     @State private var showRestoreAlert = false
     @State private var restoreMessage = ""
 
@@ -33,6 +36,27 @@ struct PaywallScreenView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
+                    // Top Bar with Scrollable Dismiss Button (scrolls with content, not in ZStack)
+                    HStack {
+                        Spacer()
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                hasSeenPaywall = true
+                                dismiss()
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.85))
+                                .frame(width: 34, height: 34)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
+                                .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.top, max(Device.topSafeArea, 50) + 4)
+                    }
+
                     heroSection
                     savingsCounter
                     plansSection
@@ -52,7 +76,7 @@ struct PaywallScreenView: View {
                             .progressViewStyle(.circular)
                             .tint(Color(hex: "#00FF88"))
                             .scaleEffect(1.5)
-                        Text("Processing...")
+                        Text("Connecting...")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.7))
                     }
@@ -79,6 +103,12 @@ struct PaywallScreenView: View {
         } message: {
             Text(restoreMessage)
         }
+        .sheet(item: Binding(
+            get: { safariURL.map { IdentifiableURL(url: $0) } },
+            set: { safariURL = $0?.url }
+        )) { idUrl in
+            SafariView(url: idUrl.url)
+        }
     }
 
     // MARK: - Hero
@@ -89,7 +119,7 @@ struct PaywallScreenView: View {
                            center: .center, startRadius: 10, endRadius: 220)
                 .frame(height: 280)
 
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 // PRO badge
                 HStack(spacing: 6) {
                     Image(systemName: "bolt.fill")
@@ -105,7 +135,7 @@ struct PaywallScreenView: View {
                                    startPoint: .leading, endPoint: .trailing)
                 )
                 .clipShape(Capsule())
-                .padding(.top, 60)
+                .padding(.top, 8)
 
                 // Animated speedometer icon
                 ZStack {
@@ -188,7 +218,7 @@ struct PaywallScreenView: View {
         )
     }
 
-    // MARK: - Plans Section
+    // MARK: - Plans Section (strictly loaded from RevenueCat PaywallViewModel)
     private var plansSection: some View {
         VStack(spacing: 12) {
             Text("CHOOSE YOUR PLAN")
@@ -196,8 +226,8 @@ struct PaywallScreenView: View {
                 .foregroundStyle(.white.opacity(0.4))
                 .padding(.top, 24)
 
-            if vm.allPackages.isEmpty {
-                // Skeleton placeholders
+            if vm.isLoading && vm.allPackages.isEmpty {
+                // Shimmering skeleton while RevenueCat loads
                 ForEach(0..<3) { _ in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color(hex: "#0E1622"))
@@ -205,7 +235,47 @@ struct PaywallScreenView: View {
                         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.06)))
                         .redacted(reason: .placeholder)
                 }
+            } else if vm.allPackages.isEmpty {
+                // Empty state when RevenueCat has no packages returned
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 26))
+                        .foregroundStyle(Color(hex: "#00FF88"))
+
+                    Text("No Plans Available")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Text("Unable to load subscription plans from RevenueCat. Please check your network or RevenueCat offering configuration.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+
+                    Button {
+                        vm.getOffering()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Retry")
+                                .font(.system(size: 13, weight: .bold))
+                        }
+                        .foregroundStyle(Color(hex: "#06090E"))
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 8)
+                        .background(Color(hex: "#00FF88"))
+                        .clipShape(Capsule())
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity)
+                .background(Color(hex: "#0A1018").opacity(0.8))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.08)))
             } else {
+                // Live packages loaded from RevenueCat ProViewModel
                 ForEach(vm.allPackages, id: \.identifier) { pkg in
                     planTile(pkg)
                 }
@@ -213,7 +283,10 @@ struct PaywallScreenView: View {
 
             // Purchase CTA
             Button {
-                vm.makePurchases { hasSeenPaywall = true }
+                vm.makePurchases {
+                    hasSeenPaywall = true
+                    dismiss()
+                }
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "bolt.fill")
@@ -232,6 +305,8 @@ struct PaywallScreenView: View {
                 .shadow(color: Color(hex: "#00E5FF").opacity(0.5), radius: 16, y: 6)
             }
             .buttonStyle(.plain)
+            .disabled(vm.selectedPackage == nil || vm.isLoading)
+            .opacity(vm.selectedPackage == nil ? 0.6 : 1.0)
             .padding(.top, 4)
         }
         .padding(.horizontal, 24)
@@ -389,29 +464,51 @@ struct PaywallScreenView: View {
 
     // MARK: - Legal Footer
     private var legalFooter: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 14) {
             Button {
-                vm.restorePurchases { hasSeenPaywall = true }
+                if Purchases.isConfigured {
+                    vm.restorePurchases {
+                        hasSeenPaywall = true
+                        dismiss()
+                    }
+                } else {
+                    restoreMessage = "RevenueCat is not configured. Purchase restoration is available when connected to App Store Connect."
+                    showRestoreAlert = true
+                }
             } label: {
                 Text("Restore Purchases")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color(hex: "#00E5FF"))
             }
 
-            Button { hasSeenPaywall = true } label: {
-                Text("Continue with Free Version")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.35))
+            HStack(spacing: 16) {
+                Button("Privacy Policy") { safariURL = URL(string: "https://mileagetax.app/privacy") }
+                Text("•").foregroundStyle(.white.opacity(0.2))
+                Button("Terms of Service") { safariURL = URL(string: "https://mileagetax.app/terms") }
             }
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white.opacity(0.4))
 
             Text("Subscriptions auto-renew unless cancelled 24h before renewal. Prices may vary by region.")
                 .font(.system(size: 10, weight: .regular))
                 .foregroundStyle(.white.opacity(0.25))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-                .padding(.top, 4)
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 20)
+        .padding(.bottom, 24)
     }
+}
+
+struct IdentifiableURL: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
