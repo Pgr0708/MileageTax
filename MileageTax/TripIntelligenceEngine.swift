@@ -572,7 +572,15 @@ final class TripTrackerService: NSObject, ObservableObject {
         scheduleNextHeartbeat()
     }
 
+    /// Pause/stop radar. Must be called on main thread.
+    /// Safe to call from UI — will not interrupt an in-progress trip finalization.
+    @MainActor
     func stop() {
+        // Never interrupt an active finalization — the async Task will complete and transition itself
+        guard state != .tripFinalizing else {
+            tripLogger.notice("stop() called during tripFinalizing — ignoring to prevent race condition.")
+            return
+        }
         motionActivityManager.stopActivityUpdates()
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
@@ -581,6 +589,21 @@ final class TripTrackerService: NSObject, ObservableObject {
         idleBufferWorkItem?.cancel()
         verifyingMotionWorkItem?.cancel()
         transition(to: .dormant)
+    }
+
+    /// Resumes background monitoring after a pause (restarts significant location + geofence).
+    @MainActor
+    func resumeAfterPause() {
+        guard state == .dormant else { return }
+        locationManager.startMonitoringSignificantLocationChanges()
+        if CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) {
+            locationManager.startMonitoringVisits()
+        }
+        if let last = lastKnownAnyLocation ?? lastValidLocation {
+            rearmStationaryGeofence(at: last.coordinate)
+        }
+        startMonitoringMotionActivity()
+        tripLogger.notice("Radar resumed by user.")
     }
 
 

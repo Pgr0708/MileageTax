@@ -16,27 +16,27 @@ private struct OnboardSlide: Identifiable {
 }
 
 private let slides: [OnboardSlide] = [
-    OnboardSlide(id: 0, imageName: "onboard_slide1",
+    OnboardSlide(id: 0, imageName: "onboarding_1",
                  badge: "IRS §162 COMPLIANT", badgeIcon: "checkmark.shield.fill",
                  title: "Every Mile\nMeans Money",
                  subtitle: "The IRS pays you $0.67 per business mile. Most drivers miss thousands every year. Not anymore.",
                  accentHex: "#00FF88"),
-    OnboardSlide(id: 1, imageName: "onboard_slide2",
+    OnboardSlide(id: 1, imageName: "onboarding_2",
                  badge: "KALMAN FILTER GPS", badgeIcon: "location.viewfinder",
                  title: "GPS So Precise\nIt's Scary",
                  subtitle: "Military-grade Kalman filtering locks your route to ±5 meters. Every turn. Every block. Perfectly captured.",
                  accentHex: "#00E5FF"),
-    OnboardSlide(id: 2, imageName: "onboard_slide3",
+    OnboardSlide(id: 2, imageName: "onboarding_3",
                  badge: "COREMOTION RADAR", badgeIcon: "antenna.radiowaves.left.and.right",
                  title: "Detects Your Drive\nAutomatically",
                  subtitle: "Our 7-layer intelligence engine knows you're driving before you even buckle up. Zero effort required.",
                  accentHex: "#00FF88"),
-    OnboardSlide(id: 3, imageName: "onboard_slide4",
+    OnboardSlide(id: 3, imageName: "onboarding_4",
                  badge: "IRS AUDIT SHIELD", badgeIcon: "building.columns.fill",
                  title: "Never Lose\na Deduction Again",
                  subtitle: "Every trip is timestamped, geocoded, and IRS §274 validated. Your vault is airtight.",
                  accentHex: "#FFD700"),
-    OnboardSlide(id: 4, imageName: "onboard_slide5",
+    OnboardSlide(id: 4, imageName: "onboarding_5",
                  badge: "100% ON-DEVICE", badgeIcon: "lock.shield.fill",
                  title: "Your Data\nNever Leaves",
                  subtitle: "No cloud. No servers. No tracking. Your routes, addresses, and earnings stay locked on your iPhone.",
@@ -61,14 +61,13 @@ struct OnBoardingScreenView: View {
             GeometryReader { geo in
                 let topSafe = max(geo.safeAreaInsets.top, 50)
                 ZStack(alignment: .bottom) {
-                    // Hero image with safe area headroom so logos never get cut off
+                    // Hero image fitting perfectly without being cut
                     Image(slide.imageName)
                         .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.height * 0.62)
-                        .clipped()
+                        .scaledToFit()
+                        .frame(width: geo.size.width)
                         .frame(maxHeight: .infinity, alignment: .top)
-                        .padding(.top, topSafe + 6)
+                        .padding(.top, max(geo.safeAreaInsets.top, 20))
                         .animation(.easeInOut(duration: 0.4), value: currentPage)
 
                     // Gradient overlay fading seamlessly into background
@@ -176,7 +175,7 @@ struct OnBoardingScreenView: View {
                     }
             )
 
-            // Skip button
+            // Skip button — hidden on last slide
             VStack {
                 HStack {
                     Spacer()
@@ -190,9 +189,11 @@ struct OnBoardingScreenView: View {
                             .clipShape(Capsule())
                             .overlay(Capsule().strokeBorder(Color.white.opacity(0.2), lineWidth: 1))
                     }
+                    .opacity(currentPage == slides.count - 1 ? 0 : 1)
+                    .disabled(currentPage == slides.count - 1)
                 }
-                .padding(.top, max(Device.topSafeArea, 50) + 8)
-                .padding(.trailing, 16)
+                .padding(.top, 16)
+                .padding(.trailing, 24)
                 Spacer()
             }
         }

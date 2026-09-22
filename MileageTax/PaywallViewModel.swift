@@ -49,8 +49,11 @@ final class ProViewModel: BaseViewModel {
         }
     }
 
-    func restorePurchases(completion: @escaping () -> ()) {
-        guard Purchases.isConfigured else { return }
+    func restorePurchases(completion: @escaping (Bool) -> ()) {
+        guard Purchases.isConfigured else { 
+            completion(false)
+            return 
+        }
         startLoading()
         Purchases.shared.restorePurchases { [weak self] (customerInfo, error) in
             guard let self = self else { return }
@@ -58,7 +61,9 @@ final class ProViewModel: BaseViewModel {
                 self.checkUserIsPro(customerInfo: customerInfo)
                 self.stopLoading()
                 if self.isPro {
-                    completion()
+                    completion(true)
+                } else {
+                    completion(false)
                 }
             }
         }

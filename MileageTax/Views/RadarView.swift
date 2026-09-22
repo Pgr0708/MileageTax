@@ -39,6 +39,51 @@ struct RadarView: View {
         trips.filter { $0.needsReview }.reduce(0) { $0 + $1.taxDeductionValueUSD }
     }
 
+    // Quarter helper
+    private func quarter(of date: Date) -> Int {
+        Calendar.current.component(.month, from: date).quotientAndRemainder(dividingBy: 3).0
+    }
+    private func year(of date: Date) -> Int {
+        Calendar.current.component(.year, from: date)
+    }
+    private var currentQuarterDeduction: Double {
+        let now = Date()
+        let q = quarter(of: now); let y = year(of: now)
+        return trips.filter {
+            guard let d = $0.startDate else { return false }
+            return $0.tripClassification == .business && quarter(of: d) == q && year(of: d) == y
+        }.reduce(0) { $0 + $1.taxDeductionValueUSD }
+    }
+    private var previousQuarterDeduction: Double {
+        let now = Date()
+        let cal = Calendar.current
+        guard let prevQ = cal.date(byAdding: .month, value: -3, to: now) else { return 0 }
+        let q = quarter(of: prevQ); let y = year(of: prevQ)
+        return trips.filter {
+            guard let d = $0.startDate else { return false }
+            return $0.tripClassification == .business && quarter(of: d) == q && year(of: d) == y
+        }.reduce(0) { $0 + $1.taxDeductionValueUSD }
+    }
+    /// e.g. "+18.4%" or "-3.2%" or "N/A (no prior Q data)"
+    private var quarterGrowthLabel: String {
+        guard previousQuarterDeduction > 0 else {
+            return currentQuarterDeduction > 0 ? "New High" : "No Data"
+        }
+        let pct = ((currentQuarterDeduction - previousQuarterDeduction) / previousQuarterDeduction) * 100
+        return String(format: "%+.1f%%", pct)
+    }
+    private var quarterGrowthPositive: Bool {
+        previousQuarterDeduction == 0 ? currentQuarterDeduction > 0 :
+            currentQuarterDeduction >= previousQuarterDeduction
+    }
+    /// Label for the comparison quarter, e.g. "Q3", "Q2"
+    private var prevQuarterLabel: String {
+        let cal = Calendar.current
+        guard let prevQ = cal.date(byAdding: .month, value: -3, to: Date()) else { return "Prev" }
+        let q = quarter(of: prevQ)  // 0-based: 0=Q1, 1=Q2, 2=Q3, 3=Q4
+        return "Q\(q + 1)"
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -183,27 +228,30 @@ struct RadarView: View {
 
                 Spacer()
 
-                // +18.4% vs Q3 Pill
+                // Dynamic growth vs previous quarter pill
+                let growthColor = quarterGrowthPositive ? Color(hex: "#00FF88") : Color(hex: "#FF4444")
+                let pillBg = quarterGrowthPositive ? Color(hex: "#06221A") : Color(hex: "#220606")
+                let arrowIcon = quarterGrowthPositive ? "arrow.up.right" : "arrow.down.right"
                 HStack(spacing: 5) {
                     VStack(alignment: .trailing, spacing: 1) {
-                        Text("+18.4% vs")
+                        Text(quarterGrowthLabel + " vs")
                             .font(.system(size: 11, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("Q3")
+                            .foregroundStyle(growthColor)
+                        Text(prevQuarterLabel)
                             .font(.system(size: 10, weight: .heavy))
-                            .foregroundStyle(Color(hex: "#00FF88").opacity(0.85))
+                            .foregroundStyle(growthColor.opacity(0.85))
                     }
 
-                    Image(systemName: "arrow.up.right")
+                    Image(systemName: arrowIcon)
                         .font(.system(size: 13, weight: .black))
-                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .foregroundStyle(growthColor)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color(hex: "#06221A").opacity(0.85))
+                .background(pillBg.opacity(0.85))
                 .clipShape(Capsule())
                 .overlay(
-                    Capsule().strokeBorder(Color(hex: "#00FF88").opacity(0.35), lineWidth: 1)
+                    Capsule().strokeBorder(growthColor.opacity(0.35), lineWidth: 1)
                 )
             }
 
@@ -547,9 +595,13 @@ struct RadarView: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     isRadarPaused.toggle()
                 }
-                // Pause = stop tracking; resume = re-enable location updates via AppLifecycle
-                if isRadarPaused {
-                    tracker.stop()
+                // Route through Task to ensure @MainActor isolation is respected
+                Task { @MainActor in
+                    if isRadarPaused {
+                        tracker.stop()
+                    } else {
+                        tracker.resumeAfterPause()
+                    }
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -574,9 +626,11 @@ struct RadarView: View {
 
             // End & Classify Button (Primary Glowing Neon Emerald)
             Button {
-                if tracker.state == .activeTracking {
-                    tracker.stop()
-                    selectedTab?.wrappedValue = 1
+                if tracker.state == .activeTracking || tracker.state == .idleBuffer {
+                    Task { @MainActor in
+                        tracker.stop()
+                        selectedTab?.wrappedValue = 1
+                    }
                 }
             } label: {
                 HStack(spacing: 8) {

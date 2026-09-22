@@ -32,15 +32,23 @@ struct SharedHeaderBar: View {
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
 
-                    Image(systemName: "m.circle.fill")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    if let icon = Bundle.main.appIcon {
+                        Image(uiImage: icon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    } else {
+                        Image(systemName: "m.circle.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

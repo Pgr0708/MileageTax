@@ -36,27 +36,6 @@ struct PaywallScreenView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    // Top Bar with Scrollable Dismiss Button (scrolls with content, not in ZStack)
-                    HStack {
-                        Spacer()
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                hasSeenPaywall = true
-                                dismiss()
-                            }
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.85))
-                                .frame(width: 34, height: 34)
-                                .background(Color.white.opacity(0.12))
-                                .clipShape(Circle())
-                                .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
-                        }
-                        .padding(.trailing, 20)
-                        .padding(.top, max(Device.topSafeArea, 50) + 4)
-                    }
-
                     heroSection
                     savingsCounter
                     plansSection
@@ -65,6 +44,30 @@ struct PaywallScreenView: View {
                     legalFooter
                     Spacer().frame(height: 40)
                 }
+            }
+
+            // Dismiss button overlay
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            hasSeenPaywall = true
+                            dismiss()
+                        }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                            .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.top, 16)
+                }
+                Spacer()
             }
 
             // Loading overlay
@@ -113,11 +116,11 @@ struct PaywallScreenView: View {
 
     // MARK: - Hero
     private var heroSection: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             // Background glow
-            RadialGradient(colors: [Color(hex: "#00FF88").opacity(0.18), .clear],
-                           center: .center, startRadius: 10, endRadius: 220)
-                .frame(height: 280)
+            RadialGradient(colors: [Color(hex: "#00FF88").opacity(0.12), .clear],
+                           center: .top, startRadius: 10, endRadius: 160)
+                .frame(height: 180)
 
             VStack(spacing: 8) {
                 // PRO badge
@@ -135,7 +138,6 @@ struct PaywallScreenView: View {
                                    startPoint: .leading, endPoint: .trailing)
                 )
                 .clipShape(Capsule())
-                .padding(.top, 8)
 
                 // Animated speedometer icon
                 ZStack {
@@ -467,9 +469,14 @@ struct PaywallScreenView: View {
         VStack(spacing: 14) {
             Button {
                 if Purchases.isConfigured {
-                    vm.restorePurchases {
-                        hasSeenPaywall = true
-                        dismiss()
+                    vm.restorePurchases { success in
+                        if success {
+                            hasSeenPaywall = true
+                            dismiss()
+                        } else {
+                            restoreMessage = "No active subscription found to restore. Please select a plan or ensure your Apple ID is correct."
+                            showRestoreAlert = true
+                        }
                     }
                 } else {
                     restoreMessage = "RevenueCat is not configured. Purchase restoration is available when connected to App Store Connect."

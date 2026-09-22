@@ -107,8 +107,7 @@ struct CustomizationScreenView: View {
                 ZStack {
                     if step == 0 { step0ProfileSetup }
                     if step == 1 { step1CountryPicker }
-                    if step == 2 { step2DistanceCurrency }
-                    if step == 3 { step3Preferences }
+                    if step == 2 { step3Preferences }
                 }
                 .opacity(stepOpacity)
                 .offset(y: stepOffset)
@@ -126,10 +125,10 @@ struct CustomizationScreenView: View {
     private var headerBar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(["Who Are You?", "Your Location & Tax Rate", "Distance & Currency", "Driving Preferences"][step])
+                Text(["Who Are You?", "Your Location & Tax Rate", "Driving Preferences"][step])
                     .font(.system(size: 20, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
-                Text("Step \(step + 1) of 4")
+                Text("Step \(step + 1) of 3")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.4))
             }
@@ -139,6 +138,7 @@ struct CustomizationScreenView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.35))
             }
+            .opacity(step == 2 ? 0 : 1)
         }
         .padding(.horizontal, 24)
         .padding(.top, 60)
@@ -148,7 +148,7 @@ struct CustomizationScreenView: View {
     // MARK: - Step Indicator
     private var stepIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(0..<4) { i in
+            ForEach(0..<3) { i in
                 Capsule()
                     .fill(i <= step ? Color(hex: "#00FF88") : Color.white.opacity(0.12))
                     .frame(height: 4)
@@ -314,49 +314,137 @@ struct CustomizationScreenView: View {
 
     private func countryRow(_ country: CountryPreset) -> some View {
         let isSelected = selectedCountry?.id == country.id
-        return Button {
-            withAnimation(.spring(response: 0.3)) { selectedCountry = country }
-        } label: {
-            HStack(spacing: 14) {
-                Text(country.flag)
-                    .font(.system(size: 26))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(country.name)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Text(country.label)
-                        .font(.system(size: 10.5, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.45))
+        return VStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.3)) {
+                    selectedCountry = country
+                    irsRate = country.rate
+                    currencySymbol = country.currency
+                    distanceUnit = country.unit
+                    customRate = country.rate
+                    countryTaxLabel = country.label
                 }
+            } label: {
+                HStack(spacing: 12) {
+                    Text(country.flag)
+                        .font(.system(size: 24))
+                        .frame(width: 34)
 
-                Spacer()
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(country.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                        Text(country.label)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.45))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .trailing, spacing: 1) {
                     Text(String(format: "%@%.3f/%@", country.currency, country.rate, country.unit))
-                        .font(.system(size: 11.5, weight: .black, design: .monospaced))
-                        .foregroundStyle(isSelected ? Color(hex: "#00FF88") : .white.opacity(0.6))
-                }
+                        .font(.system(size: 11, weight: .black, design: .monospaced))
+                        .foregroundStyle(isSelected ? Color(hex: "#00FF88") : .white.opacity(0.5))
+                        .lineLimit(1)
 
-                ZStack {
-                    Circle()
-                        .strokeBorder(isSelected ? Color(hex: "#00FF88") : Color.white.opacity(0.2), lineWidth: 2)
-                        .frame(width: 20, height: 20)
-                    if isSelected {
-                        Circle().fill(Color(hex: "#00FF88")).frame(width: 10, height: 10)
+                    ZStack {
+                        Circle()
+                            .strokeBorder(isSelected ? Color(hex: "#00FF88") : Color.white.opacity(0.2), lineWidth: 2)
+                            .frame(width: 20, height: 20)
+                        if isSelected {
+                            Circle().fill(Color(hex: "#00FF88")).frame(width: 10, height: 10)
+                        }
                     }
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(Color(hex: isSelected ? "#0D2218" : "#0A1018"))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(isSelected ? Color(hex: "#00FF88").opacity(0.5) : Color.white.opacity(0.06), lineWidth: isSelected ? 1.5 : 1)
-            )
+            .buttonStyle(.plain)
+
+            if isSelected {
+                Rectangle()
+                    .fill(Color(hex: "#00FF88").opacity(0.18))
+                    .frame(height: 1)
+
+                HStack(spacing: 10) {
+                    // CURRENCY
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("CURRENCY")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.4))
+                        Menu {
+                            ForEach(["$", "£", "€", "₹", "¥", "A$", "CA$", "S$", "CHF", "kr", "R", "R$", "AED", "₩"], id: \.self) { sym in
+                                Button(sym) { currencySymbol = sym }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(currencySymbol)
+                                    .font(.system(size: 15, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color(hex: "#00FF88"))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 7))
+                                    .foregroundStyle(.white.opacity(0.4))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 7)
+                            .background(Color.black.opacity(0.35))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+
+                    // UNIT
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("UNIT")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.4))
+                        Menu {
+                            Button("mi") { distanceUnit = "mi" }
+                            Button("km") { distanceUnit = "km" }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(distanceUnit)
+                                    .font(.system(size: 15, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color(hex: "#00E5FF"))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 7))
+                                    .foregroundStyle(.white.opacity(0.4))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 7)
+                            .background(Color.black.opacity(0.35))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+
+                    // RATE
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("RATE")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.4))
+                        TextField("0.00", value: $customRate, format: .number)
+                            .font(.system(size: 15, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.center)
+                            .padding(.vertical, 7)
+                            .background(Color.black.opacity(0.35))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .onChange(of: customRate) { newVal in irsRate = newVal }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+            }
         }
-        .buttonStyle(.plain)
+        .background(Color(hex: isSelected ? "#0D2218" : "#0A1018"))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(
+                    isSelected ? Color(hex: "#00FF88").opacity(0.5) : Color.white.opacity(0.06),
+                    lineWidth: isSelected ? 1.5 : 1
+                )
+        )
     }
 
     // MARK: - Step 2: Distance & Currency
@@ -373,12 +461,11 @@ struct CustomizationScreenView: View {
                         .fill(Color(hex: "#0E1622"))
                         .frame(height: 64)
 
-                    // Sliding car
-                    Image(systemName: "car.fill")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(Color(hex: "#00FF88"))
-                        .padding(.leading, distanceUnit == "mi" ? 24 : nil)
-                        .padding(.trailing, distanceUnit == "km" ? 24 : nil)
+                    // Sliding pill background
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(hex: "#00FF88").opacity(0.15))
+                        .padding(6)
+                        .frame(width: UIScreen.main.bounds.width / 2 - 24)
                         .frame(maxWidth: .infinity, alignment: distanceUnit == "mi" ? .leading : .trailing)
                         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: distanceUnit)
 
@@ -565,7 +652,7 @@ struct CustomizationScreenView: View {
             }
 
             Button {
-                if step < 3 {
+                if step < 2 {
                     applyStepSettings()
                     withAnimation(.spring(response: 0.4)) { step += 1 }
                 } else {
@@ -579,9 +666,9 @@ struct CustomizationScreenView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text(step == 3 ? "Start Tracking" : "Next")
+                    Text(step == 2 ? "Start Tracking" : "Next")
                         .font(.system(size: 16, weight: .heavy, design: .rounded))
-                    Image(systemName: step == 3 ? "arrow.up.right" : "chevron.right")
+                    Image(systemName: step == 2 ? "arrow.up.right" : "chevron.right")
                         .font(.system(size: 13, weight: .black))
                 }
                 .foregroundStyle(Color(hex: "#06090E"))
