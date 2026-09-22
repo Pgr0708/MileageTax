@@ -241,6 +241,11 @@ struct CustomizationScreenView: View {
                             .foregroundStyle(.white)
                             .tint(Color(hex: "#00FF88"))
                             .submitLabel(.done)
+                            .onChange(of: userName) { _, newVal in
+                                if newVal.count > 10 {
+                                    userName = String(newVal.prefix(10))
+                                }
+                            }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)

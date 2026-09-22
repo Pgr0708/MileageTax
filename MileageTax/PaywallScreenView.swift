@@ -489,9 +489,9 @@ struct PaywallScreenView: View {
             }
 
             HStack(spacing: 16) {
-                Button("Privacy Policy") { safariURL = URL(string: "https://mileagetax.app/privacy") }
+                Button("Privacy Policy") { safariURL = URL(string: "https://sites.google.com/view/inovexa/privacy-policy") }
                 Text("•").foregroundStyle(.white.opacity(0.2))
-                Button("Terms of Service") { safariURL = URL(string: "https://mileagetax.app/terms") }
+                Button("Terms of Service") { safariURL = URL(string: "https://sites.google.com/view/inovexa/terms-and-conditions") }
             }
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(.white.opacity(0.4))

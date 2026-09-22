@@ -11,6 +11,7 @@ import StoreKit
 struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.openURL) private var openURL
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
@@ -95,18 +96,15 @@ struct ProfileView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .sheet(isPresented: $showSafariSheet) {
-            if let url = showSafariURL {
-                SafariView(url: url)
-                    .ignoresSafeArea()
-            }
-        }
+        // Safari links now use @Environment(\.openURL) directly
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showEditProfile, onDismiss: {
             profilePhotoData = UserDefaults.standard.data(forKey: "MT_userPhotoData")
         }) {
             EditProfileSheet(profilePhotoData: $profilePhotoData)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
@@ -187,49 +185,58 @@ struct ProfileView: View {
                 // Avatar Photo — real photo if available, else placeholder
                 Button { showEditProfile = true } label: {
                     ZStack {
+                        // Inner content clipped to circle
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(hex: "#102028"), Color(hex: "#0C121A")],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(width: 92, height: 92)
+
+                            if let data = profilePhotoData, let img = UIImage(data: data) {
+                                Image(uiImage: img)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 92, height: 92)
+                                    .clipShape(Circle())
+                            } else {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 86, height: 86)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [Color(hex: "#00E5FF").opacity(0.9), Color(hex: "#00FF88").opacity(0.9)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                        }
+                        .clipShape(Circle())
+
+                        // Camera badge — sits OUTSIDE clipped group, always fully visible
                         Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(hex: "#102028"), Color(hex: "#0C121A")],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00B8CC")],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 92, height: 92)
-
-                        if let data = profilePhotoData, let img = UIImage(data: data) {
-                            Image(uiImage: img)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 92, height: 92)
-                                .clipShape(Circle())
-                        } else {
-                            Image(systemName: "person.crop.circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 86, height: 86)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color(hex: "#00E5FF").opacity(0.9), Color(hex: "#00FF88").opacity(0.9)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                        }
-
-                        // Camera badge
-                        Circle()
-                            .fill(Color(hex: "#00E5FF"))
-                            .frame(width: 24, height: 24)
+                            .frame(width: 28, height: 28)
                             .overlay(
                                 Image(systemName: "camera.fill")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(Color(hex: "#041620"))
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(.white)
                             )
-                            .offset(x: 30, y: 30)
+                            .shadow(color: Color(hex: "#00E5FF").opacity(0.6), radius: 6)
+                            .offset(x: 32, y: 32)
                     }
                 }
-                .clipShape(Circle())
 
 
             }
@@ -602,7 +609,7 @@ struct ProfileView: View {
             supportRow(icon: "bubble.left.and.bubble.right.fill", iconColor: "#00E5FF",
                        title: "Support & Feedback",
                        subtitle: "We respond within 24 hours") {
-                if let url = URL(string: "mailto:support@mileagetax.app") {
+                if let url = URL(string: "mailto:support@inovexa.com") {
                     UIApplication.shared.open(url)
                 }
             }
@@ -610,18 +617,16 @@ struct ProfileView: View {
             supportRow(icon: "lock.doc.fill", iconColor: "#00FF88",
                        title: "Privacy Policy",
                        subtitle: "How we protect your data") {
-                if let url = URL(string: "https://mileagetax.app/privacy") {
-                    showSafariURL = url
-                    showSafariSheet = true
+                if let url = URL(string: "https://sites.google.com/view/inovexa/privacy-policy") {
+                    openURL(url)
                 }
             }
             sectionDivider
             supportRow(icon: "doc.text.fill", iconColor: "#00FF88",
                        title: "Terms & Conditions",
                        subtitle: "Usage terms and agreements") {
-                if let url = URL(string: "https://mileagetax.app/terms") {
-                    showSafariURL = url
-                    showSafariSheet = true
+                if let url = URL(string: "https://sites.google.com/view/inovexa/terms-and-conditions") {
+                    openURL(url)
                 }
             }
             sectionDivider

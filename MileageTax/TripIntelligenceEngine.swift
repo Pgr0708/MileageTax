@@ -117,6 +117,7 @@ import CoreBluetooth
 import BackgroundTasks
 import UIKit
 import os
+import WidgetKit
 internal import Combine
 
 // MARK: - Logging
@@ -810,6 +811,18 @@ final class TripTrackerService: NSObject, ObservableObject {
     private func transition(to newState: TripState) {
         tripLogger.debug("FSM \(self.state.rawValue, privacy: .public) -> \(newState.rawValue, privacy: .public)")
         state = newState
+        pushWidgetSnapshot()
+    }
+
+    /// Writes live state to shared UserDefaults so the home screen widget can read it.
+    private func pushWidgetSnapshot() {
+        let defaults = UserDefaults(suiteName: "group.com.inovexa.mileagetax") ?? .standard
+        let isActive = (state == .activeTracking || state == .idleBuffer)
+        defaults.set(isActive,              forKey: "widget.isTracking")
+        defaults.set(liveDistanceMiles,     forKey: "widget.liveMiles")
+        defaults.set(liveDeductionUSD,      forKey: "widget.liveDeduction")
+        defaults.set(currentSpeedMph,       forKey: "widget.liveSpeed")
+        WidgetCenter.shared.reloadTimelines(ofKind: "MileageTaxQuickWidget")
     }
 
     // MARK: - CoreMotion

@@ -22,8 +22,8 @@ enum AppInfo {
         Bundle.main.bundleIdentifier ?? "com.bhavik.MileageTax"
     }
 
-    static var supportURLString: String =   "https://dakshyaminfotech.store/support/"
-    static var termsURLString: String =     "https://dakshyaminfotech.store/terms-and-conditions/"
-    static var privacyURLString: String =   "https://dakshyaminfotech.store/privacy-policy/"
+    static var supportURLString: String =   "https://sites.google.com/view/inovexa/support"
+    static var termsURLString: String =     "https://sites.google.com/view/inovexa/terms-and-conditions"
+    static var privacyURLString: String =   "https://sites.google.com/view/inovexa/privacy-policy"
     static var supportEmail: String =       "inovexa.contact@gmail.com"
 }

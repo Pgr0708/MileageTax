@@ -4,9 +4,11 @@
 //
 
 import Foundation
+import WidgetKit
 import CoreData
 import CoreLocation
 import SwiftUI
+import StoreKit
 
 final class CoreDataManager: NSObject {
 
@@ -148,6 +150,51 @@ final class CoreDataManager: NSObject {
         entity.waypointsData   = try? JSONEncoder().encode(record.waypoints)
 
         save()
+
+        // ── Rate Us: trigger on 5th completed trip (fires once only) ──
+        requestReviewIfNeeded()
+        // ── Push fresh YTD to widget ──
+        pushYTDToWidget()
+    }
+
+    // MARK: - Widget Data Push
+
+    func pushYTDToWidget() {
+        let all = fetchAllTrips()
+        let ytdMiles = all.filter { !$0.isInProgress }.reduce(0.0) { $0 + $1.totalDistanceMiles }
+        let ytdDeduction = all.filter { !$0.isInProgress }.reduce(0.0) { $0 + $1.taxDeductionValueUSD }
+        let defaults = UserDefaults(suiteName: "group.com.inovexa.mileagetax") ?? .standard
+        defaults.set(ytdDeduction, forKey: "widget.ytdDeduction")
+        defaults.set(ytdMiles,     forKey: "widget.ytdMiles")
+        WidgetCenter.shared.reloadTimelines(ofKind: "MileageTaxQuickWidget")
+    }
+
+    // MARK: - Rate Us Review Request
+
+    private static let reviewRequestedKey = "inovexa.rateUs.hasRequested"
+    private static let reviewTripThreshold = 5
+
+    private func requestReviewIfNeeded() {
+        // Only fire once ever — if already requested, skip
+        guard !UserDefaults.standard.bool(forKey: CoreDataManager.reviewRequestedKey) else { return }
+
+        // Count only completed (non-in-progress) trips
+        let req: NSFetchRequest<TripEntity> = TripEntity.fetchRequest()
+        req.predicate = NSPredicate(format: "isInProgress == false")
+        let completedCount = (try? context.count(for: req)) ?? 0
+
+        guard completedCount >= CoreDataManager.reviewTripThreshold else { return }
+
+        // Mark as requested so we never ask again
+        UserDefaults.standard.set(true, forKey: CoreDataManager.reviewRequestedKey)
+
+        // Must trigger on main thread after a short delay so the trip save animation settles
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            if let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                SKStoreReviewController.requestReview(in: scene)
+            }
+        }
     }
 
     /// Returns all saved trips sorted newest-first.

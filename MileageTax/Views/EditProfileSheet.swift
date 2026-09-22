@@ -95,10 +95,18 @@ struct EditProfileSheet: View {
 
                         // Name field
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("DISPLAY NAME")
-                                .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                                .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
-                                .padding(.horizontal, 4)
+                            HStack {
+                                Text("DISPLAY NAME")
+                                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                                    .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
+                                Spacer()
+                                Text("\(draftName.count)/10")
+                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(draftName.count >= 10
+                                        ? Color(hex: "#FF4444").opacity(0.8)
+                                        : Color.white.opacity(0.3))
+                            }
+                            .padding(.horizontal, 4)
 
                             HStack(spacing: 12) {
                                 Image(systemName: "person.fill")
@@ -111,6 +119,11 @@ struct EditProfileSheet: View {
                                     .tint(Color(hex: "#00FF88"))
                                     .submitLabel(.done)
                                     .onSubmit { saveAndDismiss() }
+                                    .onChange(of: draftName) { _, newVal in
+                                        if newVal.count > 10 {
+                                            draftName = String(newVal.prefix(10))
+                                        }
+                                    }
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
@@ -164,9 +177,10 @@ struct EditProfileSheet: View {
                         }
                         .padding(.horizontal, 24)
 
-                        Spacer(minLength: 20)
+                        Spacer(minLength: 60)
                     }
                     .padding(.top, 24)
+                    .padding(.bottom, 40)
                 }
             }
             .navigationTitle("Edit Profile")
