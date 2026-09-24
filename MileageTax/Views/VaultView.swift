@@ -82,6 +82,10 @@ struct VaultView: View {
 
     // MARK: - Computed Filter Range
 
+    private var activeYear: Int {
+        Calendar.current.component(.year, from: activeRange.end)
+    }
+
     private var activeRange: (start: Date, end: Date) {
         if selectedFilter == .custom {
             return (customStart, customEnd)
@@ -121,15 +125,32 @@ struct VaultView: View {
         filteredBusinessTrips.count
     }
 
+    private var filteredPendingTrips: [TripEntity] {
+        let (start, end) = activeRange
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: end) ?? end
+        return allTrips.filter {
+            guard ($0.tripClassification == .unclassified || $0.needsReview), let d = $0.startDate else { return false }
+            return d >= start && d <= endOfDay
+        }
+    }
+
+    private var pendingTripCount: Int {
+        filteredPendingTrips.count
+    }
+
+    private var pendingDeduction: Double {
+        filteredPendingTrips.reduce(0) { $0 + $1.taxDeductionValueUSD }
+    }
+
     private var currentQuarterSummary: (miles: Double, deduction: Double, status: QuarterStatus, count: Int) {
-        CoreDataManager.shared.quarterSummary(for: .q3)
+        CoreDataManager.shared.quarterSummary(for: .q3, year: activeYear)
     }
 
     private var q1Summary: (miles: Double, deduction: Double, status: QuarterStatus, count: Int) {
-        CoreDataManager.shared.quarterSummary(for: .q1)
+        CoreDataManager.shared.quarterSummary(for: .q1, year: activeYear)
     }
     private var q2Summary: (miles: Double, deduction: Double, status: QuarterStatus, count: Int) {
-        CoreDataManager.shared.quarterSummary(for: .q2)
+        CoreDataManager.shared.quarterSummary(for: .q2, year: activeYear)
     }
 
     private var velocityPacingRatio: Double {
@@ -169,10 +190,8 @@ struct VaultView: View {
                 .scrollBounceBehavior(.basedOnSize)
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showExportShare) {
-                if let url = exportURL {
-                    ShareSheet(activityItems: [url])
-                }
+            .sheet(item: $exportURL) { url in
+                ShareSheet(activityItems: [url])
             }
             .sheet(isPresented: $showCustomDateSheet) {
                 customDatePickerSheet
@@ -558,6 +577,24 @@ struct VaultView: View {
                     .foregroundStyle(Color(hex: "#00E5FF"))
             }
 
+            // Pending review banner — surfaces unclassified trips so the vault
+            // is never silently $0.00 when a drive has been recorded.
+            if pendingTripCount > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(hex: "#FFB020"))
+                    Text("\(pendingTripCount) PENDING DRIVES • \(currencySymbol)\(String(format: "%.2f", pendingDeduction)) UNCLAIMED")
+                        .font(.system(size: 10.5, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Color(hex: "#FFB020"))
+                    Spacer()
+                }
+                .padding(8)
+                .background(Color(hex: "#FFB020").opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#FFB020").opacity(0.3), lineWidth: 1))
+            }
+
             // 3-Column Stats Sub-box
             HStack(spacing: 8) {
                 // Audit Risk
@@ -690,7 +727,7 @@ struct VaultView: View {
                     quarter: "Q1 • Jan-Mar",
                     badgeText: q1Summary.count > 0 ? "AUDITED" : "NO DATA",
                     badgeColor: q1Summary.count > 0 ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"),
-                    milesText: q1Summary.miles > 0 ? String(format: "%.1f business mi", q1Summary.miles) : "— no trips",
+                    milesText: q1Summary.miles > 0 ? String(format: "%.1f business %@", MileageUnits.distanceValue(q1Summary.miles), MileageUnits.unitLabel) : "— no trips",
                     amountText: q1Summary.deduction > 0 ? String(format: "$%.2f", q1Summary.deduction) : "$0.00",
                     subText: "Closed & Signed",
                     isActive: false
@@ -702,7 +739,7 @@ struct VaultView: View {
                     quarter: "Q2 • Apr-Jun",
                     badgeText: q2Summary.count > 0 ? "AUDITED" : "NO DATA",
                     badgeColor: q2Summary.count > 0 ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"),
-                    milesText: q2Summary.miles > 0 ? String(format: "%.1f business mi", q2Summary.miles) : "— no trips",
+                    milesText: q2Summary.miles > 0 ? String(format: "%.1f business %@", MileageUnits.distanceValue(q2Summary.miles), MileageUnits.unitLabel) : "— no trips",
                     amountText: q2Summary.deduction > 0 ? String(format: "$%.2f", q2Summary.deduction) : "$0.00",
                     subText: "Closed & Signed",
                     isActive: false
@@ -714,7 +751,7 @@ struct VaultView: View {
                     quarter: "Q3 • Jul-Sep",
                     badgeText: "ACTIVE",
                     badgeColor: Color(hex: "#00E5FF"),
-                    milesText: currentQuarterSummary.miles > 0 ? String(format: "%.1f business mi", currentQuarterSummary.miles) : "— no trips yet",
+                    milesText: currentQuarterSummary.miles > 0 ? String(format: "%.1f business %@", MileageUnits.distanceValue(currentQuarterSummary.miles), MileageUnits.unitLabel) : "— no trips yet",
                     amountText: currentQuarterSummary.deduction > 0 ? String(format: "$%.2f", currentQuarterSummary.deduction) : "$0.00",
                     subText: "Live Accumulation",
                     isActive: true
@@ -1018,7 +1055,6 @@ struct VaultView: View {
                     // Export CSV Button (Bright Glowing Electric Cyan, Clear and High Contrast)
                     Button {
                         exportURL = ExportEngine.exportCSV(trips: filteredBusinessTrips)
-                        showExportShare = true
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "square.and.arrow.down.fill")

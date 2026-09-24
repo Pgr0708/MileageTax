@@ -16,6 +16,7 @@ struct RulesView: View {
     @AppStorage(AppStorageKeys.autoClassifyWorkHours) private var autoClassifyWorkHours = true
     @AppStorage(AppStorageKeys.workHoursStart)        private var workHoursStart: Double = 8.5
     @AppStorage(AppStorageKeys.workHoursEnd)          private var workHoursEnd:   Double = 17.5
+    @AppStorage(AppStorageKeys.workDaysMask)          private var workDaysMask: Int = MileageTaxDefaults.defaultWorkDaysMask
     @AppStorage(AppStorageKeys.irsRateOverride)       private var irsRateOverride: Double        = MileageTaxDefaults.irsRatePerMile
     @AppStorage(AppStorageKeys.currencySymbol)          private var currencySymbol: String  = MileageTaxDefaults.defaultCurrencySymbol
     @AppStorage(AppStorageKeys.distanceUnit)            private var distanceUnit: String    = MileageTaxDefaults.defaultDistanceUnit
@@ -25,16 +26,29 @@ struct RulesView: View {
 
     @StateObject private var geofenceManager = GeofenceManager.shared
     @StateObject private var rulesManager = AutomationRuleManager.shared
-    @AppStorage("MT_geofenceEnabled") private var geofenceEnabled = true
+    @AppStorage(AppStorageKeys.geofenceEnabled) private var geofenceEnabled = true
+    @AppStorage(AppStorageKeys.motionDetectDistanceM) private var detectDistanceM: Double = 300
+    @AppStorage(AppStorageKeys.motionDetectSpeedMS) private var detectSpeedMS: Double = 5.0
+    @State private var detectPreset: Int = {
+        let d = UserDefaults.standard.double(forKey: AppStorageKeys.motionDetectDistanceM)
+        let s = UserDefaults.standard.double(forKey: AppStorageKeys.motionDetectSpeedMS)
+        if d > 0 {
+            if d < 250 { return 0 }
+            return s >= 6 ? 2 : 1
+        }
+        return 1   // default: 300 m / 18 km/h
+    }()
 
     private var workShiftHoursFormatted: String {
-        let startH = Int(workHoursStart)
-        let startM = Int((workHoursStart.truncatingRemainder(dividingBy: 1)) * 60)
-        let endH = Int(workHoursEnd)
-        let endM = Int((workHoursEnd.truncatingRemainder(dividingBy: 1)) * 60)
-        let sFmt = String(format: "%d:%02d AM", startH > 12 ? startH - 12 : startH, startM)
-        let eFmt = String(format: "%d:%02d PM", endH > 12 ? endH - 12 : endH, endM)
-        return "Mon–Fri • \(sFmt) – \(eFmt)"
+        "\(Weekday.scheduleLabel(forMask: workDaysMask)) • \(Self.timeLabel(workHoursStart)) – \(Self.timeLabel(workHoursEnd))"
+    }
+
+    private static func timeLabel(_ hourValue: Double) -> String {
+        let h = Int(hourValue)
+        let m = Int((hourValue - Double(h)) * 60 + 0.5)
+        let period = h >= 12 ? "PM" : "AM"
+        let hour12 = h % 12 == 0 ? 12 : h % 12
+        return String(format: "%d:%02d %@", hour12, m, period)
     }
     @State private var showAddRuleSheet = false
     @State private var showPinGeofenceSheet = false
@@ -66,6 +80,9 @@ struct RulesView: View {
                         // Card 4: CoreMotion Intelligent Gating
                         coreMotionGatingCard
 
+                        // Card 5: Trip Detection Sensitivity
+                        detectionSensitivityCard
+
                         Spacer(minLength: 110)
                     }
                     .padding(.horizontal, 16)
@@ -82,8 +99,8 @@ struct RulesView: View {
                 PinGeofenceModalView()
             }
             .sheet(isPresented: $showWorkHoursSheet) {
-                WorkHoursModalView(startHour: $workHoursStart, endHour: $workHoursEnd)
-                    .presentationDetents([.height(360), .medium])
+                WorkHoursModalView(startHour: $workHoursStart, endHour: $workHoursEnd, workDaysMask: $workDaysMask)
+                    .presentationDetents([.medium, .large])
             }
         }
         .preferredColorScheme(.dark)
@@ -846,87 +863,153 @@ struct RulesView: View {
         )
         .shadow(color: Color.black.opacity(0.5), radius: 14, x: 0, y: 7)
     }
+
+    // MARK: - Card 5: Trip Detection Sensitivity
+
+    private var detectionSensitivityCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color(hex: "#00E5FF"))
+                Text("Trip Detection")
+                    .font(.system(size: 14.5, weight: .bold))
+                    .foregroundStyle(.white)
+                Spacer()
+                Text("DETECT AFTER")
+                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+
+            Picker("", selection: $detectPreset) {
+                Text("60 m / 5 km/h").tag(0)
+                Text("300 m / 18 km/h").tag(1)
+                Text("300 m / 24 km/h").tag(2)
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: detectPreset) { _, newVal in
+                switch newVal {
+                case 0:
+                    detectDistanceM = 60
+                    detectSpeedMS = 1.4   // 5 km/h
+                case 2:
+                    detectDistanceM = 300
+                    detectSpeedMS = 6.7   // 24 km/h ≈ 15 mph
+                default:
+                    detectDistanceM = 300
+                    detectSpeedMS = 5.0   // 18 km/h
+                }
+            }
+
+            Text("A drive is recorded once you've moved this far at this speed — the trip's true start is still captured from the parked origin.")
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.6))
+                .lineSpacing(2)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: "#0A1018").opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+    }
 }
 
 // MARK: - Modals
 
 struct AddRuleModalView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var geofenceManager = GeofenceManager.shared
+    @StateObject private var bluetooth = BluetoothVehicleManager.shared
+
     @State private var ruleName = ""
-    @State private var ruleType = "Work Hours"
+    @State private var ruleType: AutomationRuleType = .geofenceZone
+    @State private var classification: TripClassification = .business
+    @State private var businessPurpose = ""
+    @State private var useSchedule = false
+    @State private var selectedDays: Set<Weekday> = Weekday.monToFri
+    @State private var startHour: Double = 9
+    @State private var endHour: Double = 17
+    @State private var selectedZoneIDs: Set<UUID> = []
+    @State private var useRoute = false
+    @State private var startZoneID: UUID?
+    @State private var endZoneID: UUID?
+    @State private var vehicleName = ""
+    @State private var showPinZone = false
+
+    private let purposeSuggestions = ["Client Meeting", "Site Inspection", "Office Commute", "Airport Run"]
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(hex: "#06090E").ignoresSafeArea()
-                
-                // Subtle ambient glow
-                RadialGradient(
-                    colors: [Color(hex: "#00E5FF").opacity(0.15), Color.clear],
-                    center: .top,
-                    startRadius: 10,
-                    endRadius: 400
-                ).ignoresSafeArea()
 
-                VStack(spacing: 24) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("RULE NAME")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                        
-                        TextField("e.g. Weekend Personal Drives", text: $ruleName)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.white)
-                            .padding()
-                            .background(Color(hex: "#0C141E"))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.1), lineWidth: 1))
-                    }
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        ruleField("RULE NAME", placeholder: "e.g. Client X HQ", text: $ruleName)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("TRIGGER TYPE")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#00E5FF"))
-                            
-                        Picker("Type", selection: $ruleType) {
-                            Text("Work Hours").tag("Work Hours")
-                            Text("Geofence Zone").tag("Geofence Zone")
-                            Text("Bluetooth Vehicle").tag("Bluetooth Vehicle")
+                        VStack(alignment: .leading, spacing: 8) {
+                            sectionLabel("AUTO-CLASSIFICATION")
+                            Picker("", selection: $classification) {
+                                Text("Business").tag(TripClassification.business)
+                                Text("Personal").tag(TripClassification.personal)
+                            }
+                            .pickerStyle(.segmented)
                         }
-                        .pickerStyle(.segmented)
-                        .colorMultiply(Color(hex: "#00E5FF").opacity(0.8)) // Tint the segmented control
-                    }
 
-                    Spacer()
+                        ruleField("DEFAULT IRS PURPOSE", placeholder: "e.g. Client Meeting", text: $businessPurpose)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(purposeSuggestions, id: \.self) { s in
+                                    Button { businessPurpose = s } label: {
+                                        Text(s)
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundStyle(Color(hex: "#00E5FF"))
+                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                            .background(Color(hex: "#00E5FF").opacity(0.1))
+                                            .clipShape(Capsule())
+                                    }
+                                }
+                            }
+                        }
 
-                    Button {
-                        if !ruleName.trimmingCharacters(in: .whitespaces).isEmpty {
-                            let type = AutomationRuleType(rawValue: ruleType) ?? .workHours
-                            AutomationRuleManager.shared.addRule(name: ruleName, type: type)
+                        VStack(alignment: .leading, spacing: 8) {
+                            sectionLabel("TRIGGER TYPE")
+                            Picker("", selection: $ruleType) {
+                                Text("Geofence").tag(AutomationRuleType.geofenceZone)
+                                Text("Work Hours").tag(AutomationRuleType.workHours)
+                                Text("Bluetooth").tag(AutomationRuleType.bluetoothVehicle)
+                            }
+                            .pickerStyle(.segmented)
                         }
-                        dismiss()
-                    } label: {
-                        HStack {
-                            Image(systemName: "bolt.fill")
-                            Text("Save Automation Rule")
+
+                        switch ruleType {
+                        case .geofenceZone: zoneSection
+                        case .workHours: scheduleSection
+                        case .bluetoothVehicle:
+                            ruleField("VEHICLE NAME", placeholder: "e.g. Prius", text: $vehicleName)
                         }
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(hex: "#061A13"))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
-                                startPoint: .leading,
-                                endPoint: .trailing
+
+                        Button { save() } label: {
+                            HStack {
+                                Image(systemName: "bolt.fill")
+                                Text("Save Automation Rule")
+                            }
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color(hex: "#061A13"))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                LinearGradient(colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
+                                               startPoint: .leading, endPoint: .trailing)
                             )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: Color(hex: "#00FF88").opacity(0.3), radius: 10, y: 4)
+                        }
+                        .padding(.top, 6)
+                        .padding(.bottom, 12)
                     }
-                    .padding(.bottom, 8)
+                    .padding(20)
                 }
-                .padding(20)
             }
             .navigationTitle("New Rule")
             .navigationBarTitleDisplayMode(.inline)
@@ -939,7 +1022,158 @@ struct AddRuleModalView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .sheet(isPresented: $showPinZone) { PinGeofenceModalView() }
         }
+    }
+
+    private var zoneSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("FREQUENT PLACES (ANY OF)")
+
+            if geofenceManager.savedZones.isEmpty {
+                Text("No saved places yet — pin one first.")
+                    .font(.system(size: 12)).foregroundStyle(.white.opacity(0.5))
+            } else {
+                ForEach(geofenceManager.savedZones) { zone in
+                    Button {
+                        if selectedZoneIDs.contains(zone.id) { selectedZoneIDs.remove(zone.id) }
+                        else { selectedZoneIDs.insert(zone.id) }
+                    } label: {
+                        HStack {
+                            Image(systemName: selectedZoneIDs.contains(zone.id) ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedZoneIDs.contains(zone.id) ? Color(hex: "#00FF88") : .white.opacity(0.4))
+                            Text(zone.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                            Spacer()
+                            Text(zone.tag).font(.system(size: 10)).foregroundStyle(.white.opacity(0.5))
+                        }
+                        .padding(10)
+                        .background(Color(hex: "#0C141E"))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+            }
+
+            Button { showPinZone = true } label: {
+                HStack { Image(systemName: "scope"); Text("Pin New Place") }
+                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: "#00FF88"))
+                    .padding(.vertical, 8)
+            }
+
+            Toggle(isOn: $useRoute) {
+                Text("Route (start → end)").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+            }
+            .tint(Color(hex: "#00FF88"))
+
+            if useRoute {
+                HStack(spacing: 10) {
+                    zonePicker("START", selection: $startZoneID)
+                    zonePicker("END", selection: $endZoneID)
+                }
+            }
+        }
+    }
+
+    private var scheduleSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: $useSchedule) {
+                Text("Only during specific hours").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+            }
+            .tint(Color(hex: "#00FF88"))
+
+            if useSchedule {
+                HStack(spacing: 8) {
+                    ForEach(Weekday.allCases) { day in
+                        let on = selectedDays.contains(day)
+                        Button {
+                            if on { selectedDays.remove(day) } else { selectedDays.insert(day) }
+                        } label: {
+                            Text(day.threeLetter)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(on ? Color(hex: "#061A13") : .white.opacity(0.7))
+                                .frame(maxWidth: .infinity).frame(height: 38)
+                                .background(on ? Color(hex: "#00FF88") : Color(hex: "#0E1622"))
+                                .clipShape(RoundedRectangle(cornerRadius: 9))
+                        }
+                    }
+                }
+
+                DatePicker("START", selection: Binding(
+                    get: { date(from: startHour) },
+                    set: { startHour = hour(from: $0) }
+                ), displayedComponents: .hourAndMinute).colorScheme(.dark).tint(Color(hex: "#00FF88"))
+
+                DatePicker("END", selection: Binding(
+                    get: { date(from: endHour) },
+                    set: { endHour = hour(from: $0) }
+                ), displayedComponents: .hourAndMinute).colorScheme(.dark).tint(Color(hex: "#00FF88"))
+            }
+        }
+    }
+
+    private func zonePicker(_ label: String, selection: Binding<UUID?>) -> some View {
+        Menu {
+            ForEach(geofenceManager.savedZones) { zone in
+                Button(zone.title) { selection.wrappedValue = zone.id }
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label).font(.system(size: 9, weight: .heavy, design: .monospaced)).foregroundStyle(.white.opacity(0.4))
+                Text(geofenceManager.savedZones.first(where: { $0.id == selection.wrappedValue })?.title ?? "Any")
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(Color(hex: "#0C141E"))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
+    private func save() {
+        let name = ruleName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { dismiss(); return }
+        let rule = AutomationRule(
+            name: name,
+            type: ruleType,
+            classification: classification,
+            businessPurpose: businessPurpose.trimmingCharacters(in: .whitespaces),
+            weekdayMask: (ruleType == .workHours && useSchedule) ? Weekday.mask(from: selectedDays) : nil,
+            startHour: (ruleType == .workHours && useSchedule) ? startHour : nil,
+            endHour: (ruleType == .workHours && useSchedule) ? endHour : nil,
+            zoneIDs: ruleType == .geofenceZone ? Array(selectedZoneIDs) : [],
+            startZoneID: (ruleType == .geofenceZone && useRoute) ? startZoneID : nil,
+            endZoneID: (ruleType == .geofenceZone && useRoute) ? endZoneID : nil,
+            vehicleName: ruleType == .bluetoothVehicle ? vehicleName : nil,
+            priority: 100
+        )
+        AutomationRuleManager.shared.addRule(rule)
+        dismiss()
+    }
+
+    private func sectionLabel(_ s: String) -> some View {
+        Text(s).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Color(hex: "#00E5FF"))
+    }
+
+    private func ruleField(_ label: String, placeholder: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionLabel(label)
+            TextField(placeholder, text: text)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white)
+                .padding()
+                .background(Color(hex: "#0C141E"))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.1), lineWidth: 1))
+        }
+    }
+
+    private func date(from hourValue: Double) -> Date {
+        let cal = Calendar.current
+        return cal.date(bySettingHour: Int(hourValue), minute: Int((hourValue - Double(Int(hourValue))) * 60), second: 0, of: Date()) ?? Date()
+    }
+
+    private func hour(from date: Date) -> Double {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return Double(c.hour ?? 0) + Double(c.minute ?? 0) / 60.0
     }
 }
 
@@ -947,6 +1181,8 @@ struct PinGeofenceModalView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var placeName = ""
     @State private var radiusMeters = 150.0
+    @State private var isPersonal = false
+    @StateObject private var locationRequester = OneShotLocationRequester()
 
     var body: some View {
         NavigationStack {
@@ -990,17 +1226,43 @@ struct PinGeofenceModalView: View {
                             .tint(Color(hex: "#00FF88"))
                     }
 
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: $isPersonal) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("PERSONAL PLACE")
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color(hex: "#FFB020"))
+                                Text("Trips to/from here will be marked Personal")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                        }
+                        .tint(Color(hex: "#7B4FFF"))
+
+                        HStack(spacing: 6) {
+                            Image(systemName: locationRequester.coordinate != nil ? "location.fill" : "location.slash")
+                                .font(.system(size: 10))
+                                .foregroundStyle(locationRequester.coordinate != nil ? Color(hex: "#00FF88") : .white.opacity(0.5))
+                            Text(locationRequester.coordinate != nil ? "Center: current location" : "Center: default (Apple Park)")
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                    }
+
                     Spacer()
 
                     Button {
                         if !placeName.trimmingCharacters(in: .whitespaces).isEmpty {
+                            let coord = locationRequester.coordinate
                             GeofenceManager.shared.addZone(
                                 title: placeName,
                                 perimeterMeters: radiusMeters,
                                 tag: "#Custom Zone",
-                                tagColorHex: "#00FF88",
+                                tagColorHex: isPersonal ? "#7B4FFF" : "#00FF88",
                                 icon: "mappin.circle.fill",
-                                isPersonal: false
+                                isPersonal: isPersonal,
+                                latitude: coord?.latitude ?? 37.7749,
+                                longitude: coord?.longitude ?? -122.4194
                             )
                         }
                         dismiss()
@@ -1032,6 +1294,7 @@ struct PinGeofenceModalView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear { locationRequester.request() }
         }
     }
 }
@@ -1040,16 +1303,61 @@ struct WorkHoursModalView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var startHour: Double
     @Binding var endHour: Double
+    @Binding var workDaysMask: Int
     
     @State private var startDate = Date()
     @State private var endDate = Date()
+    @State private var selectedDays: Set<Weekday> = Weekday.monToFri
     
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(hex: "#06090E").ignoresSafeArea()
                 
-                VStack(spacing: 32) {
+                VStack(spacing: 20) {
+                    // Weekday selector (Mon–Sun, Mon–Fri selected by default)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("WORK DAYS")
+                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#00FF88"))
+                            Spacer()
+                            Text(Weekday.scheduleLabel(forMask: Weekday.mask(from: selectedDays)))
+                                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+
+                        HStack(spacing: 8) {
+                            ForEach(Weekday.allCases) { day in
+                                let selected = selectedDays.contains(day)
+                                Button {
+                                    if selected { selectedDays.remove(day) } else { selectedDays.insert(day) }
+                                } label: {
+                                    Text(day.threeLetter)
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(selected ? Color(hex: "#061A13") : .white.opacity(0.7))
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 40)
+                                        .background(selected ? Color(hex: "#00FF88") : Color(hex: "#0E1622"))
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(
+                                            selected ? Color.clear : Color.white.opacity(0.08)))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        HStack(spacing: 10) {
+                            quickDayButton("Weekdays") { selectedDays = Weekday.monToFri }
+                            quickDayButton("Every day") { selectedDays = Set(Weekday.allCases) }
+                            quickDayButton("Clear") { selectedDays = [] }
+                        }
+                    }
+                    .padding(16)
+                    .background(Color(hex: "#0A1018").opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+
                     VStack(alignment: .leading, spacing: 12) {
                         DatePicker("START TIME", selection: $startDate, displayedComponents: .hourAndMinute)
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
@@ -1081,6 +1389,7 @@ struct WorkHoursModalView: View {
                     Spacer()
                     
                     Button {
+                        workDaysMask = Weekday.mask(from: selectedDays)
                         dismiss()
                     } label: {
                         HStack {
@@ -1115,7 +1424,22 @@ struct WorkHoursModalView: View {
                 let cal = Calendar.current
                 startDate = cal.date(bySettingHour: Int(startHour), minute: Int((startHour.truncatingRemainder(dividingBy: 1)) * 60), second: 0, of: Date()) ?? Date()
                 endDate = cal.date(bySettingHour: Int(endHour), minute: Int((endHour.truncatingRemainder(dividingBy: 1)) * 60), second: 0, of: Date()) ?? Date()
+                selectedDays = Weekday.weekdays(fromMask: workDaysMask)
             }
         }
+    }
+
+    private func quickDayButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color(hex: "#00E5FF"))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color(hex: "#00E5FF").opacity(0.08))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }

@@ -21,7 +21,7 @@ struct ClassifyView: View {
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \TripEntity.startDate, ascending: false)],
-        predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
+        predicate: NSPredicate(format: "isInProgress == false AND (needsReview == true OR classification == nil OR classification == %@)", TripClassification.unclassified.rawValue),
         animation: .default)
     private var pendingTrips: FetchedResults<TripEntity>
 
@@ -44,7 +44,7 @@ struct ClassifyView: View {
         if let pid = preselectedTripID, let match = pendingTrips.first(where: { $0.id == pid }) {
             return match
         }
-        return pendingTrips.first ?? allTrips.first
+        return pendingTrips.first
     }
 
     private var currentTrip: TripEntity? {
@@ -84,7 +84,7 @@ struct ClassifyView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        if pendingCount > 0 {
+                        if currentTrip != nil {
                             // Screen Title Row (Classify Drives + 1 OF 3 PENDING + BATCH)
                             screenTitleRow
 
@@ -150,7 +150,7 @@ struct ClassifyView: View {
                                     .frame(maxWidth: .infinity)
                                     Divider().background(Color.white.opacity(0.1)).frame(height: 32)
                                     VStack(spacing: 4) {
-                                        Text("\(allTrips.filter { $0.tripClassification != .business }.count)")
+                                        Text("\(allTrips.filter { $0.tripClassification == .personal }.count)")
                                             .font(.system(size: 26, weight: .black, design: .rounded))
                                             .foregroundStyle(Color(hex: "#00E5FF"))
                                         Text("PERSONAL")
@@ -351,6 +351,15 @@ struct ClassifyView: View {
                 }
         )
         .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
+        .id(currentTrip?.objectID)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.96).combined(with: .opacity),
+            removal: .opacity))
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: currentTrip?.objectID)
+        .onChange(of: currentTrip?.objectID) { _, _ in
+            swipeOffset = .zero
+            swipeOpacity = 1.0
+        }
     }
 
     @ViewBuilder
@@ -402,8 +411,8 @@ struct ClassifyView: View {
     private func cardStatsRow(durationMins: Int, tripMiles: Double, avgSpeedMph: Double) -> some View {
         HStack(spacing: 8) {
             statPill(icon: "timer", text: "\(durationMins) MINS")
-            statPill(icon: "point.topleft.down.to.point.bottomright.curvepath.fill", text: String(format: "%.1f MILES", tripMiles))
-            statPill(icon: "gauge.with.needle", text: String(format: "%.1f MPH AVG", avgSpeedMph))
+            statPill(icon: "point.topleft.down.to.point.bottomright.curvepath.fill", text: String(format: "%.1f %@", MileageUnits.distanceValue(tripMiles), MileageUnits.unitLabelLong))
+            statPill(icon: "gauge.with.needle", text: String(format: "%.1f %@ AVG", MileageUnits.speedValue(avgSpeedMph), MileageUnits.speedUnitLabel))
             Spacer()
         }
     }
@@ -534,7 +543,7 @@ struct ClassifyView: View {
 
                 Spacer()
 
-                Text(String(format: "%.3f%@/%@", irsRate, currencySymbol, distanceUnit))
+                Text(String(format: "%.3f%@/%@", MileageUnits.ratePerDisplayUnit(irsRate), currencySymbol, MileageUnits.unitLabel))
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .padding(.horizontal, 6)
@@ -544,7 +553,7 @@ struct ClassifyView: View {
             }
 
             HStack(alignment: .firstTextBaseline) {
-                Text(String(format: "+$%.2f", deduction))
+                Text(String(format: "+%@%.2f", currencySymbol, deduction))
                     .font(.system(size: 29, weight: .black, design: .rounded))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8, x: 0, y: 0)
@@ -679,7 +688,7 @@ struct ClassifyView: View {
                     }
                     .foregroundStyle(Color(hex: "#061A13"))
 
-                    Text(String(format: "+$%.2f WRITE-OFF", tripDeduction))
+                    Text(String(format: "+%@%.2f WRITE-OFF", currencySymbol, tripDeduction))
                         .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Color(hex: "#061A13").opacity(0.8))
                 }
@@ -714,14 +723,14 @@ struct ClassifyView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(lastClassifiedTrip != nil
-                     ? String(format: "Categorized %.1f mi as %@", lastClassifiedTrip!.miles, lastClassifiedTrip!.isBusiness ? "Business" : "Personal")
-                     : "Categorized 6.4 mi as Business")
+                     ? "Categorized \(MileageUnits.distance(lastClassifiedTrip!.miles)) as \(lastClassifiedTrip!.isBusiness ? "Business" : "Personal")"
+                     : "Categorized \(MileageUnits.distance(6.4)) as Business")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(.white)
 
                 Text(lastClassifiedTrip != nil
-                     ? String(format: "Accrued +$%.2f to Vault", lastClassifiedTrip!.deduction)
-                     : "Accrued +$4.29 to Vault")
+                     ? String(format: "Accrued +%@%.2f to Vault", currencySymbol, lastClassifiedTrip!.deduction)
+                     : "Accrued +\(currencySymbol)4.29 to Vault")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.45))
             }
@@ -766,6 +775,7 @@ struct ClassifyView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             if let trip = currentTrip {
                 trip.tripClassification = asBusiness ? .business : .personal
+                trip.taxDeductionValueUSD = asBusiness ? trip.taxDeductionValueUSD : 0
                 trip.needsReview = false
                 CoreDataManager.shared.save()
             }
@@ -869,7 +879,7 @@ struct BatchClassifySheet: View {
                     Text("Batch Classify")
                         .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
-                    Text("\(pendingTrips.count) pending drive\(pendingTrips.count == 1 ? "" : "s")  •  \(String(format: "%.1f", totalMiles)) mi total")
+                    Text("\(pendingTrips.count) pending drive\(pendingTrips.count == 1 ? "" : "s")  •  \(MileageUnits.distance(totalMiles)) total")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -881,7 +891,7 @@ struct BatchClassifySheet: View {
                             Text("MAX POTENTIAL YIELD")
                                 .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                                 .foregroundStyle(.white.opacity(0.45))
-                            Text(String(format: "+$%.2f", totalDeduction))
+                            Text(String(format: "+%@%.2f", MileageUnits.currencySymbol, totalDeduction))
                                 .font(.system(size: 28, weight: .black, design: .rounded))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                         }
@@ -915,7 +925,7 @@ struct BatchClassifySheet: View {
                             Text("Mark All as Business")
                                 .font(.system(size: 15, weight: .heavy, design: .rounded))
                             Spacer()
-                            Text(String(format: "+$%.2f", totalDeduction))
+                            Text(String(format: "+%@%.2f", MileageUnits.currencySymbol, totalDeduction))
                                 .font(.system(size: 13, weight: .black, design: .monospaced))
                         }
                         .foregroundStyle(Color(hex: "#061A13"))

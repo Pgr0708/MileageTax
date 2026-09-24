@@ -107,10 +107,10 @@ struct TripDetailSheetView: View {
 
                             // Stats grid
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                                statCell(label: "DISTANCE",   value: String(format: "%.1f %@", trip.totalDistanceMiles, distanceUnit))
+                                statCell(label: "DISTANCE",   value: MileageUnits.distance(trip.totalDistanceMiles))
                                 statCell(label: "DEDUCTION",  value: String(format: "%@%.2f", currencySymbol, trip.taxDeductionValueUSD))
-                                statCell(label: "MAX SPEED",  value: String(format: "%.0f mph", trip.maxSpeedMph))
-                                statCell(label: "AVG SPEED",  value: String(format: "%.0f mph", trip.averageMovingSpeedMph))
+                                statCell(label: "MAX SPEED",  value: MileageUnits.speed(trip.maxSpeedMph, decimals: 0))
+                                statCell(label: "AVG SPEED",  value: MileageUnits.speed(trip.averageMovingSpeedMph, decimals: 0))
                                 if let start = trip.startDate {
                                     statCell(label: "DATE",   value: start.formatted(date: .abbreviated, time: .omitted))
                                     statCell(label: "START",  value: start.formatted(date: .omitted, time: .shortened))

@@ -3,6 +3,7 @@
 // Real-time telemetry, animated HUD, live 3D route map preview, and IRS write-offs.
 
 import SwiftUI
+import MapKit
 import CoreData
 
 struct RadarView: View {
@@ -27,10 +28,14 @@ struct RadarView: View {
 
     // Real Metrics calculated live from CoreData Single Source of Truth
     private var ytdMiles: Double {
-        trips.filter { $0.tripClassification == .business }.reduce(0) { $0 + $1.totalDistanceMiles }
+        let y = Calendar.current.component(.year, from: Date())
+        return trips.filter { $0.tripClassification == .business && year(of: $0.startDate ?? .distantPast) == y }
+            .reduce(0) { $0 + $1.totalDistanceMiles }
     }
     private var ytdDeduction: Double {
-        trips.filter { $0.tripClassification == .business }.reduce(0) { $0 + $1.taxDeductionValueUSD }
+        let y = Calendar.current.component(.year, from: Date())
+        return trips.filter { $0.tripClassification == .business && year(of: $0.startDate ?? .distantPast) == y }
+            .reduce(0) { $0 + $1.taxDeductionValueUSD }
     }
     private var pendingCount: Int {
         trips.filter { $0.needsReview }.count
@@ -39,49 +44,21 @@ struct RadarView: View {
         trips.filter { $0.needsReview }.reduce(0) { $0 + $1.taxDeductionValueUSD }
     }
 
-    // Quarter helper
-    private func quarter(of date: Date) -> Int {
-        Calendar.current.component(.month, from: date).quotientAndRemainder(dividingBy: 3).0
+    private var unclassifiedTrips: [TripEntity] {
+        trips.filter { $0.tripClassification == .unclassified || $0.needsReview }
     }
+
+    /// Every unclassified trip is always logged (no cap, regardless of age),
+    /// followed by the 5 most recent classified trips.
+    private var logStreamTrips: [TripEntity] {
+        let classified = trips.filter {
+            !($0.tripClassification == .unclassified || $0.needsReview)
+        }.prefix(5)
+        return unclassifiedTrips + classified
+    }
+
     private func year(of date: Date) -> Int {
         Calendar.current.component(.year, from: date)
-    }
-    private var currentQuarterDeduction: Double {
-        let now = Date()
-        let q = quarter(of: now); let y = year(of: now)
-        return trips.filter {
-            guard let d = $0.startDate else { return false }
-            return $0.tripClassification == .business && quarter(of: d) == q && year(of: d) == y
-        }.reduce(0) { $0 + $1.taxDeductionValueUSD }
-    }
-    private var previousQuarterDeduction: Double {
-        let now = Date()
-        let cal = Calendar.current
-        guard let prevQ = cal.date(byAdding: .month, value: -3, to: now) else { return 0 }
-        let q = quarter(of: prevQ); let y = year(of: prevQ)
-        return trips.filter {
-            guard let d = $0.startDate else { return false }
-            return $0.tripClassification == .business && quarter(of: d) == q && year(of: d) == y
-        }.reduce(0) { $0 + $1.taxDeductionValueUSD }
-    }
-    /// e.g. "+18.4%" or "-3.2%" or "N/A (no prior Q data)"
-    private var quarterGrowthLabel: String {
-        guard previousQuarterDeduction > 0 else {
-            return currentQuarterDeduction > 0 ? "New High" : "No Data"
-        }
-        let pct = ((currentQuarterDeduction - previousQuarterDeduction) / previousQuarterDeduction) * 100
-        return String(format: "%+.1f%%", pct)
-    }
-    private var quarterGrowthPositive: Bool {
-        previousQuarterDeduction == 0 ? currentQuarterDeduction > 0 :
-            currentQuarterDeduction >= previousQuarterDeduction
-    }
-    /// Label for the comparison quarter, e.g. "Q3", "Q2"
-    private var prevQuarterLabel: String {
-        let cal = Calendar.current
-        guard let prevQ = cal.date(byAdding: .month, value: -3, to: Date()) else { return "Prev" }
-        let q = quarter(of: prevQ)  // 0-based: 0=Q1, 1=Q2, 2=Q3, 3=Q4
-        return "Q\(q + 1)"
     }
 
     var body: some View {
@@ -227,32 +204,6 @@ struct RadarView: View {
                 }
 
                 Spacer()
-
-                // Dynamic growth vs previous quarter pill
-                let growthColor = quarterGrowthPositive ? Color(hex: "#00FF88") : Color(hex: "#FF4444")
-                let pillBg = quarterGrowthPositive ? Color(hex: "#06221A") : Color(hex: "#220606")
-                let arrowIcon = quarterGrowthPositive ? "arrow.up.right" : "arrow.down.right"
-                HStack(spacing: 5) {
-                    VStack(alignment: .trailing, spacing: 1) {
-                        Text(quarterGrowthLabel + " vs")
-                            .font(.system(size: 11, weight: .black, design: .rounded))
-                            .foregroundStyle(growthColor)
-                        Text(prevQuarterLabel)
-                            .font(.system(size: 10, weight: .heavy))
-                            .foregroundStyle(growthColor.opacity(0.85))
-                    }
-
-                    Image(systemName: arrowIcon)
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundStyle(growthColor)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(pillBg.opacity(0.85))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().strokeBorder(growthColor.opacity(0.35), lineWidth: 1)
-                )
             }
 
             // Center: Big Hero Number
@@ -274,7 +225,7 @@ struct RadarView: View {
                     .foregroundStyle(Color(hex: "#00FF88"))
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(String(format: "%.1f", ytdMiles) + "  BUSINESS MILES")
+                    Text(String(format: "%.1f", MileageUnits.distanceValue(ytdMiles)) + "  BUSINESS " + MileageUnits.unitLabelLong)
                         .font(.system(size: 11, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
 
@@ -561,8 +512,8 @@ struct RadarView: View {
             metricBox(
                 icon: "point.topleft.down.to.point.bottomright.curvepath.fill",
                 label: "DISTANCE",
-                value: String(format: "%.1f", tracker.liveDistanceMiles),
-                unit: "MILES",
+                value: String(format: "%.1f", MileageUnits.distanceValue(tracker.liveDistanceMiles)),
+                unit: MileageUnits.unitLabelLong,
                 accent: Color(hex: "#00FF88")
             )
 
@@ -570,8 +521,8 @@ struct RadarView: View {
             metricBox(
                 icon: "speedometer",
                 label: "SPEED",
-                value: String(format: "%.0f", tracker.currentSpeedMph),
-                unit: "MPH",
+                value: String(format: "%.0f", MileageUnits.speedValue(tracker.currentSpeedMph)),
+                unit: MileageUnits.speedUnitLabel,
                 accent: Color.white
             )
 
@@ -579,7 +530,7 @@ struct RadarView: View {
             metricBox(
                 icon: "banknote.fill",
                 label: "TAX YIELD",
-                value: String(format: "+$%.2f", tracker.liveDeductionUSD),
+                value: String(format: "+%@%.2f", currencySymbol, tracker.liveDeductionUSD),
                 unit: "WRITE-OFF",
                 accent: Color(hex: "#00FF88")
             )
@@ -741,7 +692,7 @@ struct RadarView: View {
                             .foregroundStyle(.white)
                     }
 
-                    Text(String(format: "+$%.2f Unclaimed Write Off", pendingDeduction))
+                    Text(String(format: "+%@%.2f Unclaimed Write Off", currencySymbol, pendingDeduction))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color(hex: "#00E5FF").opacity(0.85))
                 }
@@ -794,6 +745,17 @@ struct RadarView: View {
                     .foregroundStyle(.white.opacity(0.8))
                     .tracking(1.2)
 
+                if unclassifiedTrips.count > 0 {
+                    Text("\(unclassifiedTrips.count) UNCLASSIFIED")
+                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#FFB020"))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "#FFB020").opacity(0.12))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().strokeBorder(Color(hex: "#FFB020").opacity(0.4), lineWidth: 1))
+                }
+
                 Spacer()
 
                 Button {
@@ -811,8 +773,8 @@ struct RadarView: View {
             .padding(.horizontal, 4)
             .padding(.top, 4)
 
-            // Log Items (show live trips if available, otherwise high-end mock telemetry rows)
-            if trips.isEmpty {
+            // Log Items (every unclassified trip + 5 most recent classified trips)
+            if logStreamTrips.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "steeringwheel")
                         .font(.system(size: 28, weight: .semibold))
@@ -835,7 +797,7 @@ struct RadarView: View {
                         .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
                 )
             } else {
-                ForEach(trips.prefix(5), id: \.objectID) { trip in
+                ForEach(logStreamTrips, id: \.objectID) { trip in
                     realTripTelemetryCard(trip: trip)
                 }
             }
@@ -929,83 +891,99 @@ struct RadarView: View {
     }
 
     private func realTripTelemetryCard(trip: TripEntity) -> some View {
-        HStack(spacing: 12) {
-            // Scenic Thumbnail
-            Image("radar_route_thumbnail")
-                .resizable()
-                .scaledToFill()
-                .frame(width: 52, height: 52)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-                )
+        let isBusiness = trip.tripClassification == .business
+        let isPersonal = trip.tripClassification == .personal
+        let isUnclassified = trip.tripClassification == .unclassified || trip.needsReview
+        let accent: Color = isBusiness ? Color(hex: "#00FF88") : (isPersonal ? Color(hex: "#7B4FFF") : Color(hex: "#FFB020"))
+        let icon: String = isBusiness ? "briefcase.fill" : (isPersonal ? "house.fill" : "questionmark.circle.fill")
+        let label: String = isUnclassified ? "Unclassified" : trip.tripClassification.rawValue.capitalized
 
-            // Title and Details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(trip.startDate ?? Date(), style: .date)
-                    .font(.system(size: 9.5, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.4))
+        return Button {
+            NotificationCenter.default.post(name: .openClassifyForTrip, object: trip.id)
+        } label: {
+            HStack(spacing: 12) {
+                // Scenic Thumbnail
+                Image("radar_route_thumbnail")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                    )
 
-                HStack(spacing: 5) {
-                    Image(systemName: trip.tripClassification == .business ? "briefcase.fill" : "house.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(trip.tripClassification == .business ? Color(hex: "#00FF88") : Color(hex: "#7B4FFF"))
-                    Text(trip.endAddress ?? "Trip Record")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                }
+                // Title and Details
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(trip.startDate ?? Date(), style: .date)
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.4))
 
-                // Tags
-                HStack(spacing: 6) {
-                    Text(trip.tripClassification.rawValue.capitalized)
-                        .font(.system(size: 8.5, weight: .bold))
-                        .foregroundStyle(trip.tripClassification == .business ? Color(hex: "#00FF88") : Color(hex: "#7B4FFF"))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            (trip.tripClassification == .business ? Color(hex: "#00FF88") : Color(hex: "#7B4FFF")).opacity(0.12)
-                        )
-                        .clipShape(Capsule())
-
-                    if let purpose = trip.businessPurpose, !purpose.isEmpty {
-                        Text(purpose)
-                            .font(.system(size: 8.5, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
+                    HStack(spacing: 5) {
+                        Image(systemName: icon)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(accent)
+                        Text(trip.endAddress ?? "Trip Record")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
                             .lineLimit(1)
+                    }
+
+                    // Tags
+                    HStack(spacing: 6) {
+                        Text(label)
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundStyle(accent)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.white.opacity(0.06))
+                            .background(accent.opacity(0.12))
                             .clipShape(Capsule())
+
+                        if let purpose = trip.businessPurpose, !purpose.isEmpty {
+                            Text(purpose)
+                                .font(.system(size: 8.5, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineLimit(1)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.white.opacity(0.06))
+                                .clipShape(Capsule())
+                        }
+
+                        if isUnclassified {
+                            Text("TAP TO CLASSIFY")
+                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(Color(hex: "#FFB020"))
+                        }
+                    }
+                }
+
+                Spacer()
+
+                // Right: Yield & Distance
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(isUnclassified ? "PENDING" : String(format: "+%@%.2f YIELD", currencySymbol, trip.taxDeductionValueUSD))
+                        .font(.system(size: 11.5, weight: .black, design: .rounded))
+                        .foregroundStyle(isUnclassified ? Color(hex: "#FFB020") : Color(hex: "#00FF88"))
+
+                    HStack(spacing: 2) {
+                        Text(MileageUnits.distance(trip.totalDistanceMiles))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.5))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.3))
                     }
                 }
             }
-
-            Spacer()
-
-            // Right: Yield & Distance
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(String(format: "+$%.2f YIELD", trip.taxDeductionValueUSD))
-                    .font(.system(size: 11.5, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-
-                HStack(spacing: 2) {
-                    Text(String(format: "%.1f mi", trip.totalDistanceMiles))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.3))
-                }
-            }
+            .padding(12)
+            .background(Color(hex: "#0A1018").opacity(0.85))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(isUnclassified ? Color(hex: "#FFB020").opacity(0.35) : Color.white.opacity(0.06), lineWidth: 1)
+            )
         }
-        .padding(12)
-        .background(Color(hex: "#0A1018").opacity(0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .buttonStyle(.plain)
     }
 }

@@ -96,7 +96,7 @@ final class NotificationManager: NSObject {
 
     func sendDriveFinished(tripID: UUID, miles: Double, deduction: Double, address: String) {
         let content = UNMutableNotificationContent()
-        content.title    = String(format: "✅ Drive Complete — %.1f mi", miles)
+        content.title    = "✅ Drive Complete — \(MileageUnits.distance(miles))"
         content.subtitle = address
         content.body     = String(format: "Est. deduction: $%.2f · Tap to classify.", deduction)
         content.sound    = UNNotificationSound(named: UNNotificationSoundName("chime.aiff"))
@@ -212,6 +212,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         if let entity = try? ctx.fetch(req).first {
             entity.classification = classification
             entity.needsReview    = false
+            if classification == "personal" { entity.taxDeductionValueUSD = 0 }
             CoreDataManager.shared.save()
         }
     }

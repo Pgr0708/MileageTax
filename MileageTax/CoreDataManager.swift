@@ -9,70 +9,187 @@ import CoreData
 import CoreLocation
 import SwiftUI
 import StoreKit
+internal import Combine
 
-final class CoreDataManager: NSObject {
+final class CoreDataManager: NSObject, ObservableObject {
 
     static let shared = CoreDataManager()
 
+    // MARK: - CloudKit Sync State
+
+    enum SyncState: Equatable {
+        case initializing
+        case syncing
+        case ready
+        case failed(String)
+    }
+
+    @Published private(set) var syncState: SyncState = .initializing
+
     // MARK: - Container
     //
-    // Using a plain local NSPersistentContainer (not CloudKit) for trip storage.
-    // This avoids the "BUG IN CLIENT OF CLOUDKIT: remote-notification background
-    // mode required" warning and eliminates the force-unwrap crash that occurred
-    // because NSPersistentCloudKitContainer.loadPersistentStores is async —
-    // the old `nsPersistentContainer!` was nil when first accessed.
+    // NSPersistentCloudKitContainer mirrors the local SQLite store to the
+    // user's private CloudKit database. This keeps trips, profile and app
+    // state restoreable after a reinstall and in sync across devices.
     //
-    // The container is loaded synchronously in init so `context` is always valid
-    // by the time any other code in the app touches it.
+    // The local store still loads synchronously (shouldAddStoreAsynchronously
+    // == false), so `context` is valid as soon as init() returns; only the
+    // CloudKit mirror is asynchronous.
 
-    let container: NSPersistentContainer
+    static let cloudKitContainerIdentifier = "iCloud.com.bhavik.MileageTax"
+
+    let container: NSPersistentCloudKitContainer
 
     var context: NSManagedObjectContext {
         container.viewContext
     }
 
+    var isReady: Bool {
+        if case .ready = syncState { return true }
+        return false
+    }
+
     private override init() {
-        container = NSPersistentContainer(name: "GoViral")
-        container.persistentStoreDescriptions.first?.shouldMigrateStoreAutomatically = true
-        container.persistentStoreDescriptions.first?.shouldInferMappingModelAutomatically = true
+        container = NSPersistentCloudKitContainer(name: "GoViral")
 
-        // loadPersistentStores calls its completion handler synchronously when
-        // the store can be opened immediately (local SQLite), so `context` is
-        // always ready before init() returns.
-        var loadError: Error?
-        container.loadPersistentStores { _, error in
-            loadError = error
+        guard let description = container.persistentStoreDescriptions.first else {
+            fatalError("CoreData: no persistent store description found.")
         }
-
-        super.init()
-
-        if let error = loadError {
-            // If the store is incompatible (e.g. model changed), delete and retry once.
-            print("💾 CoreData ERROR on first load: \(error.localizedDescription)")
-            if let storeURL = container.persistentStoreDescriptions.first?.url {
-                let fm = FileManager.default
-                for ext in ["", "-shm", "-wal"] {
-                    let target = storeURL.deletingPathExtension()
-                        .appendingPathExtension("sqlite\(ext)")
-                    try? fm.removeItem(at: target)
-                }
-            }
-            // Reload after clearing incompatible store
-            container.loadPersistentStores { _, retryError in
-                if let retryError {
-                    print("💾 CoreData FATAL: Retry also failed: \(retryError.localizedDescription)")
-                } else {
-                    print("💾 CoreData SUCCESS: Loaded after clearing incompatible store.")
-                }
-            }
-        } else {
-            print("💾 CoreData SUCCESS: Database loaded successfully.")
-        }
+        description.shouldMigrateStoreAutomatically = true
+        description.shouldInferMappingModelAutomatically = true
+        description.shouldAddStoreAsynchronously = false
+        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        description.setOption(true as NSNumber,
+                              forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+        description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+            containerIdentifier: CoreDataManager.cloudKitContainerIdentifier)
 
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        container.viewContext.name = "viewContext"
+
+        super.init()
+
+        // Local store loads synchronously; CloudKit mirroring begins afterwards.
+        container.loadPersistentStores { [weak self] _, error in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                if let error {
+                    print("💾 CoreData ERROR loading store: \(error.localizedDescription)")
+                    self.syncState = .failed(error.localizedDescription)
+                } else {
+                    print("💾 CoreData SUCCESS: CloudKit store loaded.")
+                    self.syncState = .ready
+                }
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(storeRemoteChange(_:)),
+            name: .NSPersistentStoreRemoteChange,
+            object: container.persistentStoreCoordinator)
+
+        // Repair pass: ensure pre-existing unclassified trips surface for review.
+        normalizeClassificationFlags()
+
+        // Restore onboarding flags / settings from a previous install if present.
+        hydrateDefaultsFromCloud()
 
         // seedInitialLedgerIfEmpty()
+    }
+
+    @objc private func storeRemoteChange(_ notification: Notification) {
+        // CloudKit pushed changes — viewContext already auto-merges via
+        // automaticallyMergesChangesFromParent; refresh restored defaults.
+        hydrateDefaultsFromCloud()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Classification Repair
+
+    /// One-time repair: any completed trip that is still unclassified (or has no
+    /// classification) must be flagged for review so it surfaces in Classify /
+    /// Vault / Radar pending instead of silently disappearing from those screens.
+    func normalizeClassificationFlags() {
+        let req: NSFetchRequest<TripEntity> = TripEntity.fetchRequest()
+        req.predicate = NSPredicate(format: "isInProgress == false")
+        let all = (try? context.fetch(req)) ?? []
+        var changed = false
+        for trip in all where trip.tripClassification == .unclassified && !trip.needsReview {
+            trip.needsReview = true
+            changed = true
+        }
+        if changed { save() }
+    }
+
+    // MARK: - Profile & App State (CloudKit-backed)
+
+    func fetchProfile() -> UserProfileEntity? {
+        let req: NSFetchRequest<UserProfileEntity> = UserProfileEntity.fetchRequest()
+        req.fetchLimit = 1
+        return (try? context.fetch(req))?.first
+    }
+
+    func saveProfile(name: String, photoData: Data?) {
+        let profile = fetchProfile() ?? UserProfileEntity(context: context)
+        profile.id = profile.id ?? UUID()
+        profile.name = name
+        profile.photoData = photoData
+        profile.updatedAt = Date()
+        save()
+    }
+
+    func fetchAppState() -> AppStateEntity? {
+        let req: NSFetchRequest<AppStateEntity> = AppStateEntity.fetchRequest()
+        req.fetchLimit = 1
+        return (try? context.fetch(req))?.first
+    }
+
+    /// Restores CloudKit-synced app state into UserDefaults on a fresh install
+    /// (only when the local onboarding flags are still absent).
+    func hydrateDefaultsFromCloud() {
+        guard let s = fetchAppState() else { return }
+        let d = UserDefaults.standard
+        guard d.object(forKey: AppStorageKeys.hasSeenLanguage) == nil,
+              d.object(forKey: AppStorageKeys.hasSeenOnboarding) == nil else { return }
+
+        d.set(s.hasSeenLanguage, forKey: AppStorageKeys.hasSeenLanguage)
+        d.set(s.hasSeenOnboarding, forKey: AppStorageKeys.hasSeenOnboarding)
+        d.set(s.hasSeenPaywall, forKey: AppStorageKeys.hasSeenPaywall)
+        d.set(s.hasSeenCustomization, forKey: AppStorageKeys.hasSeenCustomization)
+        if let n = s.userName, !n.isEmpty { d.set(n, forKey: AppStorageKeys.userName) }
+        if let c = s.currencySymbol { d.set(c, forKey: AppStorageKeys.currencySymbol) }
+        if let u = s.distanceUnit { d.set(u, forKey: AppStorageKeys.distanceUnit) }
+        if let l = s.countryTaxLabel { d.set(l, forKey: AppStorageKeys.countryTaxLabel) }
+        d.set(s.ratePerMile, forKey: AppStorageKeys.irsRateOverride)
+        d.set(Int(s.workDaysMask), forKey: AppStorageKeys.workDaysMask)
+        print("💾 CoreData: hydrated defaults from CloudKit.")
+    }
+
+    /// Mirrors the current UserDefaults app state into the CloudKit-backed store
+    /// so a reinstall can restore onboarding flags, profile and tax settings.
+    func persistDefaultsToCloud() {
+        let d = UserDefaults.standard
+        let s = fetchAppState() ?? AppStateEntity(context: context)
+        s.id = s.id ?? UUID()
+        s.hasSeenLanguage      = d.bool(forKey: AppStorageKeys.hasSeenLanguage)
+        s.hasSeenOnboarding    = d.bool(forKey: AppStorageKeys.hasSeenOnboarding)
+        s.hasSeenPaywall       = d.bool(forKey: AppStorageKeys.hasSeenPaywall)
+        s.hasSeenCustomization = d.bool(forKey: AppStorageKeys.hasSeenCustomization)
+        s.userName             = d.string(forKey: AppStorageKeys.userName) ?? ""
+        s.currencySymbol       = d.string(forKey: AppStorageKeys.currencySymbol) ?? MileageTaxDefaults.defaultCurrencySymbol
+        s.distanceUnit         = d.string(forKey: AppStorageKeys.distanceUnit) ?? MileageTaxDefaults.defaultDistanceUnit
+        s.countryTaxLabel      = d.string(forKey: AppStorageKeys.countryTaxLabel) ?? MileageTaxDefaults.defaultCountryLabel
+        let savedRate = d.object(forKey: AppStorageKeys.irsRateOverride) as? Double ?? 0
+        s.ratePerMile          = savedRate > 0 ? savedRate : MileageTaxDefaults.irsRatePerMile
+        let mask = d.integer(forKey: AppStorageKeys.workDaysMask)
+        s.workDaysMask         = Int64(mask != 0 ? mask : MileageTaxDefaults.defaultWorkDaysMask)
+        s.updatedAt            = Date()
+        save()
     }
 
     // MARK: - Generic Helpers
@@ -134,6 +251,8 @@ final class CoreDataManager: NSObject {
         entity.endLongitude          = record.endLongitude
         entity.startAddress          = record.startAddress
         entity.endAddress            = record.endAddress
+        entity.startLandmark         = record.startLandmark
+        entity.endLandmark           = record.endLandmark
         entity.totalDistanceMiles    = record.totalDistanceMiles
         entity.maxSpeedMph           = record.maxSpeedMph
         entity.averageMovingSpeedMph = record.averageMovingSpeedMph
@@ -217,7 +336,7 @@ final class CoreDataManager: NSObject {
 
     // MARK: - Dynamic Aggregation Queries (Single Source of Truth)
 
-    func quarterSummary(for quarter: QuarterPeriod, year: Int = 2026) -> (miles: Double, deduction: Double, status: QuarterStatus, count: Int) {
+    func quarterSummary(for quarter: QuarterPeriod, year: Int) -> (miles: Double, deduction: Double, status: QuarterStatus, count: Int) {
         let calendar = Calendar.current
         let all = fetchAllTrips()
         let filtered = all.filter { trip in
@@ -233,7 +352,7 @@ final class CoreDataManager: NSObject {
         return (miles: miles, deduction: deduction, status: status, count: filtered.count)
     }
 
-    func totalBusinessMetrics(year: Int = 2026) -> (miles: Double, deduction: Double, count: Int) {
+    func totalBusinessMetrics(year: Int) -> (miles: Double, deduction: Double, count: Int) {
         let calendar = Calendar.current
         let all = fetchAllTrips()
         let filtered = all.filter { trip in
@@ -393,14 +512,12 @@ final class CoreDataManager: NSObject {
     // MARK: - Factory Reset
 
     func deleteAllTrips() {
-        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = TripEntity.fetchRequest()
-        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-        do {
-            try context.execute(batchDeleteRequest)
-            try context.save()
-        } catch {
-            print("Failed to delete all trips: \(error)")
+        // Delete through the context (not NSBatchDeleteRequest) so CloudKit can
+        // write per-object tombstones and @FetchRequest observes the change.
+        for trip in fetchAllTrips() {
+            context.delete(trip)
         }
+        save()
     }
 
 } // end CoreDataManager

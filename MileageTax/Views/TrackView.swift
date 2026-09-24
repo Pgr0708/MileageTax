@@ -149,7 +149,7 @@ struct TrackView: View {
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.white.opacity(0.25))
 
-            Text(String(format: "%.0f MPH", displaySpeed))
+            Text(String(format: "%.0f %@", MileageUnits.speedValue(displaySpeed), MileageUnits.speedUnitLabel))
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundStyle(Color(hex: "#00E5FF"))
 
@@ -317,11 +317,11 @@ struct TrackView: View {
                     .padding(.top, 4)
 
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(isTracking ? String(format: "%.0f", displaySpeed) : "0")
+                    Text(isTracking ? String(format: "%.0f", MileageUnits.speedValue(displaySpeed)) : "0")
                         .font(.system(size: 48, weight: .black, design: .rounded))
                         .foregroundStyle(isTracking ? .white : .white.opacity(0.3))
 
-                    Text("MPH")
+                    Text(MileageUnits.speedUnitLabel)
                         .font(.system(size: 14, weight: .heavy, design: .rounded))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }

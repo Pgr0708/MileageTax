@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24902" systemVersion="25F84" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="TripEntity" representedClassName="TripEntity" syncable="YES" codeGenerationType="class">
+        <!-- Identity -->
+        <attribute name="id"                    optional="YES" attributeType="UUID"     usesScalarValueType="NO"/>
+        <!-- Timing -->
+        <attribute name="startDate"             optional="YES" attributeType="Date"     usesScalarValueType="NO"/>
+        <attribute name="endDate"               optional="YES" attributeType="Date"     usesScalarValueType="NO"/>
+        <attribute name="createdAt"             optional="YES" attributeType="Date"     usesScalarValueType="NO"/>
+        <attribute name="updatedAt"             optional="YES" attributeType="Date"     usesScalarValueType="NO"/>
+        <!-- Coordinates -->
+        <attribute name="startLatitude"         optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="startLongitude"        optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="endLatitude"           optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="endLongitude"          optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <!-- Addresses -->
+        <attribute name="startAddress"          optional="YES" attributeType="String"   defaultValueString=""/>
+        <attribute name="endAddress"            optional="YES" attributeType="String"   defaultValueString=""/>
+        <!-- Stats -->
+        <attribute name="totalDistanceMiles"    optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="maxSpeedMph"           optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="averageMovingSpeedMph" optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="taxDeductionValueUSD"  optional="YES" attributeType="Double"   defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="currencyCode"          optional="YES" attributeType="String"   defaultValueString="USD"/>
+        <!-- Classification -->
+        <attribute name="classification"        optional="YES" attributeType="String"   defaultValueString="unclassified"/>
+        <attribute name="businessPurpose"       optional="YES" attributeType="String"   defaultValueString=""/>
+        <attribute name="vehicleName"           optional="YES" attributeType="String"   defaultValueString=""/>
+        <!-- Flags -->
+        <attribute name="isInProgress"          optional="YES" attributeType="Boolean"  defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="needsReview"           optional="YES" attributeType="Boolean"  defaultValueString="NO"  usesScalarValueType="YES"/>
+        <!-- Route data — stored as JSON-encoded Data blobs, spilled to disk for CloudKit asset friendliness -->
+        <attribute name="breadcrumbsData"       optional="YES" attributeType="Binary"   allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="waypointsData"         optional="YES" attributeType="Binary"   allowsExternalBinaryDataStorage="YES"/>
+    </entity>
+    <entity name="UserProfileEntity" representedClassName="UserProfileEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id"         optional="YES" attributeType="UUID"     usesScalarValueType="NO"/>
+        <attribute name="name"       optional="YES" attributeType="String"   defaultValueString=""/>
+        <attribute name="photoData"  optional="YES" attributeType="Binary"   allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="updatedAt"  optional="YES" attributeType="Date"     usesScalarValueType="NO"/>
+    </entity>
+    <entity name="AppStateEntity" representedClassName="AppStateEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id"                     optional="YES" attributeType="UUID"     usesScalarValueType="NO"/>
+        <attribute name="hasSeenLanguage"        optional="YES" attributeType="Boolean"  defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="hasSeenOnboarding"      optional="YES" attributeType="Boolean"  defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="hasSeenPaywall"         optional="YES" attributeType="Boolean"  defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="hasSeenCustomization"   optional="YES" attributeType="Boolean"  defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="userName"               optional="YES" attributeType="String"   defaultValueString=""/>
+        <attribute name="currencySymbol"         optional="YES" attributeType="String"   defaultValueString="$"/>
+        <attribute name="distanceUnit"           optional="YES" attributeType="String"   defaultValueString="mi"/>
+        <attribute name="countryTaxLabel"        optional="YES" attributeType="String"   defaultValueString="IRS Standard (USA)"/>
+        <attribute name="ratePerMile"            optional="YES" attributeType="Double"   defaultValueString="0.67" usesScalarValueType="YES"/>
+        <attribute name="workDaysMask"           optional="YES" attributeType="Integer 64" defaultValueString="62" usesScalarValueType="YES"/>
+        <attribute name="updatedAt"              optional="YES" attributeType="Date"     usesScalarValueType="NO"/>
+    </entity>
+</model>

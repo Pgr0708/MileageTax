@@ -60,6 +60,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         }
         print("Received an APNs device token: \(readableToken)")
     }
+
+    // CloudKit delivers silent pushes when the private database changes on
+    // another device. Acknowledge them so the store coordinator can import.
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        completionHandler(.newData)
+    }
 }
 
 extension AppDelegate: MessagingDelegate {

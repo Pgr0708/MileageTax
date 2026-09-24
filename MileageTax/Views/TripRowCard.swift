@@ -71,12 +71,12 @@ struct TripRowCard: View {
 
             // Mileage & Tax Deduction
             VStack(alignment: .trailing, spacing: 3) {
-                Text(String(format: "+$%.2f", trip.taxDeductionValueUSD))
+                Text(String(format: "+%@%.2f", MileageUnits.currencySymbol, trip.taxDeductionValueUSD))
                     .font(.system(size: 13, weight: .black, design: .rounded))
                     .foregroundStyle(classColor)
 
                 HStack(spacing: 3) {
-                    Text(String(format: "%.1f mi", trip.totalDistanceMiles))
+                    Text(MileageUnits.distance(trip.totalDistanceMiles))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.55))
 

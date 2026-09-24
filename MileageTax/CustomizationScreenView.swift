@@ -69,7 +69,7 @@ struct CustomizationScreenView: View {
     @AppStorage(AppStorageKeys.distanceUnit)          private var distanceUnit: String   = MileageTaxDefaults.defaultDistanceUnit
     @AppStorage(AppStorageKeys.countryTaxLabel)       private var countryTaxLabel: String = MileageTaxDefaults.defaultCountryLabel
     @AppStorage(AppStorageKeys.weeklyReportEnabled)   private var weeklyReport = true
-    @AppStorage(AppStorageKeys.autoClassifyWorkHours) private var autoWorkHours = false
+    @AppStorage(AppStorageKeys.autoClassifyWorkHours) private var autoWorkHours = true
 
     @AppStorage(AppStorageKeys.userName) private var userName: String = ""
     @State private var profilePhotoData: Data? = UserDefaults.standard.data(forKey: "MT_userPhotoData")
@@ -662,6 +662,7 @@ struct CustomizationScreenView: View {
                     withAnimation(.spring(response: 0.4)) { step += 1 }
                 } else {
                     applyStepSettings()
+                    ProfileStore.shared.save(name: userName, photo: profilePhotoData)
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     withAnimation(.easeInOut(duration: 0.35)) {
                         hasSeenCustomization = true
@@ -699,7 +700,8 @@ struct CustomizationScreenView: View {
 
     private func applyStepSettings() {
         if let c = selectedCountry {
-            irsRate       = c.rate * selectedVehicle.rateMultiplier
+            let perMile = MileageUnits.perMileRate(from: c.rate, nativeUnit: c.unit)
+            irsRate       = perMile * selectedVehicle.rateMultiplier
             currencySymbol = c.currency
             distanceUnit   = c.unit
             countryTaxLabel = c.label

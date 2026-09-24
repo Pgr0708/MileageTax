@@ -110,6 +110,9 @@ struct ProfileView: View {
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
                 avatarGlowPhase = true
             }
+            let stored = ProfileStore.shared
+            if !stored.name.isEmpty { userName = stored.name }
+            if let data = stored.photoData { profilePhotoData = data }
         }
     }
 
@@ -264,10 +267,10 @@ struct ProfileView: View {
                         .foregroundStyle(.white.opacity(0.45))
 
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text(String(format: "%.0f", totalMiles))
+                        Text(String(format: "%.0f", MileageUnits.distanceValue(totalMiles)))
                             .font(.system(size: 22, weight: .black, design: .rounded))
                             .foregroundStyle(Color(hex: "#00FF88"))
-                        Text("mi")
+                        Text(MileageUnits.unitLabel)
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white.opacity(0.5))
                     }
@@ -365,7 +368,7 @@ struct ProfileView: View {
 
                 Spacer()
 
-                Text(String(format: "%.0f¢/mi", irsRate * 100))
+                Text(String(format: "%.0f¢/%@", MileageUnits.ratePerDisplayUnit(irsRate) * 100, MileageUnits.unitLabel))
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .padding(.horizontal, 8)
@@ -772,10 +775,10 @@ struct TaxSettingsModalView: View {
                                     Button {
                                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                             currencySymbol  = preset.symbol
-                                            irsRate         = preset.rate
                                             distanceUnit    = preset.unit
                                             countryTaxLabel = preset.label
-                                            rateInputText   = String(preset.rate)
+                                            irsRate         = MileageUnits.perMileRate(from: preset.rate, nativeUnit: preset.unit)
+                                            rateInputText   = String(format: "%.3f", MileageUnits.ratePerDisplayUnit(irsRate))
                                         }
                                     } label: {
                                         HStack {
@@ -871,8 +874,10 @@ struct TaxSettingsModalView: View {
                                                         .padding(.vertical, 8)
                                                         .background(Color.black.opacity(0.3))
                                                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                        .onChange(of: rateInputText) { newVal in
-                                                            if let d = Double(newVal) { irsRate = d }
+                                                        .onChange(of: rateInputText) { _, newVal in
+                                                            if let d = Double(newVal) {
+                                                                irsRate = MileageUnits.perMileRate(from: d, nativeUnit: distanceUnit)
+                                                            }
                                                         }
                                                 }
                                             }

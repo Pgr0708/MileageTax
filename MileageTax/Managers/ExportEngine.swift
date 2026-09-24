@@ -24,21 +24,31 @@ enum ExportEngine {
 
     // MARK: - Rate for a given trip date
 
-    private static func rate(for date: Date) -> Double {
+    /// Full tax record active for the given date (native-unit rate + effective dates).
+    private static func rateRecord(for date: Date) -> TaxRateRecord? {
         let country = countryLabel
-        // Find the country in the rule engine by matching label or country name
         let match = TaxRuleEngine.database.first { r in
             country.contains(r.country) || country.contains(r.authority)
         }
-        if let match = match {
-            // Check date range
-            let record = TaxRuleEngine.database
-                .filter { $0.country == match.country }
-                .first { r in r.effectiveFrom <= date && (r.effectiveTo == nil || r.effectiveTo! >= date) }
-            return record?.rate ?? match.rate
-        }
+        guard let match else { return nil }
+        return TaxRuleEngine.database
+            .filter { $0.country == match.country }
+            .first { r in r.effectiveFrom <= date && (r.effectiveTo == nil || r.effectiveTo! >= date) }
+            ?? match
+    }
+
+    private static func rate(for date: Date) -> Double {
+        if let record = rateRecord(for: date) { return record.rate }
         let saved = UserDefaults.standard.double(forKey: AppStorageKeys.irsRateOverride)
         return saved > 0 ? saved : MileageTaxDefaults.irsRatePerMile
+    }
+
+    /// Accurate deduction value for a trip: personal trips are always $0;
+    /// business/unclassified use the stored value, falling back to miles × rate.
+    private static func deduction(for trip: TripEntity, appliedRate: Double) -> Double {
+        if trip.classification == "personal" { return 0 }
+        if trip.taxDeductionValueUSD > 0 { return trip.taxDeductionValueUSD }
+        return trip.totalDistanceMiles * appliedRate
     }
 
     // MARK: ─── PHASE 6: Rich 20-Field CSV ────────────────────────────────
@@ -46,7 +56,7 @@ enum ExportEngine {
     static func exportCSV(trips: [TripEntity]) -> URL {
         let header = [
             "Trip ID", "Date", "Start Time", "End Time",
-            "Start Address", "End Address",
+            "Start Address", "Start Landmark", "End Address", "End Landmark",
             "Purpose", "Classification", "Vehicle",
             "Start Latitude", "Start Longitude", "End Latitude", "End Longitude",
             "Distance (\(distanceUnit))", "Tax Authority", "Rate Applied",
@@ -63,9 +73,8 @@ enum ExportEngine {
         for trip in trips {
             let tripDate = trip.startDate ?? Date()
             let appliedRate = rate(for: tripDate)
-            let deduction = trip.taxDeductionValueUSD > 0
-                ? trip.taxDeductionValueUSD
-                : trip.totalDistanceMiles * appliedRate
+            let effectiveDate = rateRecord(for: tripDate)?.effectiveFrom ?? tripDate
+            let deduction = Self.deduction(for: trip, appliedRate: appliedRate)
 
             let breadcrumbCount: Int = {
                 guard let data = trip.breadcrumbsData,
@@ -73,14 +82,17 @@ enum ExportEngine {
                 else { return 0 }
                 return crumbs.count
             }()
+            let trackMethod = breadcrumbCount > 0 ? "GPS Automatic (\(breadcrumbCount) pts)" : "Manual"
 
             let cells: [String] = [
-                escaped(trip.id?.uuidString ?? UUID().uuidString),
+                escaped(trip.id?.uuidString ?? ""),
                 dateFmt.string(from: tripDate),
                 timeFmt.string(from: trip.startDate ?? Date()),
                 timeFmt.string(from: trip.endDate ?? Date()),
                 escaped(trip.startAddress ?? ""),
+                escaped(trip.startLandmark ?? trip.startAddress ?? ""),
                 escaped(trip.endAddress ?? ""),
+                escaped(trip.endLandmark ?? trip.endAddress ?? ""),
                 escaped(trip.businessPurpose ?? ""),
                 escaped(trip.classification ?? "unclassified"),
                 escaped(trip.vehicleName ?? ""),
@@ -88,17 +100,17 @@ enum ExportEngine {
                 String(format: "%.6f", trip.startLongitude),
                 String(format: "%.6f", trip.endLatitude),
                 String(format: "%.6f", trip.endLongitude),
-                String(format: "%.2f", trip.totalDistanceMiles),
+                String(format: "%.2f", MileageUnits.distanceValue(trip.totalDistanceMiles)),
                 escaped(countryLabel),
                 String(format: "%.4f", appliedRate),
-                dateFmt.string(from: tripDate),   // rate effective as of trip date
+                dateFmt.string(from: effectiveDate),
                 String(format: "%.2f", deduction),
-                "0.00",   // parking — field reserved
-                "0.00",   // tolls   — field reserved
+                "",   // parking — not tracked
+                "",   // tolls   — not tracked
                 String(format: "%.2f", deduction),
-                "GPS Automatic",
+                trackMethod,
                 String(breadcrumbCount),
-                ""        // notes
+                ""    // notes
             ]
             rows.append(cells.joined(separator: ","))
         }
@@ -122,7 +134,7 @@ enum ExportEngine {
             .appendingPathComponent("MileageTax_Report_\(dateStamp()).pdf")
 
         let businessTrips = trips.filter { $0.classification == "business" }
-        let totalMiles    = businessTrips.reduce(0.0) { $0 + $1.totalDistanceMiles }
+        let totalMiles    = trips.reduce(0.0) { $0 + $1.totalDistanceMiles }
         let totalDeduct   = businessTrips.reduce(0.0) { $0 + $1.taxDeductionValueUSD }
 
         let dateFmtLabel = DateFormatter()
@@ -139,7 +151,7 @@ enum ExportEngine {
             ctx.beginPage()
             let gc = ctx.cgContext
             drawSummaryPage(gc: gc, pageW: pageW, margin: margin,
-                            trips: trips, businessTrips: businessTrips,
+                            trips: trips,
                             totalMiles: totalMiles, totalDeduct: totalDeduct,
                             userName: userName, rangeLabel: rangeLabel)
 
@@ -147,7 +159,7 @@ enum ExportEngine {
             var yPos: CGFloat = 0
             var isFirstTripPage = true
 
-            for trip in businessTrips {
+            for trip in trips {
                 let blockHeight: CGFloat = 120
                 if yPos == 0 || yPos + blockHeight > pageH - margin {
                     ctx.beginPage()
@@ -179,7 +191,7 @@ enum ExportEngine {
     private static let grey   = UIColor(red: 0.40, green: 0.40, blue: 0.40, alpha: 1)
 
     private static func drawSummaryPage(gc: CGContext, pageW: CGFloat, margin: CGFloat,
-                                        trips: [TripEntity], businessTrips: [TripEntity],
+                                        trips: [TripEntity],
                                         totalMiles: Double, totalDeduct: Double, userName: String,
                                         rangeLabel: String = "") {
         var y: CGFloat = margin
@@ -201,9 +213,9 @@ enum ExportEngine {
         ]
         let reportRangeText: String
         if rangeLabel.isEmpty {
-            reportRangeText = "BUSINESS MILEAGE REPORT · TAX YEAR \(Calendar.current.component(.year, from: Date()))"
+            reportRangeText = "MILEAGE LOG REPORT · TAX YEAR \(Calendar.current.component(.year, from: Date()))"
         } else {
-            reportRangeText = "BUSINESS MILEAGE REPORT · \(rangeLabel.uppercased())"
+            reportRangeText = "MILEAGE LOG REPORT · \(rangeLabel.uppercased())"
         }
         reportRangeText.draw(at: CGPoint(x: margin, y: 50), withAttributes: subtitleAttr)
 
@@ -219,16 +231,23 @@ enum ExportEngine {
         y = 140
 
         // ── Summary Block ────────────────────────────────────────────────
-        drawSectionHeader(gc: gc, title: "BUSINESS MILEAGE SUMMARY", y: y, margin: margin, pageW: pageW)
+        drawSectionHeader(gc: gc, title: "MILEAGE SUMMARY", y: y, margin: margin, pageW: pageW)
         y += 28
 
+        let bizMiles  = trips.filter { $0.classification == "business" }.reduce(0.0) { $0 + $1.totalDistanceMiles }
+        let persMiles = trips.filter { $0.classification == "personal" }.reduce(0.0) { $0 + $1.totalDistanceMiles }
+        let uncMiles  = trips.filter { $0.classification == "unclassified" }.reduce(0.0) { $0 + $1.totalDistanceMiles }
+
         let summaryItems: [(String, String)] = [
-            ("Total Business \(distanceUnit.uppercased())", String(format: "%.1f \(distanceUnit)", totalMiles)),
-            ("Mileage Deduction", String(format: "\(currencySymbol)%.2f", totalDeduct)),
+            ("Business \(distanceUnit.uppercased())", String(format: "%.1f \(distanceUnit)", MileageUnits.distanceValue(bizMiles))),
+            ("Business Deduction", String(format: "\(currencySymbol)%.2f", totalDeduct)),
+            ("Personal \(distanceUnit.uppercased())", String(format: "%.1f \(distanceUnit)", MileageUnits.distanceValue(persMiles))),
+            ("Unclassified \(distanceUnit.uppercased())", String(format: "%.1f \(distanceUnit)", MileageUnits.distanceValue(uncMiles))),
             ("Rate Applied", "\(currencySymbol)\(String(format: "%.3f", rate(for: Date())))/\(distanceUnit)"),
             ("Parking", "\(currencySymbol)0.00"),
             ("Tolls", "\(currencySymbol)0.00"),
-            ("TOTAL BUSINESS TRAVEL VALUE", String(format: "\(currencySymbol)%.2f", totalDeduct)),
+            ("TOTAL LOGGED \(distanceUnit.uppercased())", String(format: "%.1f \(distanceUnit)", MileageUnits.distanceValue(totalMiles))),
+            ("TOTAL DEDUCTION", String(format: "\(currencySymbol)%.2f", totalDeduct)),
         ]
         for (i, item) in summaryItems.enumerated() {
             let isBold = i == summaryItems.count - 1
@@ -296,9 +315,7 @@ enum ExportEngine {
                                     yPos: CGFloat, margin: CGFloat, pageW: CGFloat) -> CGFloat {
         var y = yPos
         let appliedRate = rate(for: trip.startDate ?? Date())
-        let deduction = trip.taxDeductionValueUSD > 0
-            ? trip.taxDeductionValueUSD
-            : trip.totalDistanceMiles * appliedRate
+        let deduction = Self.deduction(for: trip, appliedRate: appliedRate)
 
         let dateFmt = DateFormatter(); dateFmt.dateFormat = "MM/dd/yy"
         let timeFmt = DateFormatter(); dateFmt.dateFormat = "h:mm a"
@@ -313,8 +330,10 @@ enum ExportEngine {
         ]
 
         let dateStr    = dateFmt.string(from: trip.startDate ?? Date())
-        let fromTo     = "\(String((trip.startAddress ?? "?").prefix(22)))\n→ \(String((trip.endAddress ?? "?").prefix(22)))"
-        let milesStr   = String(format: "%.1f", trip.totalDistanceMiles)
+        let startLabel = trip.startLandmark ?? trip.startAddress ?? "—"
+        let endLabel   = trip.endLandmark ?? trip.endAddress ?? "—"
+        let fromTo     = "\(String(startLabel.prefix(22)))\n→ \(String(endLabel.prefix(22)))"
+        let milesStr   = String(format: "%.1f", MileageUnits.distanceValue(trip.totalDistanceMiles))
         let classStr   = String((trip.classification ?? "").prefix(7))
         let rateStr    = "\(currencySymbol)\(String(format: "%.3f", appliedRate))"
         let deductStr  = String(format: "\(currencySymbol)%.2f", deduction)

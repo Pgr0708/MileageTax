@@ -199,11 +199,13 @@ struct EditProfileSheet: View {
     }
 
     private func saveAndDismiss() {
-        userName = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+        userName = trimmed
         if let img = pickedImage, let d = img.jpegData(compressionQuality: 0.82) {
             UserDefaults.standard.set(d, forKey: "MT_userPhotoData")
             profilePhotoData = d
         }
+        ProfileStore.shared.save(name: trimmed, photo: profilePhotoData)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         dismiss()
     }

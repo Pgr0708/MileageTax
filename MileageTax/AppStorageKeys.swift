@@ -37,6 +37,10 @@ enum AppStorageKeys {
     static let btGatingEnabled             = "MT_btGatingEnabled"
     static let weeklyReportEnabled         = "MT_weeklyReportEnabled"
     static let knownVehicles               = "MTKnownVehicleBluetoothNames"
+    static let workDaysMask                = "MT_workDaysMask"
+    static let geofenceEnabled             = "MT_geofenceEnabled"
+    static let motionDetectDistanceM       = "MT_motionDetectDistanceM"   // metres
+    static let motionDetectSpeedMS         = "MT_motionDetectSpeedMS"     // metres/second
 
     // MARK: MileageTax Global Tax & Currency
     static let currencySymbol              = "MT_currencySymbol"
@@ -53,6 +57,9 @@ public enum MileageTaxDefaults {
     public static let defaultCurrencySymbol: String = "$"
     public static let defaultDistanceUnit: String   = "mi"
     public static let defaultCountryLabel: String   = "IRS Standard (USA)"
+    /// Bitmask of selected work days (bit 0 = Sunday … bit 6 = Saturday).
+    /// Default is Monday–Friday = 0b0111110 = 62.
+    public static let defaultWorkDaysMask: Int      = 62
 }
 
 

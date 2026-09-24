@@ -110,6 +110,7 @@
 
 import Foundation
 import CoreLocation
+import MapKit
 import CoreMotion
 import UserNotifications
 import AVFoundation
@@ -165,12 +166,26 @@ public enum TripTrackerConfig {
 
     // FSM thresholds
     static let stationaryGeofenceRadiusM: CLLocationDistance      = 50
-    static let motionVerificationWindowSeconds: TimeInterval       = 40
-    static let motionVerificationDisplacementM: CLLocationDistance = 150
-    static let motionVerificationSpeedMS: Double                   = 6.7  // 15 mph
+    /// Must be long enough to confirm the configured threshold. 300 m at
+    /// 18 km/h (~5 m/s) takes 60 s, so 120 s leaves GPS-interval margin.
+    static let motionVerificationWindowSeconds: TimeInterval       = 120
+    /// Runtime-configurable "detect after" thresholds.
+    /// Default: 300 m at 18+ km/h (5.0 m/s).
+    static var motionVerificationDisplacementM: CLLocationDistance {
+        let v = UserDefaults.standard.double(forKey: AppStorageKeys.motionDetectDistanceM)
+        return v > 0 ? v : 300
+    }
+    static var motionVerificationSpeedMS: Double {
+        let v = UserDefaults.standard.double(forKey: AppStorageKeys.motionDetectSpeedMS)
+        return v > 0 ? v : 5.0   // 18 km/h
+    }
+
+    // Pre-roll capture — backdates the committed trip to the true origin.
+    static let preludeMaxPoints: Int                       = 80
+    static let preludeMinSpacingMeters: CLLocationDistance = 5
     static let idleBufferGraceSeconds: TimeInterval                = 300  // 5 min
     static let idleBufferMaxExtensionSeconds: TimeInterval         = 600  // ferry/drawbridge cap
-    static let minimumTripDistanceMiles: Double                    = 0.2
+    static let minimumTripDistanceMiles: Double                    = 0.05  // was 0.2 — allows ~80m+ trips
     static let waypointStopMaxSeconds: TimeInterval                = 300
     static let tripMergeGapSeconds: TimeInterval                   = 180
     static let tripMergeDistanceMeters: CLLocationDistance         = 300
@@ -283,6 +298,8 @@ public final class TripMemoryRecord {
     public var endLongitude:          Double = 0
     public var startAddress:          String = "Resolving..."
     public var endAddress:            String = "In progress"
+    public var startLandmark:         String = ""
+    public var endLandmark:           String = ""
     public var totalDistanceMiles:    Double = 0
     public var maxSpeedMph:           Double = 0
     public var averageMovingSpeedMph: Double = 0
@@ -404,6 +421,32 @@ actor GeocodeCache {
         return fallback
     }
 
+    /// Returns the name of the nearest point-of-interest ("famous point") near
+    /// the coordinate, or an empty string when nothing is found / offline.
+    /// The caller falls back to the reverse-geocoded address — never fabricated.
+    func landmark(for location: CLLocation) async -> String {
+        let key = "poi:" + Self.key(for: location.coordinate)
+        if let cached = cache[key] { return cached }
+
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = "point of interest"
+        request.region = MKCoordinateRegion(center: location.coordinate,
+                                            latitudinalMeters: 400,
+                                            longitudinalMeters: 400)
+        request.resultTypes = .pointOfInterest
+
+        do {
+            let response = try await MKLocalSearch(request: request).start()
+            if let first = response.mapItems.first, let name = first.name, !name.isEmpty {
+                cache[key] = name
+                return name
+            }
+        } catch {
+            tripLogger.debug("POI lookup failed: \(error.localizedDescription, privacy: .public)")
+        }
+        return ""
+    }
+
     private static func key(for c: CLLocationCoordinate2D) -> String {
         String(format: "%.4f,%.4f", c.latitude, c.longitude)
     }
@@ -482,7 +525,7 @@ final class TripTrackerService: NSObject, ObservableObject {
         get {
             let saved = UserDefaults.standard.double(forKey: AppStorageKeys.irsRateOverride)
             let ratePerMile = saved > 0 ? saved : MileageTaxDefaults.irsRatePerMile
-            return TaxJurisdictionRate(currencyCode: "USD", ratePerMile: ratePerMile)
+            return TaxJurisdictionRate(currencyCode: MileageUnits.currencyCode, ratePerMile: ratePerMile)
         }
         set {
             UserDefaults.standard.set(newValue.ratePerMile, forKey: AppStorageKeys.irsRateOverride)
@@ -521,6 +564,9 @@ final class TripTrackerService: NSObject, ObservableObject {
     private var activeTripStartTrigger:       TripStartTrigger?
     /// PATCH 2: fresh wall-clock timestamp recorded when verification begins.
     private var verifyingMotionStartTime:     Date?
+    /// Pre-roll path captured between the parked origin and trip confirmation,
+    /// so the committed trip starts at the true origin (not after 300 m).
+    private var preludeLocations:             [CLLocation] = []
 
     // Idle buffer state
     private var idleBufferStartDate:       Date?
@@ -961,6 +1007,9 @@ final class TripTrackerService: NSObject, ObservableObject {
         activeTripStartTrigger       = trigger
         verifyingMotionStartTime     = Date()       // PATCH 2
         verifyingMotionStartLocation = lastKnownAnyLocation
+        // Seed the pre-roll buffer with the parked origin so the true start is known.
+        preludeLocations.removeAll()
+        if let parked = lastKnownAnyLocation { preludeLocations.append(parked) }
         verifyingMotionDeadline      = Date().addingTimeInterval(TripTrackerConfig.motionVerificationWindowSeconds)
         transition(to: .verifyingMotion)
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
@@ -983,12 +1032,26 @@ final class TripTrackerService: NSObject, ObservableObject {
         verifyingMotionWorkItem?.cancel()
         verifyingMotionStartLocation = nil
         verifyingMotionStartTime     = nil
+        preludeLocations.removeAll()   // false alarm — discard the pre-roll
         if let last = lastKnownAnyLocation { rearmStationaryGeofence(at: last.coordinate) }
         else                               { locationManager.stopUpdatingLocation() }
         transition(to: .dormant)
     }
 
     private func processVerification(location: CLLocation) {
+        // Capture the pre-roll path while verification is in flight.
+        if let last = preludeLocations.last {
+            if location.timestamp > last.timestamp,
+               location.distance(from: last) >= TripTrackerConfig.preludeMinSpacingMeters {
+                preludeLocations.append(location)
+                if preludeLocations.count > TripTrackerConfig.preludeMaxPoints {
+                    preludeLocations.removeFirst(preludeLocations.count - TripTrackerConfig.preludeMaxPoints)
+                }
+            }
+        } else {
+            preludeLocations.append(location)
+        }
+
         guard let seed = verifyingMotionStartLocation else {
             verifyingMotionStartLocation = location; return
         }
@@ -1032,17 +1095,35 @@ final class TripTrackerService: NSObject, ObservableObject {
             lastFinalizedTrip        = nil
             lastFinalizedEndLocation = nil
         } else {
-            tripStartDate       = seedLocation.timestamp
-            tripStartLocation   = seedLocation
-            breadcrumbs         = [TripBreadcrumb(location: seedLocation)]
+            let prelude = preludeLocations.isEmpty ? [seedLocation] : preludeLocations
+            if let first = prelude.first {
+                tripStartDate    = first.timestamp
+                tripStartLocation = CLLocation(latitude: first.coordinate.latitude,
+                                               longitude: first.coordinate.longitude)
+            } else {
+                tripStartDate    = seedLocation.timestamp
+                tripStartLocation = seedLocation
+            }
+            breadcrumbs         = prelude.map { TripBreadcrumb(location: $0) }
             waypoints           = []
-            accumulatedMeters   = 0
             speedSamples        = []
             maxObservedSpeedMps = 0
             inProgressRecord    = nil
-        }
 
-        lastValidLocation = seedLocation
+            // Recompute odometer over the spliced pre-roll path (true origin → confirming).
+            accumulatedMeters = 0
+            for i in 1..<prelude.count {
+                accumulatedMeters += prelude[i].distance(from: prelude[i-1])
+            }
+        }
+        preludeLocations.removeAll()
+
+        // Account for the confirming fix and keep the valid-location cursor honest.
+        if let lastCrumb = breadcrumbs.last {
+            let lastLoc = CLLocation(latitude: lastCrumb.latitude, longitude: lastCrumb.longitude)
+            accumulatedMeters += confirmingLocation.distance(from: lastLoc)
+        }
+        lastValidLocation = confirmingLocation
         appendBreadcrumb(confirmingLocation)
 
         if let r = stationaryRegion { locationManager.stopMonitoring(for: r) }
@@ -1269,9 +1350,13 @@ final class TripTrackerService: NSObject, ObservableObject {
         Task {
             let startAddress = await GeocodeCache.shared.address(for: startLoc)
             let endAddress   = await GeocodeCache.shared.address(for: endLocation)
+            async let startLandmark = GeocodeCache.shared.landmark(for: startLoc)
+            async let endLandmark   = GeocodeCache.shared.landmark(for: endLocation)
+            let (sLandmark, eLandmark) = await (startLandmark, endLandmark)
             await MainActor.run {
                 self.commitTrip(start: startLoc, end: endLocation,
                                 startAddress: startAddress, endAddress: endAddress,
+                                startLandmark: sLandmark, endLandmark: eLandmark,
                                 distanceMiles: distanceMiles,
                                 avgSpeedMph: avgSpeedMph, maxSpeedMph: maxSpeedMph,
                                 breadcrumbs: finalBreadcrumbs, needsReview: possibleTransit)
@@ -1287,6 +1372,7 @@ final class TripTrackerService: NSObject, ObservableObject {
 
     private func commitTrip(start: CLLocation, end: CLLocation,
                              startAddress: String, endAddress: String,
+                             startLandmark: String = "", endLandmark: String = "",
                              distanceMiles: Double, avgSpeedMph: Double,
                              maxSpeedMph: Double,
                              breadcrumbs finalBreadcrumbs: [TripBreadcrumb],
@@ -1301,6 +1387,8 @@ final class TripTrackerService: NSObject, ObservableObject {
         record.endLongitude          = end.coordinate.longitude
         record.startAddress          = startAddress
         record.endAddress            = endAddress
+        record.startLandmark         = startLandmark.isEmpty ? startAddress : startLandmark
+        record.endLandmark           = endLandmark.isEmpty ? endAddress : endLandmark
         record.totalDistanceMiles    = roundedMiles
         record.maxSpeedMph           = maxSpeedMph
         record.averageMovingSpeedMph = avgSpeedMph
@@ -1308,23 +1396,25 @@ final class TripTrackerService: NSObject, ObservableObject {
         record.breadcrumbs           = finalBreadcrumbs
         record.waypoints             = waypoints
         record.isInProgress          = false
-        record.needsReview           = needsReview
         record.vehicleName           = connectedAudioDeviceName
         record.currencyCode          = rate.currencyCode
         record.updatedAt             = Date()
 
-        // ── Auto-Classify Work Hours Rule (Single Source of Truth) ──
-        if UserDefaults.standard.bool(forKey: AppStorageKeys.autoClassifyWorkHours) {
-            let startHour = Calendar.current.component(.hour, from: record.startDate)
-            let startSetting = Int(UserDefaults.standard.double(forKey: AppStorageKeys.workHoursStart))
-            let endSetting = Int(UserDefaults.standard.double(forKey: AppStorageKeys.workHoursEnd))
-            let effectiveStart = startSetting > 0 ? startSetting : Int(MileageTaxDefaults.defaultWorkStartHour)
-            let effectiveEnd = endSetting > 0 ? endSetting : Int(MileageTaxDefaults.defaultWorkEndHour)
-            if startHour >= effectiveStart && startHour < effectiveEnd {
-                record.classification = .business
-                record.needsReview    = false
-            }
-        }
+        // ── Evaluate auto-classification rules (Single Source of Truth) ──
+        let ruleOutcome = TripRuleEngine.evaluate(
+            startDate: record.startDate,
+            startCoordinate: CLLocationCoordinate2D(latitude: record.startLatitude,
+                                                    longitude: record.startLongitude),
+            endCoordinate: CLLocationCoordinate2D(latitude: record.endLatitude,
+                                                  longitude: record.endLongitude),
+            isInsideVerifiedVehicle: isInsideVerifiedVehicle,
+            connectedVehicleName: connectedAudioDeviceName,
+            possibleTransit: needsReview)
+
+        record.classification = ruleOutcome.classification
+        if let tag = ruleOutcome.tag, !tag.isEmpty { record.businessPurpose = tag }
+        record.needsReview = (ruleOutcome.classification == .unclassified)
+        if record.classification == .personal { record.taxDeductionValueUSD = 0 }
 
         // ── Persist to CoreData ──
         CoreDataManager.shared.saveTripRecord(record)
@@ -1350,6 +1440,7 @@ final class TripTrackerService: NSObject, ObservableObject {
     private func resetTripScopedState() {
         breadcrumbs.removeAll()
         waypoints.removeAll()
+        preludeLocations.removeAll()
         accumulatedMeters    = 0
         speedSamples.removeAll()
         maxObservedSpeedMps  = 0

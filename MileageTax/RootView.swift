@@ -32,5 +32,7 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: currentFlow)
+        .onAppear { CoreDataManager.shared.persistDefaultsToCloud() }
+        .onChange(of: currentFlow) { _, _ in CoreDataManager.shared.persistDefaultsToCloud() }
     }
 }

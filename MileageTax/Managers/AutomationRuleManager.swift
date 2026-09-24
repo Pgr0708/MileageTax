@@ -25,14 +25,7 @@ final class AutomationRuleManager: NSObject, ObservableObject {
 
     // MARK: - Actions
 
-    func addRule(name: String, type: AutomationRuleType, notes: String = "", tag: String = "#Business") {
-        let rule = AutomationRule(
-            name: name,
-            type: type,
-            isEnabled: true,
-            notes: notes,
-            tag: tag
-        )
+    func addRule(_ rule: AutomationRule) {
         customRules.append(rule)
         persistRules()
     }

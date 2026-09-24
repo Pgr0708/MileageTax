@@ -5,6 +5,11 @@
 
 import SwiftUI
 import CoreData
+// MARK: - URL Identifiable for sheet(item:)
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
+}
+
 
 struct ExportHubView: View {
     @Environment(\.dismiss) private var dismiss
@@ -157,10 +162,9 @@ struct ExportHubView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(Color(hex: "#06090E"), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .sheet(isPresented: $showShareSheet) {
-                if let url = shareItem {
-                    ShareSheet(activityItems: [url])
-                }
+            .sheet(item: $shareItem) { url in
+                ShareSheet(activityItems: [url])
+                    .ignoresSafeArea()
             }
         }
     }
@@ -453,8 +457,18 @@ struct ExportHubView: View {
             DispatchQueue.main.async {
                 isExporting = false
                 shareItem = url
-                showShareSheet = true
             }
         }
     }
+
+// MARK: - Share Sheet (local copy so ExportHubView is self-contained)
+private struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let vc = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return vc
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
 }

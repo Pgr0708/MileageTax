@@ -61,15 +61,18 @@ struct AppTabView: View {
                 )
                 .padding(.horizontal, 16)
                 .padding(.top, Device.topSafeArea)
-                .background(
-                    // Subtle gradient mask so header reads over any tab background
-                    LinearGradient(
-                        colors: [Color(hex: "#06090E").opacity(0.72), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea()
-                )
+                .padding(.bottom, 10)
+                .background {
+                    ZStack(alignment: .bottom) {
+                        // Opaque + blurred backdrop so scrolled content never bleeds through.
+                        Rectangle().fill(Color(hex: "#06090E").opacity(0.9))
+                        Rectangle().fill(.ultraThinMaterial)
+                        // Hard bottom edge + hairline for a crisp boundary.
+                        Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
+                    }
+                    .ignoresSafeArea(edges: .top)
+                }
+                .shadow(color: Color.black.opacity(0.5), radius: 10, y: 6)
                 Spacer()
             }
             .ignoresSafeArea()
