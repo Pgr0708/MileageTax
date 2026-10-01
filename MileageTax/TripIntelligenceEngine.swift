@@ -666,6 +666,11 @@ final class TripTrackerService: NSObject, ObservableObject {
             tripLogger.debug("manualStartTrip called but state is \(_stateVal, privacy: .public) — ignoring.")
             return
         }
+        // Subscription gate: no new manual trips once the free allowance is spent.
+        guard !SubscriptionGate.isLocked else {
+            tripLogger.notice("Subscription gate locked — manual trip start suppressed.")
+            return
+        }
         tripLogger.notice("⚡ Manual trip start triggered by user.")
         
         // Power on GPS immediately at full accuracy
@@ -995,6 +1000,12 @@ final class TripTrackerService: NSObject, ObservableObject {
     /// displacement by an overnight-old seed location timestamp.
     private func beginMotionVerification(trigger: TripStartTrigger) {
         guard state == .dormant else { return }
+
+        // Subscription gate: no new auto-detected trips once the free allowance is spent.
+        guard !SubscriptionGate.isLocked else {
+            tripLogger.notice("Subscription gate locked — suppressing auto trip start.")
+            return
+        }
 
         // Bluetooth Gating Rule: If enabled, only verify/start if connected to paired car
         if UserDefaults.standard.bool(forKey: AppStorageKeys.btGatingEnabled) {
@@ -1377,6 +1388,13 @@ final class TripTrackerService: NSObject, ObservableObject {
                              maxSpeedMph: Double,
                              breadcrumbs finalBreadcrumbs: [TripBreadcrumb],
                              needsReview: Bool) {
+        // Subscription gate: don't record a trip once the free allowance is spent.
+        guard !SubscriptionGate.isLocked else {
+            tripLogger.notice("Subscription gate locked — discarding completed trip.")
+            discardAndReset(rearmAt: end.coordinate)
+            return
+        }
+
         let roundedMiles = (distanceMiles * 10).rounded() / 10
         let record = inProgressRecord ?? TripMemoryRecord(
             startDate: tripStartDate ?? start.timestamp, endDate: Date())

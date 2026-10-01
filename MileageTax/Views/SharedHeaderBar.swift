@@ -10,6 +10,8 @@ struct SharedHeaderBar: View {
     @Binding var showNotificationSheet: Bool
     @Binding var showProfile: Bool
     var pendingCount: Int
+    @AppStorage(AppStorageKeys.isPremium) private var isPremium = false
+    @ObservedObject private var coreData = CoreDataManager.shared
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -76,6 +78,14 @@ struct SharedHeaderBar: View {
                         .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
                         .tracking(1.8)
+
+                    if !isPremium {
+                        let remaining = max(0, MileageTaxDefaults.freeTripLimit - coreData.completedTripCount)
+                        Text("\(remaining) FREE DRIVE\(remaining == 1 ? "" : "S") LEFT")
+                            .font(.system(size: 7.5, weight: .black, design: .monospaced))
+                            .foregroundStyle(Color(hex: "#FFB020"))
+                            .tracking(0.5)
+                    }
                 }
             }
 

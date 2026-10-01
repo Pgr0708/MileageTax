@@ -44,10 +44,13 @@ class BaseViewModel: NSObject, ObservableObject {
     
     // @@@@
     func checkUserIsPro(customerInfo: CustomerInfo?) {
-        if customerInfo?.entitlements["pro"]?.isActive == true ||
-                customerInfo?.entitlements["lifetime"]?.isActive == true {
+        // Never downgrade on a failed/empty fetch — a purchase can only be
+        // cleared by a real "no active entitlement" response.
+        guard let customerInfo else { return }
+        if customerInfo.entitlements["pro"]?.isActive == true ||
+                customerInfo.entitlements["lifetime"]?.isActive == true {
             isPro = true
-        } else if let date = customerInfo?.latestExpirationDate, date >= Date() {
+        } else if let date = customerInfo.latestExpirationDate, date >= Date() {
             isPro = true
         } else {
             isPro = false

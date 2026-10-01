@@ -23,7 +23,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: revenueCatAPIKey)
         Purchases.shared.delegate = self
-        
+
+        // Refresh entitlements early so the subscription gate knows Pro status
+        // promptly (rather than waiting for a delegate callback).
+        refreshEntitlements()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil)
+
         application.registerForRemoteNotifications()
 
         Messaging.messaging().token { token, error in
@@ -48,7 +57,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         
         return true
     }
-    
+
+    private func refreshEntitlements() {
+        guard Purchases.isConfigured else { return }
+        Purchases.shared.getCustomerInfo { customerInfo, _ in
+            Task { @MainActor in
+                BaseViewModel.shared.checkUserIsPro(customerInfo: customerInfo)
+            }
+        }
+    }
+
+    @objc private func handleWillEnterForeground() {
+        refreshEntitlements()
+    }
+
     func application(_: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("Oh no! Failed to register for remote notifications with error \(error)")
     }
@@ -80,6 +102,6 @@ extension AppDelegate: MessagingDelegate {
 
 extension AppDelegate : PurchasesDelegate {
     func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
-        BaseViewModel().checkUserIsPro(customerInfo: customerInfo)
+        BaseViewModel.shared.checkUserIsPro(customerInfo: customerInfo)
     }
 }

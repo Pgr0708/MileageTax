@@ -18,6 +18,9 @@ struct PaywallScreenView: View {
     @State private var safariURL: URL? = nil
     @State private var showRestoreAlert = false
     @State private var restoreMessage = ""
+    /// When true the paywall is mandatory (free-trip limit reached): the close
+    /// button is hidden and the only way out is purchasing or restoring.
+    var isForced: Bool = false
 
     private let targetSaved: Double = 4847
     private let features: [(icon: String, text: String, sub: String)] = [
@@ -46,26 +49,28 @@ struct PaywallScreenView: View {
                 }
             }
 
-            // Dismiss button overlay
+            // Dismiss button overlay (hidden when the paywall is forced)
             VStack {
                 HStack {
                     Spacer()
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            hasSeenPaywall = true
-                            dismiss()
+                    if !isForced {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                hasSeenPaywall = true
+                                dismiss()
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.85))
+                                .frame(width: 34, height: 34)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
+                                .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
                         }
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.12))
-                            .clipShape(Circle())
-                            .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
+                        .padding(.trailing, 20)
+                        .padding(.top, 16)
                     }
-                    .padding(.trailing, 20)
-                    .padding(.top, 16)
                 }
                 Spacer()
             }
@@ -248,7 +253,9 @@ struct PaywallScreenView: View {
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
 
-                    Text("Unable to load subscription plans from RevenueCat. Please check your network or RevenueCat offering configuration.")
+                    Text(vm.loadErrorMessage.isEmpty
+                         ? "Unable to load subscription plans. Please check your connection."
+                         : vm.loadErrorMessage)
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.55))
                         .multilineTextAlignment(.center)

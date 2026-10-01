@@ -11,10 +11,12 @@ internal import Combine
 final class ProViewModel: BaseViewModel {
     @Published var selectedPackage: Package?
     @Published var allPackages = [Package]()
+    /// Human-readable reason the paywall can't show plans (usually offline).
+    @Published var loadErrorMessage: String = ""
 
     func getOffering() {
         guard Purchases.isConfigured else {
-            print("[RevenueCat] Purchases is not configured.")
+            loadErrorMessage = "Purchases are not configured."
             return
         }
         startLoading()
@@ -24,11 +26,16 @@ final class ProViewModel: BaseViewModel {
                 self.stopLoading()
                 if let error = error {
                     print("[RevenueCat] Error getting offerings: \(error.localizedDescription)")
+                    self.loadErrorMessage = "No internet connection. Connect to the internet and try again."
+                } else {
+                    self.loadErrorMessage = ""
                 }
                 if let currentOffering = offerings?.current ?? offerings?.all.values.first {
                     self.allPackages = currentOffering.availablePackages
                     // Preselect annual plan, or the first available
                     self.selectedPackage = self.allPackages.first(where: { $0.packageType == .annual }) ?? self.allPackages.first
+                } else if self.allPackages.isEmpty, error == nil {
+                    self.loadErrorMessage = "No subscription plans are available right now."
                 }
             }
         }

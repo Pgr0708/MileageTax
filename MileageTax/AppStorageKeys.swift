@@ -60,6 +60,8 @@ public enum MileageTaxDefaults {
     /// Bitmask of selected work days (bit 0 = Sunday … bit 6 = Saturday).
     /// Default is Monday–Friday = 0b0111110 = 62.
     public static let defaultWorkDaysMask: Int      = 62
+    /// Number of free completed trips before the subscription gate locks.
+    public static let freeTripLimit: Int            = 4
 }
 
 

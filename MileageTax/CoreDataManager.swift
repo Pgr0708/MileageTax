@@ -26,6 +26,10 @@ final class CoreDataManager: NSObject, ObservableObject {
 
     @Published private(set) var syncState: SyncState = .initializing
 
+    /// Live count of completed trips (isInProgress == false) — drives the
+    /// free-trip allowance gate in SubscriptionGate.
+    @Published private(set) var completedTripCount: Int = 0
+
     // MARK: - Container
     //
     // NSPersistentCloudKitContainer mirrors the local SQLite store to the
@@ -96,6 +100,9 @@ final class CoreDataManager: NSObject, ObservableObject {
         // Restore onboarding flags / settings from a previous install if present.
         hydrateDefaultsFromCloud()
 
+        // Initialize the live trip counter for the subscription gate.
+        refreshCompletedTripCount()
+
         // seedInitialLedgerIfEmpty()
     }
 
@@ -103,6 +110,7 @@ final class CoreDataManager: NSObject, ObservableObject {
         // CloudKit pushed changes — viewContext already auto-merges via
         // automaticallyMergesChangesFromParent; refresh restored defaults.
         hydrateDefaultsFromCloud()
+        refreshCompletedTripCount()
     }
 
     deinit {
@@ -219,6 +227,13 @@ final class CoreDataManager: NSObject, ObservableObject {
         }
     }
 
+    /// Recomputes the live completed-trip count (used by the subscription gate).
+    func refreshCompletedTripCount() {
+        let req: NSFetchRequest<TripEntity> = TripEntity.fetchRequest()
+        req.predicate = NSPredicate(format: "isInProgress == false")
+        completedTripCount = (try? context.count(for: req)) ?? 0
+    }
+
     // MARK: - Trip Persistence
 
     /// Insert or update a TripMemoryRecord in CoreData (upsert by UUID).
@@ -270,6 +285,8 @@ final class CoreDataManager: NSObject, ObservableObject {
 
         save()
 
+        // ── Refresh the free-trip allowance counter ──
+        refreshCompletedTripCount()
         // ── Rate Us: trigger on 5th completed trip (fires once only) ──
         requestReviewIfNeeded()
         // ── Push fresh YTD to widget ──
@@ -518,6 +535,7 @@ final class CoreDataManager: NSObject, ObservableObject {
             context.delete(trip)
         }
         save()
+        refreshCompletedTripCount()
     }
 
 } // end CoreDataManager

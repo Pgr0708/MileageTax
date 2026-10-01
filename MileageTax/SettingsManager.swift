@@ -70,7 +70,7 @@ final class SettingsManager: ObservableObject {
 
     
     @AppStorage(AppStorageKeys.isPremium)
-    var isPremium = true {
+    var isPremium = false {
         didSet { objectWillChange.send() }
     }
 
