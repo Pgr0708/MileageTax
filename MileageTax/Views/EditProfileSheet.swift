@@ -22,7 +22,7 @@ struct EditProfileSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_onboard_mile")
 
                 RadialGradient(
                     colors: [Color(hex: "#00E5FF").opacity(0.07), .clear],
@@ -97,11 +97,11 @@ struct EditProfileSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("DISPLAY NAME")
-                                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                                    .font(DS.tech(10))
                                     .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
                                 Spacer()
                                 Text("\(draftName.count)/10")
-                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                    .font(DS.tech(10))
                                     .foregroundStyle(draftName.count >= 10
                                         ? Color(hex: "#FF4444").opacity(0.8)
                                         : Color.white.opacity(0.3))

@@ -113,9 +113,7 @@ struct RulesView: View {
             Color(hex: "#06090E").ignoresSafeArea()
 
             // Mountain scenic wallpaper at top fading into deep obsidian
-            Image("radar_bg_mountain")
-                .resizable()
-                .scaledToFill()
+            ScenicBackdrop(style: .alpineDawn, horizon: 0.36, showRoad: false, vignette: false, seed: 19, photo: "scene_rules")
                 .ignoresSafeArea()
                 .overlay(
                     LinearGradient(
@@ -157,13 +155,13 @@ struct RulesView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text("Automations")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(DS.display(20))
                         .foregroundStyle(.white)
                     + Text(" & ")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(DS.display(20))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                     + Text("Rules")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(DS.display(20))
                         .foregroundStyle(Color(hex: "#00FF88"))
 
                     Image(systemName: "gearshape.fill")
@@ -186,7 +184,7 @@ struct RulesView: View {
                     Image(systemName: "plus.circle")
                         .font(.system(size: 13, weight: .bold))
                     Text("ADD\nRULE")
-                        .font(.system(size: 9, weight: .heavy, design: .rounded))
+                        .font(DS.display(9))
                         .multilineTextAlignment(.leading)
                 }
                 .foregroundStyle(Color(hex: "#00FF88"))
@@ -250,12 +248,12 @@ struct RulesView: View {
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Color(hex: "#00E5FF"))
                 Text(header)
-                    .font(.system(size: 8, weight: .black, design: .monospaced))
+                    .font(DS.tech(8))
                     .foregroundStyle(.white.opacity(0.45))
             }
 
             Text(value)
-                .font(.system(size: 16, weight: .black, design: .rounded))
+                .font(DS.display(16))
                 .foregroundStyle(valueColor)
 
             Text(sub)
@@ -282,42 +280,8 @@ struct RulesView: View {
     }
 
     // MARK: - Card Background with Precise Trailing Alignment
-    struct RulesCardBackground: View {
-        let imageName: String
-        var aspectRatio: Double = 1024.0 / 377.0
-        var trailingOffset: CGFloat = 0
+    typealias RulesCardBackground = CardArtBackground
 
-        var body: some View {
-            GeometryReader { geo in
-                ZStack(alignment: .trailing) {
-                    // Background artwork image pinned to trailing edge so right-side subject is 100% visible
-                    Image(imageName)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(
-                            width: max(geo.size.width, geo.size.height * aspectRatio),
-                            height: geo.size.height,
-                            alignment: .trailing
-                        )
-                        .offset(x: trailingOffset)
-                        .frame(width: geo.size.width, height: geo.size.height, alignment: .trailing)
-                        .clipped()
-
-                    // Protective obsidian glass gradient on left for crystal clear readability
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(hex: "#060B14"), location: 0.0),
-                            .init(color: Color(hex: "#060B14").opacity(0.96), location: 0.45),
-                            .init(color: Color(hex: "#060B14").opacity(0.70), location: 0.58),
-                            .init(color: Color.clear, location: 0.78)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                }
-            }
-        }
-    }
 
     // MARK: - Card 1: Work Shift Schedule
 
@@ -365,7 +329,7 @@ struct RulesView: View {
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("SMART\nTIPS")
-                        .font(.system(size: 7.5, weight: .black, design: .monospaced))
+                        .font(DS.tech(7.5))
                         .foregroundStyle(Color(hex: "#00FF88"))
                         .multilineTextAlignment(.leading)
                 }
@@ -389,7 +353,7 @@ struct RulesView: View {
                     Image(systemName: "calendar")
                         .font(.system(size: 11, weight: .bold))
                     Text(workShiftHoursFormatted)
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(11))
                     Image(systemName: "pencil")
                         .font(.system(size: 9, weight: .bold))
                 }
@@ -441,7 +405,7 @@ struct RulesView: View {
                     Image(systemName: autoClassifyWorkHours ? "checkmark.circle.fill" : "circle.dashed")
                         .font(.system(size: 9, weight: .bold))
                     Text(autoClassifyWorkHours ? "Status: Active" : "Status: Off")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(DS.tech(9))
                 }
                 .foregroundStyle(autoClassifyWorkHours ? Color(hex: "#00FF88") : Color.white.opacity(0.4))
                 .padding(.horizontal, 8)
@@ -503,7 +467,7 @@ struct RulesView: View {
                         .foregroundStyle(.white)
 
                     Text(bluetooth.connectedVehicleName ?? "Not connected")
-                        .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                        .font(DS.tech(10.5))
                         .foregroundStyle(bluetooth.connectedVehicleName != nil ? Color(hex: "#00E5FF") : Color.gray)
                         .padding(.top, 1)
                 }
@@ -533,7 +497,7 @@ struct RulesView: View {
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
                     Text(bluetooth.connectedVehicleName != nil ? "14ms • Active" : "Scanning...")
-                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(bluetooth.connectedVehicleName != nil ? Color(hex: "#00E5FF") : Color.gray)
                 }
                 .padding(.horizontal, 9)
@@ -610,7 +574,7 @@ struct RulesView: View {
                         Image(systemName: "mappin.fill")
                             .font(.system(size: 8))
                         Text("\(geofenceManager.savedZones.count) SAVED")
-                            .font(.system(size: 8, weight: .black, design: .monospaced))
+                            .font(DS.tech(8))
                     }
                     .foregroundStyle(Color(hex: "#00E5FF"))
                     .padding(.horizontal, 7)
@@ -698,7 +662,7 @@ struct RulesView: View {
 
                 HStack(spacing: 4) {
                     Text("\(Int(perimeterMeters))m zone")
-                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
 
@@ -756,7 +720,7 @@ struct RulesView: View {
                         .foregroundStyle(.white)
 
                     Text("Sub-Centimeter Hardware Telemetry")
-                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                         .padding(.top, 1)
                 }
@@ -766,9 +730,9 @@ struct RulesView: View {
 
                 VStack(spacing: 1) {
                     Text("iOS 18")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8))
                     Text("API")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8))
                 }
                 .foregroundStyle(.white.opacity(0.7))
                 .padding(.horizontal, 7)
@@ -793,7 +757,7 @@ struct RulesView: View {
                         Spacer()
 
                         Text("1.1% / day")
-                            .font(.system(size: 10.5, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(10.5))
                             .foregroundStyle(Color(hex: "#00FF88"))
                     }
 
@@ -825,7 +789,7 @@ struct RulesView: View {
                         Spacer()
 
                         Text("8.0% – 12.0% / day")
-                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                            .font(DS.tech(9.5))
                             .foregroundStyle(.white.opacity(0.45))
                     }
 
@@ -877,7 +841,7 @@ struct RulesView: View {
                     .foregroundStyle(.white)
                 Spacer()
                 Text("DETECT AFTER")
-                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9))
                     .foregroundStyle(.white.opacity(0.4))
             }
 
@@ -941,7 +905,7 @@ struct AddRuleModalView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_rules")
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
@@ -1117,7 +1081,7 @@ struct AddRuleModalView: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: 3) {
-                Text(label).font(.system(size: 9, weight: .heavy, design: .monospaced)).foregroundStyle(.white.opacity(0.4))
+                Text(label).font(DS.tech(9)).foregroundStyle(.white.opacity(0.4))
                 Text(geofenceManager.savedZones.first(where: { $0.id == selection.wrappedValue })?.title ?? "Any")
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
             }
@@ -1150,7 +1114,7 @@ struct AddRuleModalView: View {
     }
 
     private func sectionLabel(_ s: String) -> some View {
-        Text(s).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Color(hex: "#00E5FF"))
+        Text(s).font(DS.tech(11)).foregroundStyle(Color(hex: "#00E5FF"))
     }
 
     private func ruleField(_ label: String, placeholder: String, text: Binding<String>) -> some View {
@@ -1187,7 +1151,7 @@ struct PinGeofenceModalView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_onboard_gps")
                 
                 RadialGradient(
                     colors: [Color(hex: "#00FF88").opacity(0.15), Color.clear],
@@ -1199,7 +1163,7 @@ struct PinGeofenceModalView: View {
                 VStack(spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("PLACE NAME")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(DS.tech(11))
                             .foregroundStyle(Color(hex: "#00FF88"))
                             
                         TextField("e.g. Office, Client HQ", text: $placeName)
@@ -1214,11 +1178,11 @@ struct PinGeofenceModalView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("PERIMETER RADIUS")
-                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .font(DS.tech(11))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                             Spacer()
                             Text("\(Int(radiusMeters)) meters")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(DS.tech(12))
                                 .foregroundStyle(.white)
                         }
                         
@@ -1230,7 +1194,7 @@ struct PinGeofenceModalView: View {
                         Toggle(isOn: $isPersonal) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("PERSONAL PLACE")
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .font(DS.tech(11))
                                     .foregroundStyle(Color(hex: "#FFB020"))
                                 Text("Trips to/from here will be marked Personal")
                                     .font(.system(size: 10, weight: .medium))
@@ -1244,7 +1208,7 @@ struct PinGeofenceModalView: View {
                                 .font(.system(size: 10))
                                 .foregroundStyle(locationRequester.coordinate != nil ? Color(hex: "#00FF88") : .white.opacity(0.5))
                             Text(locationRequester.coordinate != nil ? "Center: current location" : "Center: default (Apple Park)")
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .font(DS.tech(10))
                                 .foregroundStyle(.white.opacity(0.6))
                         }
                     }
@@ -1312,18 +1276,18 @@ struct WorkHoursModalView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_rules")
                 
                 VStack(spacing: 20) {
                     // Weekday selector (Mon–Sun, Mon–Fri selected by default)
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("WORK DAYS")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(DS.tech(12))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                             Spacer()
                             Text(Weekday.scheduleLabel(forMask: Weekday.mask(from: selectedDays)))
-                                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                                .font(DS.display(11))
                                 .foregroundStyle(.white.opacity(0.6))
                         }
 
@@ -1360,7 +1324,7 @@ struct WorkHoursModalView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         DatePicker("START TIME", selection: $startDate, displayedComponents: .hourAndMinute)
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(DS.tech(12))
                             .foregroundStyle(Color(hex: "#00FF88"))
                             .colorScheme(.dark)
                             .tint(Color(hex: "#00FF88"))
@@ -1372,7 +1336,7 @@ struct WorkHoursModalView: View {
                         Divider().background(Color.white.opacity(0.1))
                         
                         DatePicker("END TIME", selection: $endDate, displayedComponents: .hourAndMinute)
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .font(DS.tech(12))
                             .foregroundStyle(Color(hex: "#00FF88"))
                             .colorScheme(.dark)
                             .tint(Color(hex: "#00FF88"))
@@ -1432,7 +1396,7 @@ struct WorkHoursModalView: View {
     private func quickDayButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(DS.tech(10))
                 .foregroundStyle(Color(hex: "#00E5FF"))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)

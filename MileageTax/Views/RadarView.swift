@@ -122,9 +122,7 @@ struct RadarView: View {
             Color(hex: "#06090E").ignoresSafeArea()
 
             // Mountain scenic wallpaper extending to top of screen behind Dynamic Island
-            Image("radar_bg_mountain")
-                .resizable()
-                .scaledToFill()
+            ScenicBackdrop(style: .mountainLake, horizon: 0.42, vignette: false, photo: "scene_radar")
                 .ignoresSafeArea()
                 .overlay(
                     LinearGradient(
@@ -165,11 +163,11 @@ struct RadarView: View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Smarter Miles.")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(DS.display(17))
                     .foregroundStyle(.white)
 
                 Text("Bigger Savings.")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(DS.display(17))
                     .foregroundStyle(.white)
 
                 // Neon Emerald Underline Bar
@@ -198,7 +196,7 @@ struct RadarView: View {
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
                     Text("YTD VERIFIED DEDUCTION")
-                        .font(.system(size: 10.5, weight: .heavy, design: .rounded))
+                        .font(DS.display(10.5))
                         .foregroundStyle(.white.opacity(0.75))
                         .tracking(0.6)
                 }
@@ -209,12 +207,12 @@ struct RadarView: View {
             // Center: Big Hero Number
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(currencySymbol)
-                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .font(DS.display(32))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 8)
 
                 Text(String(format: "%.2f", ytdDeduction))
-                    .font(.system(size: 38, weight: .black, design: .rounded))
+                    .font(DS.display(38))
                     .foregroundStyle(.white)
             }
 
@@ -226,11 +224,11 @@ struct RadarView: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(String(format: "%.1f", MileageUnits.distanceValue(ytdMiles)) + "  BUSINESS " + MileageUnits.unitLabelLong)
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .font(DS.display(11))
                         .foregroundStyle(.white)
 
                     Text("LOGGED")
-                        .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.45))
                 }
             }
@@ -238,8 +236,7 @@ struct RadarView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            Image("radar_ytd_chart_card")
-                .resizable()
+            ScenicBackdrop(style: .alpineDawn, horizon: 0.78, showRoad: false, vignette: false, seed: 29, photo: "card_ytd")
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
@@ -281,7 +278,7 @@ struct RadarView: View {
                     }
 
                     Text("LIVE DRIVE IN PROGRESS")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .font(DS.display(12))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
@@ -295,7 +292,7 @@ struct RadarView: View {
                 Spacer()
 
                 Text("IRS 2026: 67¢/MI")
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(.white.opacity(0.85))
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
@@ -314,9 +311,7 @@ struct RadarView: View {
                     .fill(Color.clear)
                     .frame(height: 140)
                     .overlay(
-                        Image("radar_live_map_route")
-                            .resizable()
-                            .scaledToFill()
+                        MapRouteArt(seed: 41, photo: "map_live")
                     )
                     .clipped()
                     .overlay(
@@ -336,7 +331,7 @@ struct RadarView: View {
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
                             Text(tracker.state == .activeTracking ? String(format: "GPS Fix: ±%.1fm", tracker.horizontalAccuracyMeters) : "GPS Fix: —")
-                                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(9.5))
                                 .foregroundStyle(.white)
                         }
                         .padding(.horizontal, 8)
@@ -363,7 +358,7 @@ struct RadarView: View {
                                 .font(.system(size: 10, weight: .black))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                             Text("FLAT1INPATH")
-                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(7.5))
                                 .foregroundStyle(.white.opacity(0.5))
                         }
                     }
@@ -421,9 +416,7 @@ struct RadarView: View {
         } label: {
             HStack(spacing: 12) {
             // Left: Scenic Route Thumbnail
-            Image("radar_route_thumbnail")
-                .resizable()
-                .scaledToFill()
+            MapRouteArt(seed: 7, routeColor: DS.green, photo: "map_thumb")
                 .frame(width: 64, height: 64)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(
@@ -440,7 +433,7 @@ struct RadarView: View {
                         .foregroundStyle(Color(hex: "#00FF88"))
 
                     Text("ORIGIN")
-                        .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.45))
 
                     Spacer()
@@ -452,7 +445,7 @@ struct RadarView: View {
                             Text("—")
                         }
                     }
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(.white.opacity(0.5))
                 }
 
@@ -468,7 +461,7 @@ struct RadarView: View {
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
                     Text("TARGET")
-                        .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.45))
                 }
 
@@ -589,7 +582,7 @@ struct RadarView: View {
                         .font(.system(size: 14, weight: .black))
 
                     Text("End & Classify")
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .font(DS.display(14))
 
                     Spacer()
 
@@ -628,16 +621,16 @@ struct RadarView: View {
                     .font(.system(size: 9))
                     .foregroundStyle(.white.opacity(0.4))
                 Text(label)
-                    .font(.system(size: 8, weight: .black, design: .monospaced))
+                    .font(DS.tech(8))
                     .foregroundStyle(.white.opacity(0.4))
             }
 
             Text(value)
-                .font(.system(size: 19, weight: .black, design: .rounded))
+                .font(DS.display(19))
                 .foregroundStyle(accent)
 
             Text(unit)
-                .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                .font(DS.tech(7.5))
                 .foregroundStyle(.white.opacity(0.45))
         }
         .frame(maxWidth: .infinity)
@@ -688,7 +681,7 @@ struct RadarView: View {
                             .frame(width: 6, height: 6)
 
                         Text("\(pendingCount) Drive\(pendingCount == 1 ? "" : "s") Pending")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(DS.display(14))
                             .foregroundStyle(.white)
                     }
 
@@ -741,13 +734,13 @@ struct RadarView: View {
             // Header: Section title + View All button
             HStack {
                 Text("TELEMETRY LOG STREAM")
-                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .font(DS.tech(11))
                     .foregroundStyle(.white.opacity(0.8))
                     .tracking(1.2)
 
                 if unclassifiedTrips.count > 0 {
                     Text("\(unclassifiedTrips.count) UNCLASSIFIED")
-                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                        .font(DS.tech(8))
                         .foregroundStyle(Color(hex: "#FFB020"))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
@@ -868,7 +861,7 @@ struct RadarView: View {
             // Right: Yield & Distance
             VStack(alignment: .trailing, spacing: 4) {
                 Text(yieldText)
-                    .font(.system(size: 11.5, weight: .black, design: .rounded))
+                    .font(DS.display(11.5))
                     .foregroundStyle(Color(hex: "#00FF88"))
 
                 HStack(spacing: 2) {
@@ -903,9 +896,7 @@ struct RadarView: View {
         } label: {
             HStack(spacing: 12) {
                 // Scenic Thumbnail
-                Image("radar_route_thumbnail")
-                    .resizable()
-                    .scaledToFill()
+                MapRouteArt(seed: 7, routeColor: DS.green, photo: "map_thumb")
                     .frame(width: 52, height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
@@ -952,7 +943,7 @@ struct RadarView: View {
 
                         if isUnclassified {
                             Text("TAP TO CLASSIFY")
-                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(7.5))
                                 .foregroundStyle(Color(hex: "#FFB020"))
                         }
                     }
@@ -963,7 +954,7 @@ struct RadarView: View {
                 // Right: Yield & Distance
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(isUnclassified ? "PENDING" : String(format: "+%@%.2f YIELD", currencySymbol, trip.taxDeductionValueUSD))
-                        .font(.system(size: 11.5, weight: .black, design: .rounded))
+                        .font(DS.display(11.5))
                         .foregroundStyle(isUnclassified ? Color(hex: "#FFB020") : Color(hex: "#00FF88"))
 
                     HStack(spacing: 2) {

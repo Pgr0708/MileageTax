@@ -94,7 +94,7 @@ struct CustomizationScreenView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#06090E").ignoresSafeArea()
+            ScenicScreenBackground(image: step == 0 ? "scene_onboard_mile" : step == 1 ? "scene_onboard_gps" : "scene_track")
 
             VStack(spacing: 0) {
                 // Header
@@ -126,10 +126,10 @@ struct CustomizationScreenView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(["Who Are You?", "Your Location & Tax Rate", "Driving Preferences"][step])
-                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .font(DS.display(20))
                     .foregroundStyle(.white)
                 Text("Step \(step + 1) of 3")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .font(DS.tech(11))
                     .foregroundStyle(.white.opacity(0.4))
             }
             Spacer()
@@ -150,7 +150,7 @@ struct CustomizationScreenView: View {
         HStack(spacing: 6) {
             ForEach(0..<3) { i in
                 Capsule()
-                    .fill(i <= step ? Color(hex: "#00FF88") : Color.white.opacity(0.12))
+                    .fill(i <= step ? DS.cyan : Color.white.opacity(0.12))
                     .frame(height: 4)
                     .animation(.spring(response: 0.4), value: step)
             }
@@ -178,7 +178,7 @@ struct CustomizationScreenView: View {
                             .overlay(
                                 Circle().strokeBorder(
                                     LinearGradient(
-                                        colors: [Color(hex: "#00E5FF").opacity(0.6), Color(hex: "#00FF88").opacity(0.4)],
+                                        colors: [Color(hex: "#00E5FF").opacity(0.6), DS.cyan.opacity(0.4)],
                                         startPoint: .topLeading, endPoint: .bottomTrailing
                                     ), lineWidth: 2.5
                                 )
@@ -204,7 +204,7 @@ struct CustomizationScreenView: View {
 
                         // Edit badge
                         Circle()
-                            .fill(Color(hex: "#00FF88"))
+                            .fill(DS.cyan)
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Image(systemName: "pencil")
@@ -227,8 +227,8 @@ struct CustomizationScreenView: View {
                 // Name field
                 VStack(alignment: .leading, spacing: 8) {
                     Text("YOUR NAME")
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
+                        .font(DS.tech(10))
+                        .foregroundStyle(DS.cyan.opacity(0.7))
                         .padding(.horizontal, 4)
 
                     HStack(spacing: 12) {
@@ -239,7 +239,7 @@ struct CustomizationScreenView: View {
                         TextField("Enter your name...", text: $userName)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.white)
-                            .tint(Color(hex: "#00FF88"))
+                            .tint(DS.cyan)
                             .submitLabel(.done)
                             .onChange(of: userName) { _, newVal in
                                 if newVal.count > 10 {
@@ -252,7 +252,7 @@ struct CustomizationScreenView: View {
                     .background(Color(hex: "#0E1622"))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(
-                        userName.isEmpty ? Color.white.opacity(0.08) : Color(hex: "#00FF88").opacity(0.4),
+                        userName.isEmpty ? Color.white.opacity(0.08) : DS.cyan.opacity(0.4),
                         lineWidth: 1.5
                     ))
                 }
@@ -262,7 +262,7 @@ struct CustomizationScreenView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .foregroundStyle(DS.cyan)
                     Text("Your name is stored only on this device — never shared.")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
@@ -271,7 +271,7 @@ struct CustomizationScreenView: View {
                 .padding(14)
                 .background(Color(hex: "#061A13").opacity(0.8))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color(hex: "#00FF88").opacity(0.15)))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(DS.cyan.opacity(0.15)))
                 .padding(.horizontal, 24)
             }
             .padding(.top, 16)
@@ -290,7 +290,7 @@ struct CustomizationScreenView: View {
                 TextField("Search country...", text: $searchText)
                     .font(.system(size: 14))
                     .foregroundStyle(.white)
-                    .tint(Color(hex: "#00FF88"))
+                    .tint(DS.cyan)
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -348,16 +348,16 @@ struct CustomizationScreenView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(String(format: "%@%.3f/%@", country.currency, country.rate, country.unit))
-                        .font(.system(size: 11, weight: .black, design: .monospaced))
-                        .foregroundStyle(isSelected ? Color(hex: "#00FF88") : .white.opacity(0.5))
+                        .font(DS.tech(11))
+                        .foregroundStyle(isSelected ? DS.cyan : .white.opacity(0.5))
                         .lineLimit(1)
 
                     ZStack {
                         Circle()
-                            .strokeBorder(isSelected ? Color(hex: "#00FF88") : Color.white.opacity(0.2), lineWidth: 2)
+                            .strokeBorder(isSelected ? DS.cyan : Color.white.opacity(0.2), lineWidth: 2)
                             .frame(width: 20, height: 20)
                         if isSelected {
-                            Circle().fill(Color(hex: "#00FF88")).frame(width: 10, height: 10)
+                            Circle().fill(DS.cyan).frame(width: 10, height: 10)
                         }
                     }
                 }
@@ -368,7 +368,7 @@ struct CustomizationScreenView: View {
 
             if isSelected {
                 Rectangle()
-                    .fill(Color(hex: "#00FF88").opacity(0.18))
+                    .fill(DS.cyan.opacity(0.18))
                     .frame(height: 1)
 
                 HStack(spacing: 10) {
@@ -384,8 +384,8 @@ struct CustomizationScreenView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text(currencySymbol)
-                                    .font(.system(size: 15, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(Color(hex: "#00FF88"))
+                                    .font(DS.tech(15))
+                                    .foregroundStyle(DS.cyan)
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.system(size: 7))
                                     .foregroundStyle(.white.opacity(0.4))
@@ -408,7 +408,7 @@ struct CustomizationScreenView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text(distanceUnit)
-                                    .font(.system(size: 15, weight: .bold, design: .monospaced))
+                                    .font(DS.tech(15))
                                     .foregroundStyle(Color(hex: "#00E5FF"))
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.system(size: 7))
@@ -427,7 +427,7 @@ struct CustomizationScreenView: View {
                             .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(.white.opacity(0.4))
                         TextField("0.00", value: $customRate, format: .number)
-                            .font(.system(size: 15, weight: .bold, design: .monospaced))
+                            .font(DS.tech(15))
                             .foregroundStyle(.white)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.center)
@@ -446,7 +446,7 @@ struct CustomizationScreenView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(
-                    isSelected ? Color(hex: "#00FF88").opacity(0.5) : Color.white.opacity(0.06),
+                    isSelected ? DS.cyan.opacity(0.5) : Color.white.opacity(0.06),
                     lineWidth: isSelected ? 1.5 : 1
                 )
         )
@@ -458,7 +458,7 @@ struct CustomizationScreenView: View {
             // Animated car indicator
             VStack(spacing: 16) {
                 Text("DISTANCE UNIT")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9.5))
                     .foregroundStyle(.white.opacity(0.4))
 
                 ZStack(alignment: .leading) {
@@ -468,7 +468,7 @@ struct CustomizationScreenView: View {
 
                     // Sliding pill background
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(hex: "#00FF88").opacity(0.15))
+                        .fill(DS.cyan.opacity(0.15))
                         .padding(6)
                         .frame(width: UIScreen.main.bounds.width / 2 - 24)
                         .frame(maxWidth: .infinity, alignment: distanceUnit == "mi" ? .leading : .trailing)
@@ -481,7 +481,7 @@ struct CustomizationScreenView: View {
                         } label: {
                             Text("Miles (mi)")
                                 .font(.system(size: 15, weight: distanceUnit == "mi" ? .heavy : .medium))
-                                .foregroundStyle(distanceUnit == "mi" ? Color(hex: "#00FF88") : .white.opacity(0.4))
+                                .foregroundStyle(distanceUnit == "mi" ? DS.cyan : .white.opacity(0.4))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 64)
                         }
@@ -490,7 +490,7 @@ struct CustomizationScreenView: View {
                         } label: {
                             Text("Kilometres (km)")
                                 .font(.system(size: 15, weight: distanceUnit == "km" ? .heavy : .medium))
-                                .foregroundStyle(distanceUnit == "km" ? Color(hex: "#00FF88") : .white.opacity(0.4))
+                                .foregroundStyle(distanceUnit == "km" ? DS.cyan : .white.opacity(0.4))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 64)
                         }
@@ -502,7 +502,7 @@ struct CustomizationScreenView: View {
             // Currency picker
             VStack(alignment: .leading, spacing: 12) {
                 Text("CURRENCY SYMBOL")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9.5))
                     .foregroundStyle(.white.opacity(0.4))
 
                 let currencies = ["$", "£", "€", "₹", "¥", "A$", "CA$", "S$", "CHF", "kr", "R", "R$", "AED", "₩"]
@@ -512,15 +512,15 @@ struct CustomizationScreenView: View {
                             withAnimation { currencySymbol = sym }
                         } label: {
                             Text(sym)
-                                .font(.system(size: 17, weight: .black, design: .rounded))
+                                .font(DS.display(17))
                                 .foregroundStyle(currencySymbol == sym ? Color(hex: "#06090E") : .white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 48)
-                                .background(currencySymbol == sym ? Color(hex: "#00FF88") : Color(hex: "#0E1622"))
+                                .background(currencySymbol == sym ? DS.cyan : Color(hex: "#0E1622"))
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(
                                     currencySymbol == sym ? Color.clear : Color.white.opacity(0.07)))
-                                .shadow(color: currencySymbol == sym ? Color(hex: "#00FF88").opacity(0.4) : .clear, radius: 8)
+                                .shadow(color: currencySymbol == sym ? DS.cyan.opacity(0.4) : .clear, radius: 8)
                         }
                         .buttonStyle(.plain)
                     }
@@ -536,7 +536,7 @@ struct CustomizationScreenView: View {
             // Vehicle type
             VStack(alignment: .leading, spacing: 12) {
                 Text("VEHICLE TYPE")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9.5))
                     .foregroundStyle(.white.opacity(0.4))
 
                 HStack(spacing: 10) {
@@ -554,11 +554,11 @@ struct CustomizationScreenView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(selectedVehicle == v ? Color(hex: "#00FF88") : Color(hex: "#0E1622"))
+                            .background(selectedVehicle == v ? DS.cyan : Color(hex: "#0E1622"))
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(
                                 selectedVehicle == v ? Color.clear : Color.white.opacity(0.07)))
-                            .shadow(color: selectedVehicle == v ? Color(hex: "#00FF88").opacity(0.4) : .clear, radius: 8)
+                            .shadow(color: selectedVehicle == v ? DS.cyan.opacity(0.4) : .clear, radius: 8)
                         }
                         .buttonStyle(.plain)
                     }
@@ -585,7 +585,7 @@ struct CustomizationScreenView: View {
             HStack(spacing: 12) {
                 Image(systemName: "building.columns.fill")
                     .font(.system(size: 16))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .foregroundStyle(DS.cyan)
                     .frame(width: 36, height: 36)
                     .background(Color(hex: "#0D2218"))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -600,13 +600,13 @@ struct CustomizationScreenView: View {
                 }
                 Spacer()
                 Text(String(format: "%@%.3f", currencySymbol, selectedCountry?.rate ?? irsRate))
-                    .font(.system(size: 13, weight: .black, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#00FF88"))
+                    .font(DS.tech(13))
+                    .foregroundStyle(DS.cyan)
             }
             .padding(14)
             .background(Color(hex: "#0A1018"))
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color(hex: "#00FF88").opacity(0.2)))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(DS.cyan.opacity(0.2)))
         }
         .padding(.horizontal, 24)
     }
@@ -630,7 +630,7 @@ struct CustomizationScreenView: View {
             }
             Spacer()
             Toggle("", isOn: isOn)
-                .tint(Color(hex: "#00FF88"))
+                .tint(DS.cyan)
                 .labelsHidden()
         }
         .padding(14)
@@ -673,19 +673,15 @@ struct CustomizationScreenView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(step == 2 ? "Start Tracking" : "Next")
-                        .font(.system(size: 16, weight: .heavy, design: .rounded))
+                        .font(DS.display(16))
                     Image(systemName: step == 2 ? "arrow.up.right" : "chevron.right")
                         .font(.system(size: 13, weight: .black))
                 }
                 .foregroundStyle(Color(hex: "#06090E"))
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(
-                    LinearGradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                   startPoint: .leading, endPoint: .trailing)
-                )
-                .clipShape(Capsule())
-                .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 12, y: 5)
+                .background(DS.cyan, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: DS.cyan.opacity(0.4), radius: 12, y: 5)
             }
             .buttonStyle(.plain)
         }

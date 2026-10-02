@@ -120,7 +120,7 @@ struct ExportHubView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_vault")
 
                 // Subtle ambient glows
                 RadialGradient(colors: [Color(hex: "#00FF88").opacity(0.06), .clear],
@@ -179,7 +179,7 @@ struct ExportHubView: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Color(hex: "#00E5FF"))
                 Text(rangeLabelString)
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(Color(hex: "#00E5FF"))
             }
             .padding(.horizontal, 12)
@@ -189,22 +189,22 @@ struct ExportHubView: View {
             .overlay(Capsule().strokeBorder(Color(hex: "#00E5FF").opacity(0.3), lineWidth: 1))
 
             Text(countryLabel)
-                .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                .font(DS.tech(10))
                 .foregroundStyle(Color(hex: "#00FF88"))
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(currencySymbol)
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(DS.display(28))
                     .foregroundStyle(Color(hex: "#00FF88"))
                 Text(String(format: "%.2f", totalDeduction))
-                    .font(.system(size: 42, weight: .black, design: .rounded))
+                    .font(DS.display(42))
                     .foregroundStyle(.white)
             }
 
             Text(String(format: "%.1f %@ • %d business trip%@",
                         totalMiles, distanceUnit, businessTrips.count,
                         businessTrips.count == 1 ? "" : "s"))
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .font(DS.tech(12))
                 .foregroundStyle(.white.opacity(0.5))
 
             if filteredTrips.isEmpty {
@@ -233,7 +233,7 @@ struct ExportHubView: View {
     private var reportTypePicker: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("REPORT TYPE")
-                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .font(DS.tech(11))
                 .foregroundStyle(Color(hex: "#00FF88"))
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -271,7 +271,7 @@ struct ExportHubView: View {
     private var dateRangeCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("DATE RANGE")
-                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .font(DS.tech(11))
                 .foregroundStyle(Color(hex: "#00E5FF"))
 
             // Quick preset chips
@@ -345,7 +345,7 @@ struct ExportHubView: View {
     private var filtersCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("INCLUDE TRIPS")
-                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .font(DS.tech(11))
                 .foregroundStyle(Color(hex: "#A78BFA"))
 
             VStack(spacing: 8) {
@@ -390,7 +390,7 @@ struct ExportHubView: View {
                     }
                     Spacer()
                     Text("\(filteredTrips.count) trips")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(DS.tech(11))
                         .opacity(0.7)
                 }
                 .font(.system(size: 16, weight: .bold))
@@ -413,7 +413,7 @@ struct ExportHubView: View {
                     Text("Export CSV (20 fields)")
                     Spacer()
                     Text("\(filteredTrips.count) trips")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(DS.tech(11))
                         .opacity(0.7)
                 }
                 .font(.system(size: 15, weight: .semibold))

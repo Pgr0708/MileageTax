@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "map_geofence.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

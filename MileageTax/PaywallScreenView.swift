@@ -82,7 +82,7 @@ struct PaywallScreenView: View {
                     VStack(spacing: 16) {
                         ProgressView()
                             .progressViewStyle(.circular)
-                            .tint(Color(hex: "#00FF88"))
+                            .tint(DS.cyan)
                             .scaleEffect(1.5)
                         Text("Connecting...")
                             .font(.system(size: 14, weight: .semibold))
@@ -119,69 +119,32 @@ struct PaywallScreenView: View {
         }
     }
 
-    // MARK: - Hero
+    // MARK: - Hero (concept board 1, screen 8)
     private var heroSection: some View {
-        ZStack(alignment: .top) {
-            // Background glow
-            RadialGradient(colors: [Color(hex: "#00FF88").opacity(0.12), .clear],
-                           center: .top, startRadius: 10, endRadius: 160)
-                .frame(height: 180)
+        ZStack(alignment: .bottomLeading) {
+            ScenicBackdrop(style: .alpineDawn, horizon: 0.7, showRoad: false, seed: 13, photo: "scene_paywall")
+                .frame(height: 330)
+                .mask(LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom))
 
-            VStack(spacing: 8) {
-                // PRO badge
-                HStack(spacing: 6) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 9, weight: .black))
-                    Text("MILEAGETAX PRO")
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                }
-                .foregroundStyle(Color(hex: "#06090E"))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(
-                    LinearGradient(colors: [Color(hex: "#00FF88"), Color(hex: "#00D670")],
-                                   startPoint: .leading, endPoint: .trailing)
-                )
-                .clipShape(Capsule())
-
-                // Animated speedometer icon
-                ZStack {
-                    ForEach(0..<3) { i in
-                        Circle()
-                            .strokeBorder(Color(hex: "#00FF88").opacity(0.08 - Double(i) * 0.02), lineWidth: 1)
-                            .frame(width: CGFloat(90 + i * 30), height: CGFloat(90 + i * 30))
-                    }
-                    ZStack {
-                        Circle()
-                            .fill(RadialGradient(colors: [Color(hex: "#0E2820"), Color(hex: "#06090E")],
-                                                  center: .center, startRadius: 10, endRadius: 50))
-                            .frame(width: 96, height: 96)
-                            .overlay(Circle().strokeBorder(Color(hex: "#00FF88").opacity(0.4), lineWidth: 2))
-                        Image(systemName: "speedometer")
-                            .font(.system(size: 36, weight: .black))
-                            .foregroundStyle(
-                                LinearGradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                               startPoint: .top, endPoint: .bottom)
-                            )
-                    }
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                (Text("Go Further\nwith ").foregroundStyle(.white) + Text("MileageTax Pro").foregroundStyle(DS.cyan))
+                    .font(DS.display(30))
+                    .shadow(color: .black.opacity(0.6), radius: 8)
+                Text("Unlock advanced features and get the most from every mile.")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .opacity(heroOpacity)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 8)
+        }
+        .overlay(alignment: .topTrailing) {
+            GaugeArt(size: 100, value: 0.85)
                 .scaleEffect(heroScale)
                 .opacity(heroOpacity)
-
-                Text("Unlock Your\nTax Potential")
-                    .font(.system(size: 32, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .opacity(heroOpacity)
-
-                Text("Join 50,000+ drivers saving thousands\nevery year with full automation.")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .opacity(heroOpacity)
-                    .padding(.bottom, 8)
-            }
-            .padding(.horizontal, 28)
+                .padding(.top, 96)
+                .padding(.trailing, 20)
         }
     }
 
@@ -189,20 +152,15 @@ struct PaywallScreenView: View {
     private var savingsCounter: some View {
         VStack(spacing: 4) {
             Text("AVG. ANNUAL SAVINGS")
-                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                .font(DS.tech(9))
                 .foregroundStyle(.white.opacity(0.4))
 
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("$")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                Text(String(format: "%.0f", counterValue))
-                    .font(.system(size: 52, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(hex: "#00FF88"))
-                    .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 12)
-                    .contentTransition(.numericText())
-                    .animation(.easeOut(duration: 2.0), value: counterValue)
-            }
+            // One Text so the "$" and digits share a layout and can't overlap while counting.
+            (Text("$ ").font(DS.display(28)) + Text(String(format: "%.0f", counterValue)).font(DS.display(52)))
+                .foregroundStyle(DS.brandGradient)
+                .shadow(color: DS.cyan.opacity(0.5), radius: 12)
+                .contentTransition(.numericText(value: counterValue))
+                .animation(.easeOut(duration: 2.0), value: counterValue)
 
             Text("in IRS-verified tax deductions")
                 .font(.system(size: 12, weight: .medium))
@@ -213,13 +171,13 @@ struct PaywallScreenView: View {
         .background(Color(hex: "#0A1018").opacity(0.6))
         .overlay(
             Rectangle()
-                .fill(Color(hex: "#00FF88").opacity(0.08))
+                .fill(DS.cyan.opacity(0.08))
                 .frame(height: 1),
             alignment: .top
         )
         .overlay(
             Rectangle()
-                .fill(Color(hex: "#00FF88").opacity(0.08))
+                .fill(DS.cyan.opacity(0.08))
                 .frame(height: 1),
             alignment: .bottom
         )
@@ -229,7 +187,7 @@ struct PaywallScreenView: View {
     private var plansSection: some View {
         VStack(spacing: 12) {
             Text("CHOOSE YOUR PLAN")
-                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                .font(DS.tech(9.5))
                 .foregroundStyle(.white.opacity(0.4))
                 .padding(.top, 24)
 
@@ -247,7 +205,7 @@ struct PaywallScreenView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 26))
-                        .foregroundStyle(Color(hex: "#00FF88"))
+                        .foregroundStyle(DS.cyan)
 
                     Text("No Plans Available")
                         .font(.system(size: 15, weight: .bold))
@@ -273,7 +231,7 @@ struct PaywallScreenView: View {
                         .foregroundStyle(Color(hex: "#06090E"))
                         .padding(.horizontal, 18)
                         .padding(.vertical, 8)
-                        .background(Color(hex: "#00FF88"))
+                        .background(DS.cyan)
                         .clipShape(Capsule())
                     }
                     .padding(.top, 4)
@@ -285,8 +243,34 @@ struct PaywallScreenView: View {
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.08)))
             } else {
                 // Live packages loaded from RevenueCat ProViewModel
-                ForEach(vm.allPackages, id: \.identifier) { pkg in
-                    planTile(pkg)
+                HStack(spacing: 6) {
+                    ForEach(vm.allPackages, id: \.identifier) { pkg in
+                        planSegment(pkg)
+                    }
+                }
+                .padding(5)
+                .background(DS.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(DS.stroke))
+
+                if let pkg = vm.selectedPackage {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(pkg.localizedPriceString)
+                            .font(DS.display(34))
+                            .foregroundStyle(.white)
+                            .contentTransition(.numericText())
+                        Text(periodSuffix(pkg))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(DS.text2)
+                        Spacer()
+                        if let save = annualSavingsPercent, pkg.packageType == .annual {
+                            Text("\(save)% OFF")
+                                .font(.system(size: 11, weight: .heavy))
+                                .foregroundStyle(Color(hex: "#03141A"))
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(DS.green, in: Capsule())
+                        }
+                    }
+                    .padding(.top, 6)
                 }
             }
 
@@ -300,17 +284,13 @@ struct PaywallScreenView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 14, weight: .black))
-                    Text(vm.selectedPackage != nil ? "Unlock Pro — \(vm.selectedPackage!.localizedPriceString)" : "Unlock Pro")
-                        .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    Text("Continue with Pro")
+                        .font(DS.display(17))
                 }
                 .foregroundStyle(Color(hex: "#06090E"))
                 .frame(maxWidth: .infinity)
                 .frame(height: 58)
-                .background(
-                    LinearGradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                   startPoint: .leading, endPoint: .trailing)
-                )
-                .clipShape(Capsule())
+                .background(DS.cyan, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .shadow(color: Color(hex: "#00E5FF").opacity(0.5), radius: 16, y: 6)
             }
             .buttonStyle(.plain)
@@ -321,67 +301,54 @@ struct PaywallScreenView: View {
         .padding(.horizontal, 24)
     }
 
-    private func planTile(_ pkg: Package) -> some View {
+    private func planSegment(_ pkg: Package) -> some View {
         let isSelected = vm.selectedPackage?.identifier == pkg.identifier
-        let isPopular  = pkg.packageType == .annual
         return Button {
             withAnimation(.spring(response: 0.3)) { vm.selectedPackage = pkg }
         } label: {
-            HStack(spacing: 14) {
-                // Radio circle
-                ZStack {
-                    Circle().strokeBorder(isSelected ? Color(hex: "#00FF88") : Color.white.opacity(0.2), lineWidth: 2)
-                        .frame(width: 22, height: 22)
-                    if isSelected {
-                        Circle().fill(Color(hex: "#00FF88")).frame(width: 12, height: 12)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(planLabel(pkg))
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                        if isPopular {
-                            Text("BEST VALUE")
-                                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
-                                .foregroundStyle(Color(hex: "#06090E"))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(hex: "#00FF88"))
-                                .clipShape(Capsule())
-                        }
-                    }
-                    Text(planSubtitle(pkg))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-
-                Spacer()
-
-                Text(pkg.localizedPriceString)
-                    .font(.system(size: 15, weight: .black, design: .monospaced))
-                    .foregroundStyle(isSelected ? Color(hex: "#00FF88") : .white.opacity(0.8))
+            VStack(spacing: 3) {
+                Text(planLabel(pkg).replacingOccurrences(of: " Pro", with: ""))
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(segmentHint(pkg))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(isSelected ? DS.cyan : DS.text3)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(
-                ZStack {
-                    Color(hex: isSelected ? "#0D2218" : "#0E1622")
-                    if isSelected {
-                        LinearGradient(colors: [Color(hex: "#00FF88").opacity(0.08), .clear],
-                                       startPoint: .leading, endPoint: .trailing)
-                    }
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(isSelected ? Color(hex: "#00FF88").opacity(0.6) : Color.white.opacity(0.07), lineWidth: isSelected ? 1.5 : 1)
-            )
-            .shadow(color: isSelected ? Color(hex: "#00FF88").opacity(0.15) : .clear, radius: 8)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(isSelected ? DS.cyan.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(isSelected ? DS.cyan : .clear, lineWidth: 1.5))
         }
         .buttonStyle(.plain)
+    }
+
+    /// Annual saving vs. paying monthly for a year, when both packages exist.
+    private var annualSavingsPercent: Int? {
+        guard let annual = vm.allPackages.first(where: { $0.packageType == .annual }),
+              let monthly = vm.allPackages.first(where: { $0.packageType == .monthly }) else { return nil }
+        let a = NSDecimalNumber(decimal: annual.storeProduct.price).doubleValue
+        let m = NSDecimalNumber(decimal: monthly.storeProduct.price).doubleValue * 12
+        guard m > 0, a < m else { return nil }
+        return Int(((1 - a / m) * 100).rounded())
+    }
+
+    private func segmentHint(_ pkg: Package) -> String {
+        switch pkg.packageType {
+        case .annual:   return annualSavingsPercent.map { "Save \($0)%" } ?? "Popular"
+        case .monthly:  return "Flexible"
+        case .lifetime: return "Best Value"
+        default:        return ""
+        }
+    }
+
+    private func periodSuffix(_ pkg: Package) -> String {
+        switch pkg.packageType {
+        case .annual:   return "/ year"
+        case .monthly:  return "/ month"
+        case .lifetime: return "one-time"
+        default:        return ""
+        }
     }
 
     private func planLabel(_ pkg: Package) -> String {
@@ -406,7 +373,7 @@ struct PaywallScreenView: View {
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("EVERYTHING INCLUDED")
-                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                .font(DS.tech(9.5))
                 .foregroundStyle(.white.opacity(0.4))
                 .padding(.bottom, 14)
                 .padding(.top, 28)
@@ -416,11 +383,11 @@ struct PaywallScreenView: View {
                     HStack(spacing: 14) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(hex: "#0D2218"))
+                                .fill(DS.cyan.opacity(0.1))
                                 .frame(width: 34, height: 34)
                             Image(systemName: f.icon)
                                 .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Color(hex: "#00FF88"))
+                                .foregroundStyle(DS.cyan)
                         }
                         VStack(alignment: .leading, spacing: 1) {
                             Text(f.text)
@@ -433,7 +400,7 @@ struct PaywallScreenView: View {
                         Spacer()
                         Image(systemName: "checkmark")
                             .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(Color(hex: "#00FF88"))
+                            .foregroundStyle(DS.cyan)
                     }
                     .padding(.vertical, 12)
                     .opacity(featuresVisible ? 1 : 0)
@@ -458,7 +425,7 @@ struct PaywallScreenView: View {
         HStack(spacing: 0) {
             ForEach(["4.9★ Rating", "50K+ Drivers", "IRS Compliant"], id: \.self) { item in
                 Text(item)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .font(DS.tech(11))
                     .foregroundStyle(.white.opacity(0.55))
                     .frame(maxWidth: .infinity)
                 if item != "IRS Compliant" {

@@ -88,9 +88,7 @@ struct TrackView: View {
                 Color(hex: "#06090E").ignoresSafeArea()
 
                 // High-resolution scenic coastal winding highway at sunset with green neon road trails
-                Image("track_bg_scenic")
-                    .resizable()
-                    .scaledToFill()
+                ScenicBackdrop(style: .coastal, horizon: 0.38, vignette: false, photo: "scene_track")
                     .frame(width: geo.size.width, height: geo.size.height * 0.72, alignment: .top)
                     .clipped()
                     .ignoresSafeArea(edges: .top)
@@ -133,7 +131,7 @@ struct TrackView: View {
                     .shadow(color: isTracking ? Color(hex: "#00FF88") : Color.clear, radius: 4)
 
                 Text(isTracking ? "REC" : "STANDBY")
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color.gray)
             }
 
@@ -142,7 +140,7 @@ struct TrackView: View {
                 .foregroundStyle(.white.opacity(0.25))
 
             Text(String(format: "%.1f MI", displayMiles))
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(DS.tech(11))
                 .foregroundStyle(.white)
 
             Text("|")
@@ -150,7 +148,7 @@ struct TrackView: View {
                 .foregroundStyle(.white.opacity(0.25))
 
             Text(String(format: "%.0f %@", MileageUnits.speedValue(displaySpeed), MileageUnits.speedUnitLabel))
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(DS.tech(11))
                 .foregroundStyle(Color(hex: "#00E5FF"))
 
             Text("|")
@@ -159,10 +157,10 @@ struct TrackView: View {
 
             HStack(spacing: 3) {
                 Text("IRS")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(.white.opacity(0.55))
                 Text(String(format: "$%.2f", displayDeduction))
-                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(11))
                     .foregroundStyle(Color(hex: "#00FF88"))
             }
         }
@@ -189,7 +187,7 @@ struct TrackView: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(isTracking ? Color(hex: "#00E5FF") : Color.gray)
                 Text(isTracking ? String(format: "GPS ±%.0fm", tracker.horizontalAccuracyMeters) : "GPS: IDLE")
-                    .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(8.5))
                     .foregroundStyle(isTracking ? .white : .white.opacity(0.4))
             }
             .padding(.horizontal, 10)
@@ -212,7 +210,7 @@ struct TrackView: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"))
                 Text(isTracking ? "TRIP ACTIVE" : "AUTO-SCANNING")
-                    .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(8.5))
                     .foregroundStyle(.white)
                 Circle()
                     .fill(isTracking ? Color(hex: "#00FF88") : Color(hex: "#00E5FF"))
@@ -311,18 +309,18 @@ struct TrackView: View {
             // Dial Center Typography
             VStack(spacing: 3) {
                 Text(isTracking ? "CRUISING" : "PARKED")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9.5))
                     .foregroundStyle(.white.opacity(0.65))
                     .tracking(1.8)
                     .padding(.top, 4)
 
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(isTracking ? String(format: "%.0f", MileageUnits.speedValue(displaySpeed)) : "0")
-                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .font(DS.display(48))
                         .foregroundStyle(isTracking ? .white : .white.opacity(0.3))
 
                     Text(MileageUnits.speedUnitLabel)
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .font(DS.display(14))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
 
@@ -340,21 +338,21 @@ struct TrackView: View {
 
                 if isTracking {
                     Text(String(format: "$%.2f", displayDeduction))
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .font(DS.display(28))
                         .foregroundStyle(Color(hex: "#00FF88"))
                         .shadow(color: Color(hex: "#00FF88").opacity(0.5), radius: 8)
 
                     Text("ACCRUED TAX YIELD")
-                        .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(7.5))
                         .foregroundStyle(.white.opacity(0.55))
                         .tracking(0.8)
                 } else {
                     Text("$0.00")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .font(DS.display(28))
                         .foregroundStyle(.white.opacity(0.25))
 
                     Text("START A TRIP TO TRACK")
-                        .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(7.5))
                         .foregroundStyle(.white.opacity(0.3))
                         .tracking(0.8)
                 }
@@ -375,11 +373,11 @@ struct TrackView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("STANDARD RATE")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8))
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 Text(String(format: "%.3f", irsRate) + currencySymbol + "/" + distanceUnit)
-                    .font(.system(size: 13.5, weight: .black, design: .monospaced))
+                    .font(DS.tech(13.5))
                     .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
@@ -393,11 +391,11 @@ struct TrackView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                     Text("TRIP ELAPSED")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8))
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 Text(formatElapsed(tracker.liveDurationSeconds))
-                    .font(.system(size: 13.5, weight: .black, design: .monospaced))
+                    .font(DS.tech(13.5))
                     .foregroundStyle(Color(hex: "#00E5FF"))
             }
             .frame(maxWidth: .infinity)
@@ -411,12 +409,12 @@ struct TrackView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("TRIP PACE")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8))
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 let paceUSDPerMin = tracker.currentSpeedMph > 0 ? (tracker.currentSpeedMph * irsRate / 60) : 0.0
                 Text(isTracking && paceUSDPerMin > 0 ? String(format: "+%@%.2f/m", currencySymbol, paceUSDPerMin) : "—")
-                    .font(.system(size: 13.5, weight: .black, design: .monospaced))
+                    .font(DS.tech(13.5))
                     .foregroundStyle(isTracking ? Color(hex: "#00FF88") : .white.opacity(0.3))
             }
             .frame(maxWidth: .infinity)
@@ -456,7 +454,7 @@ struct TrackView: View {
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
                     Text(isTracking ? "Live Waypoints" : "Trip Status")
-                        .font(.system(size: 15.5, weight: .bold, design: .rounded))
+                        .font(DS.display(15.5))
                         .foregroundStyle(.white)
                 }
 
@@ -468,7 +466,7 @@ struct TrackView: View {
                         .frame(width: 5, height: 5)
                         .shadow(color: isTracking ? Color(hex: "#00FF88") : Color.clear, radius: 3)
                     Text(isTracking ? "ACTIVE CADENCE" : "STANDBY")
-                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color.gray)
                 }
                 .padding(.horizontal, 8)
@@ -497,11 +495,11 @@ struct TrackView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
                             Text(isTracking ? "ORIGIN • \(tripStartTimeString)" : "ORIGIN")
-                                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                                .font(DS.tech(8.5))
                                 .foregroundStyle(Color(hex: "#00E5FF").opacity(0.9))
                             Spacer()
                             Text(isTracking ? String(format: "%.2f \(distanceUnit)", displayMiles) : "—")
-                                .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                .font(DS.tech(9.5))
                                 .foregroundStyle(.white.opacity(0.45))
                         }
 
@@ -532,11 +530,11 @@ struct TrackView: View {
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
                             Text("EN ROUTE")
-                                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(8.5))
                                 .foregroundStyle(Color(hex: "#00E5FF"))
                             Spacer()
                             Text(String(format: "%.2f \(distanceUnit) logged", displayMiles))
-                                .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                                .font(DS.tech(8.5))
                                 .foregroundStyle(.white.opacity(0.55))
                         }
                         .padding(.horizontal, 10)
@@ -560,7 +558,7 @@ struct TrackView: View {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("DESTINATION")
-                                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                                .font(DS.tech(8.5))
                                 .foregroundStyle(Color(hex: "#00FF88"))
 
                             Text("Recording in progress...")
@@ -603,7 +601,7 @@ struct TrackView: View {
             if isTracking {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("PRE-CLASSIFY THIS TRIP")
-                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.5))
 
                     HStack(spacing: 8) {
@@ -671,11 +669,11 @@ struct TrackView: View {
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.system(size: 14, weight: .black, design: .rounded))
+                .font(DS.display(14))
                 .foregroundStyle(.white)
 
             Text(label)
-                .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                .font(DS.tech(7.5))
                 .foregroundStyle(.white.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
@@ -728,7 +726,7 @@ struct TrackView: View {
                             .animation(.easeInOut(duration: 1).repeatForever(), value: isTracking)
                     )
                 Text(isTracking ? "LIVE ROUTE" : "NO ACTIVE TRIP")
-                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(isTracking ? Color(hex: "#00FF88") : Color.white.opacity(0.5))
             }
             .padding(.horizontal, 12)
@@ -761,7 +759,7 @@ struct TrackView: View {
                                 .frame(width: 10, height: 10)
                         }
                         Text("Stop & Classify Drive")
-                            .font(.system(size: 16, weight: .heavy, design: .rounded))
+                            .font(DS.display(16))
                             .foregroundStyle(Color(hex: "#061A13"))
                     }
                     .frame(maxWidth: .infinity)
@@ -793,7 +791,7 @@ struct TrackView: View {
                         }
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Start Trip Manually")
-                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                                .font(DS.display(15))
                             Text("Bypass auto-detection · GPS starts immediately")
                                 .font(.system(size: 10, weight: .medium))
                                 .opacity(0.7)

@@ -50,7 +50,7 @@ struct ProfileView: View {
     var body: some View {
         ZStack {
             // Background
-            Color(hex: "#06090E").ignoresSafeArea()
+            ScenicScreenBackground(image: "scene_vault")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
@@ -136,7 +136,7 @@ struct ProfileView: View {
                     }
 
                     Text("Back")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(DS.display(14))
                         .foregroundStyle(.white.opacity(0.85))
                 }
             }
@@ -150,7 +150,7 @@ struct ProfileView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("Edit")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(DS.display(13))
                         .foregroundStyle(Color(hex: "#00FF88"))
                 }
                 .padding(.horizontal, 12)
@@ -249,7 +249,7 @@ struct ProfileView: View {
             // Name & Title
             VStack(spacing: 3) {
                 Text(userName.isEmpty ? "Tap Edit to set your name" : userName)
-                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .font(DS.display(24))
                     .foregroundStyle(userName.isEmpty ? .white.opacity(0.4) : .white)
                     .onTapGesture { showEditProfile = true }
 
@@ -263,12 +263,12 @@ struct ProfileView: View {
                 // Tracked Miles
                 VStack(spacing: 2) {
                     Text("TRACKED")
-                        .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(9))
                         .foregroundStyle(.white.opacity(0.45))
 
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text(String(format: "%.0f", MileageUnits.distanceValue(totalMiles)))
-                            .font(.system(size: 22, weight: .black, design: .rounded))
+                            .font(DS.display(22))
                             .foregroundStyle(Color(hex: "#00FF88"))
                         Text(MileageUnits.unitLabel)
                             .font(.system(size: 11, weight: .bold))
@@ -284,11 +284,11 @@ struct ProfileView: View {
                 // Tax Yield
                 VStack(spacing: 2) {
                     Text("TAX YIELD")
-                        .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(9))
                         .foregroundStyle(.white.opacity(0.45))
 
                     Text(String(format: "%@%.0f", currencySymbol, totalYield))
-                        .font(.system(size: 22, weight: .black, design: .rounded))
+                        .font(DS.display(22))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
                 .frame(maxWidth: .infinity)
@@ -327,7 +327,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Text("ACTIVE")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .font(DS.tech(9))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -369,7 +369,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Text(String(format: "%.0f¢/%@", MileageUnits.ratePerDisplayUnit(irsRate) * 100, MileageUnits.unitLabel))
-                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -388,14 +388,14 @@ struct ProfileView: View {
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.white)
                     Text("AES-256 GCM Trip Journal")
-                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(.white.opacity(0.45))
                 }
 
                 Spacer()
 
                 Text("ENCRYPTED")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .font(DS.tech(9))
                     .foregroundStyle(Color(hex: "#00FF88"))
             }
 
@@ -546,7 +546,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Text("ACTIVE")
-                    .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                    .font(DS.tech(8.5))
                     .foregroundStyle(Color(hex: "#00FF88"))
             }
         }
@@ -566,7 +566,7 @@ struct ProfileView: View {
                 Image(systemName: "trash.fill")
                     .font(.system(size: 13, weight: .bold))
                 Text("Factory Reset App Data")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(DS.display(13))
             }
             .foregroundStyle(Color.red.opacity(0.85))
             .frame(maxWidth: .infinity)
@@ -710,10 +710,10 @@ struct ProfileView: View {
     private var footerMetadata: some View {
         VStack(spacing: 3) {
             Text("App Version 3.4.2 (Build 890 - CoreMotion v2)")
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .font(DS.tech(9))
                 .foregroundStyle(.white.opacity(0.35))
             Text("Encrypted Hardware ID: 9F84-281A-CD48")
-                .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                .font(DS.tech(8.5))
                 .foregroundStyle(.white.opacity(0.25))
         }
         .padding(.top, 6)
@@ -755,7 +755,7 @@ struct TaxSettingsModalView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_rules")
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
@@ -763,7 +763,7 @@ struct TaxSettingsModalView: View {
                         // ── Country Presets with Inline Customization ──────────
                         VStack(alignment: .leading, spacing: 10) {
                             Text("SELECT TAX AUTHORITY")
-                                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(11))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                                 .padding(.horizontal, 4)
 
@@ -789,7 +789,7 @@ struct TaxSettingsModalView: View {
                                             
                                             if !isSelected {
                                                 Text("\(preset.symbol)\(String(format: "%.2f", preset.rate))/\(preset.unit)")
-                                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                                    .font(DS.tech(12))
                                                     .foregroundStyle(.white.opacity(0.5))
                                             } else {
                                                 Image(systemName: "checkmark.circle.fill")
@@ -822,7 +822,7 @@ struct TaxSettingsModalView: View {
                                                     } label: {
                                                         HStack {
                                                             Text(currencySymbol)
-                                                                .font(.system(size: 16, weight: .black, design: .monospaced))
+                                                                .font(DS.tech(16))
                                                                 .foregroundStyle(Color(hex: "#00FF88"))
                                                             Image(systemName: "chevron.up.chevron.down")
                                                                 .font(.system(size: 10))
@@ -847,7 +847,7 @@ struct TaxSettingsModalView: View {
                                                     } label: {
                                                         HStack {
                                                             Text(distanceUnit)
-                                                                .font(.system(size: 16, weight: .black, design: .monospaced))
+                                                                .font(DS.tech(16))
                                                                 .foregroundStyle(Color(hex: "#00E5FF"))
                                                             Image(systemName: "chevron.up.chevron.down")
                                                                 .font(.system(size: 10))
@@ -867,7 +867,7 @@ struct TaxSettingsModalView: View {
                                                         .foregroundStyle(.white.opacity(0.5))
                                                     
                                                     TextField("0.00", text: $rateInputText)
-                                                        .font(.system(size: 16, weight: .black, design: .monospaced))
+                                                        .font(DS.tech(16))
                                                         .foregroundStyle(.white)
                                                         .keyboardType(.decimalPad)
                                                         .multilineTextAlignment(.center)
@@ -908,7 +908,7 @@ struct TaxSettingsModalView: View {
                                 .foregroundStyle(.white.opacity(0.6))
                             Spacer()
                             Text("\(currencySymbol)\(String(format: "%.3f", irsRate))/\(distanceUnit)")
-                                .font(.system(size: 16, weight: .black, design: .monospaced))
+                                .font(DS.tech(16))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                         }
                         .padding(14)

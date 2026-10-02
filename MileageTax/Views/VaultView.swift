@@ -213,7 +213,7 @@ struct VaultView: View {
     private var customDatePickerSheet: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_vault")
 
                 VStack(spacing: 24) {
                     // Header
@@ -233,7 +233,7 @@ struct VaultView: View {
                     // Quick Presets row
                     VStack(alignment: .leading, spacing: 10) {
                         Text("QUICK PRESETS")
-                            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(10))
                             .foregroundStyle(Color(hex: "#00E5FF").opacity(0.7))
 
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -264,7 +264,7 @@ struct VaultView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("START")
-                                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                    .font(DS.tech(9))
                                     .foregroundStyle(.white.opacity(0.4))
                                 DatePicker("", selection: $customStart, displayedComponents: .date)
                                     .labelsHidden()
@@ -274,7 +274,7 @@ struct VaultView: View {
                             Spacer()
                             VStack(alignment: .trailing, spacing: 3) {
                                 Text("END")
-                                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                    .font(DS.tech(9))
                                     .foregroundStyle(.white.opacity(0.4))
                                 DatePicker("", selection: $customEnd, displayedComponents: .date)
                                     .labelsHidden()
@@ -297,7 +297,7 @@ struct VaultView: View {
                     }.count
 
                     Text("\(previewCount) business trip\(previewCount == 1 ? "" : "s") in range")
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(DS.tech(13))
                         .foregroundStyle(Color(hex: "#00FF88"))
                         .padding(.top, 4)
 
@@ -338,9 +338,7 @@ struct VaultView: View {
             Color(hex: "#06090E").ignoresSafeArea()
 
             // Mountain scenic wallpaper at top fading into deep obsidian
-            Image("radar_bg_mountain")
-                .resizable()
-                .scaledToFill()
+            ScenicBackdrop(style: .mountainLake, horizon: 0.36, showRoad: false, vignette: false, seed: 23, photo: "scene_vault")
                 .ignoresSafeArea()
                 .overlay(
                     LinearGradient(
@@ -387,7 +385,7 @@ struct VaultView: View {
                     .shadow(color: Color(hex: "#00FF88"), radius: 3)
 
                 Text("100% ON-DEVICE SQLITE")
-                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9.5))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .tracking(0.6)
 
@@ -431,7 +429,7 @@ struct VaultView: View {
                         .foregroundStyle(Color(hex: "#00E5FF"))
 
                     Text(filterLabel)
-                        .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                        .font(DS.display(10.5))
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
@@ -449,42 +447,8 @@ struct VaultView: View {
     }
 
     // MARK: - Card Background with Precise Trailing Alignment
-    struct VaultCardBackground: View {
-        let imageName: String
-        let aspectRatio: Double
-        var trailingOffset: CGFloat = 0
+    typealias VaultCardBackground = CardArtBackground
 
-        var body: some View {
-            GeometryReader { geo in
-                ZStack(alignment: .trailing) {
-                    // Background artwork image pinned to trailing edge so right-side subject is 100% visible
-                    Image(imageName)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(
-                            width: max(geo.size.width, geo.size.height * aspectRatio),
-                            height: geo.size.height,
-                            alignment: .trailing
-                        )
-                        .offset(x: trailingOffset)
-                        .frame(width: geo.size.width, height: geo.size.height, alignment: .trailing)
-                        .clipped()
-
-                    // Protective obsidian glass gradient on left for crystal clear readability
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(hex: "#060B14"), location: 0.0),
-                            .init(color: Color(hex: "#060B14").opacity(0.96), location: 0.45),
-                            .init(color: Color(hex: "#060B14").opacity(0.70), location: 0.58),
-                            .init(color: Color.clear, location: 0.78)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                }
-            }
-        }
-    }
 
     // MARK: - YTD Certified Write-Off Hero Card (vault_hero_bg)
 
@@ -498,7 +462,7 @@ struct VaultView: View {
                         .foregroundStyle(Color(hex: "#00FF88"))
 
                     Text("Tax Deduction Vault")
-                        .font(.system(size: 16.5, weight: .bold, design: .rounded))
+                        .font(DS.display(16.5))
                         .foregroundStyle(.white)
                 }
 
@@ -512,10 +476,10 @@ struct VaultView: View {
 
                     VStack(alignment: .leading, spacing: 0) {
                         Text("IRS § 162")
-                            .font(.system(size: 8, weight: .black, design: .monospaced))
+                            .font(DS.tech(8))
                             .foregroundStyle(Color(hex: "#00FF88"))
                         Text("COMPLIANT")
-                            .font(.system(size: 8, weight: .black, design: .monospaced))
+                            .font(DS.tech(8))
                             .foregroundStyle(Color(hex: "#00FF88"))
                     }
                 }
@@ -533,7 +497,7 @@ struct VaultView: View {
                     .foregroundStyle(Color(hex: "#00E5FF"))
 
                 Text("YTD CERTIFIED WRITE-OFF")
-                    .font(.system(size: 9.5, weight: .black, design: .monospaced))
+                    .font(DS.tech(9.5))
                     .foregroundStyle(.white.opacity(0.65))
                     .tracking(0.6)
             }
@@ -541,7 +505,7 @@ struct VaultView: View {
             // Big Hero Amount
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(currencySymbol)
-                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .font(DS.display(34))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
@@ -552,7 +516,7 @@ struct VaultView: View {
                     .shadow(color: Color(hex: "#00FF88").opacity(0.35), radius: 8)
 
                 Text(String(format: "%.2f", totalDeductionUSD))
-                    .font(.system(size: 38, weight: .black, design: .rounded))
+                    .font(DS.display(38))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [Color(hex: "#00FF88"), Color(hex: "#00E5FF")],
@@ -569,11 +533,11 @@ struct VaultView: View {
                     .foregroundStyle(Color(hex: "#00FF88"))
 
                 Text(String(format: "%.1f", totalBusinessMiles) + "  Total Eligible Miles")
-                    .font(.system(size: 11.5, weight: .heavy, design: .rounded))
+                    .font(DS.display(11.5))
                     .foregroundStyle(.white)
 
                 Text(String(format: "@ %.3f%@/%@", irsRate, currencySymbol, distanceUnit))
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(Color(hex: "#00E5FF"))
             }
 
@@ -585,7 +549,7 @@ struct VaultView: View {
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Color(hex: "#FFB020"))
                     Text("\(pendingTripCount) PENDING DRIVES • \(currencySymbol)\(String(format: "%.2f", pendingDeduction)) UNCLAIMED")
-                        .font(.system(size: 10.5, weight: .heavy, design: .rounded))
+                        .font(DS.display(10.5))
                         .foregroundStyle(Color(hex: "#FFB020"))
                     Spacer()
                 }
@@ -605,13 +569,13 @@ struct VaultView: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text("AUDIT RISK")
-                            .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(7.5))
                             .foregroundStyle(.white.opacity(0.45))
                         Text("0.00%")
-                            .font(.system(size: 11, weight: .black, design: .monospaced))
+                            .font(DS.tech(11))
                             .foregroundStyle(Color(hex: "#00FF88"))
                         Text("LOW")
-                            .font(.system(size: 7, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(7))
                             .foregroundStyle(Color(hex: "#00FF88").opacity(0.8))
                     }
                 }
@@ -628,7 +592,7 @@ struct VaultView: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text("IRS RATE TIER")
-                            .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(7.5))
                             .foregroundStyle(.white.opacity(0.45))
                         Text("Standard • '26")
                             .font(.system(size: 10, weight: .black))
@@ -648,10 +612,10 @@ struct VaultView: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text("LOGGED TRIPS")
-                            .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(7.5))
                             .foregroundStyle(.white.opacity(0.45))
                         Text("\(totalDrivesCount) Drives")
-                            .font(.system(size: 10, weight: .black, design: .rounded))
+                            .font(DS.display(10))
                             .foregroundStyle(Color(hex: "#00E5FF"))
                     }
                 }
@@ -771,7 +735,7 @@ struct VaultView: View {
                     Spacer()
 
                     Text(String(format: "%.0f%% of Target", velocityPacingRatio * 100))
-                        .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(Color(hex: "#00E5FF"))
                 }
 
@@ -837,7 +801,7 @@ struct VaultView: View {
                             .foregroundStyle(.white)
 
                         Text(badgeText)
-                            .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
+                            .font(DS.tech(7.5))
                             .foregroundStyle(badgeColor)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
@@ -846,7 +810,7 @@ struct VaultView: View {
                     }
 
                     Text(milesText)
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .font(DS.tech(10))
                         .foregroundStyle(.white.opacity(0.5))
                 }
             }
@@ -857,11 +821,11 @@ struct VaultView: View {
             HStack(spacing: 8) {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(amountText)
-                        .font(.system(size: 14.5, weight: .black, design: .rounded))
+                        .font(DS.display(14.5))
                         .foregroundStyle(isActive ? Color(hex: "#00E5FF") : .white)
 
                     Text(subText)
-                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.45))
                 }
 
@@ -895,7 +859,7 @@ struct VaultView: View {
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color(hex: "#00FF88"))
                     Text("Tamper-Proof Hash")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(DS.tech(9))
                         .foregroundStyle(Color(hex: "#00FF88"))
                 }
                 .padding(.horizontal, 8)
@@ -929,7 +893,7 @@ struct VaultView: View {
                                 .foregroundStyle(.white)
 
                             Text("PDF")
-                                .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(8))
                                 .foregroundStyle(.white.opacity(0.7))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
@@ -966,7 +930,7 @@ struct VaultView: View {
                                 .font(.system(size: 13, weight: .black))
 
                             Text("Export PDF")
-                                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                                .font(DS.display(13))
                         }
                         .foregroundStyle(Color(hex: "#041B12"))
                         .padding(.horizontal, 16)
@@ -1024,7 +988,7 @@ struct VaultView: View {
                                 .foregroundStyle(.white)
 
                             Text("CSV")
-                                .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(8))
                                 .foregroundStyle(.white.opacity(0.7))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
@@ -1061,7 +1025,7 @@ struct VaultView: View {
                                 .font(.system(size: 13, weight: .black))
 
                             Text("Export CSV")
-                                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                                .font(DS.display(13))
                         }
                         .foregroundStyle(Color(hex: "#041620"))
                         .padding(.horizontal, 16)
@@ -1118,7 +1082,7 @@ struct VaultView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
                     Text("ZERO CLOUD TELEMETRY GUARANTEE")
-                        .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(.white)
 
                     Circle()

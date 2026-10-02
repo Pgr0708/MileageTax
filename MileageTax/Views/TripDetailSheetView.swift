@@ -43,7 +43,7 @@ struct TripDetailSheetView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#06090E").ignoresSafeArea()
+                ScenicScreenBackground(image: "scene_vault")
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
@@ -61,7 +61,7 @@ struct TripDetailSheetView: View {
                                 Image(systemName: "road.lanes")
                                     .font(.system(size: 11, weight: .bold))
                                 Text(String(format: "%.1f %@", trip.totalDistanceMiles, distanceUnit))
-                                    .font(.system(size: 13, weight: .black, design: .monospaced))
+                                    .font(DS.tech(13))
                             }
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
@@ -77,7 +77,7 @@ struct TripDetailSheetView: View {
                             // Classification badge
                             HStack {
                                 Text((trip.classification ?? "unclassified").uppercased())
-                                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                                    .font(DS.tech(11))
                                     .foregroundStyle(classificationColor)
                                     .padding(.horizontal, 12).padding(.vertical, 5)
                                     .background(classificationColor.opacity(0.12))
@@ -85,7 +85,7 @@ struct TripDetailSheetView: View {
                                     .overlay(Capsule().strokeBorder(classificationColor.opacity(0.4), lineWidth: 1))
                                 Spacer()
                                 Text(String(format: "%@%.2f", currencySymbol, trip.taxDeductionValueUSD))
-                                    .font(.system(size: 20, weight: .black, design: .monospaced))
+                                    .font(DS.tech(20))
                                     .foregroundStyle(Color(hex: "#00FF88"))
                             }
 
@@ -131,7 +131,7 @@ struct TripDetailSheetView: View {
                                         .font(.system(size: 13))
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("BUSINESS PURPOSE")
-                                            .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                            .font(DS.tech(9))
                                             .foregroundStyle(.white.opacity(0.4))
                                         Text(purpose)
                                             .font(.system(size: 13, weight: .medium))
@@ -174,7 +174,7 @@ struct TripDetailSheetView: View {
                 .frame(width: 20)
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                    .font(DS.tech(9))
                     .foregroundStyle(.white.opacity(0.4))
                 Text(value)
                     .font(.system(size: 13, weight: .semibold))
@@ -188,10 +188,10 @@ struct TripDetailSheetView: View {
     private func statCell(label: String, value: String) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                .font(DS.tech(9))
                 .foregroundStyle(.white.opacity(0.4))
             Text(value)
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .font(DS.tech(13))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -202,5 +202,4 @@ struct TripDetailSheetView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
-
 

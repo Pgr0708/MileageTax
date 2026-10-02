@@ -61,9 +61,7 @@ struct ClassifyView: View {
                 // Scenic background
                 Color(hex: "#06090E").ignoresSafeArea()
                 GeometryReader { geo in
-                    Image("classify_bg")
-                        .resizable()
-                        .scaledToFill()
+                    ScenicBackdrop(style: .cityNight, horizon: 0.55, vignette: false, photo: "scene_classify")
                         .frame(width: geo.size.width, height: geo.size.height * 0.55)
                         .clipped()
                         .frame(maxHeight: .infinity, alignment: .top)
@@ -121,7 +119,7 @@ struct ClassifyView: View {
                                 .padding(.bottom, 28)
 
                                 Text("All Caught Up!")
-                                    .font(.system(size: 30, weight: .black, design: .rounded))
+                                    .font(DS.display(30))
                                     .foregroundStyle(.white)
 
                                 Text("Every drive is classified.")
@@ -141,30 +139,30 @@ struct ClassifyView: View {
                                 HStack(spacing: 0) {
                                     VStack(spacing: 4) {
                                         Text("\(allTrips.filter { $0.tripClassification == .business }.count)")
-                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .font(DS.display(26))
                                             .foregroundStyle(Color(hex: "#00FF88"))
                                         Text("BUSINESS")
-                                            .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                            .font(DS.tech(8.5))
                                             .foregroundStyle(.white.opacity(0.4))
                                     }
                                     .frame(maxWidth: .infinity)
                                     Divider().background(Color.white.opacity(0.1)).frame(height: 32)
                                     VStack(spacing: 4) {
                                         Text("\(allTrips.filter { $0.tripClassification == .personal }.count)")
-                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .font(DS.display(26))
                                             .foregroundStyle(Color(hex: "#00E5FF"))
                                         Text("PERSONAL")
-                                            .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                            .font(DS.tech(8.5))
                                             .foregroundStyle(.white.opacity(0.4))
                                     }
                                     .frame(maxWidth: .infinity)
                                     Divider().background(Color.white.opacity(0.1)).frame(height: 32)
                                     VStack(spacing: 4) {
                                         Text("\(allTrips.count)")
-                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .font(DS.display(26))
                                             .foregroundStyle(.white)
                                         Text("TOTAL")
-                                            .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                            .font(DS.tech(8.5))
                                             .foregroundStyle(.white.opacity(0.4))
                                     }
                                     .frame(maxWidth: .infinity)
@@ -216,11 +214,11 @@ struct ClassifyView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
                     Text("Classify Drives")
-                        .font(.system(size: 22, weight: .black, design: .rounded))
+                        .font(DS.display(22))
                         .foregroundStyle(.white)
 
                     Text("1 OF \(pendingCount) PENDING")
-                        .font(.system(size: 9, weight: .black, design: .monospaced))
+                        .font(DS.tech(9))
                         .foregroundStyle(Color(hex: "#00FF88"))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
@@ -240,7 +238,7 @@ struct ClassifyView: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .black))
                     Text("BATCH")
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(10))
                 }
                 .foregroundStyle(.white.opacity(0.85))
                 .padding(.horizontal, 10)
@@ -303,7 +301,7 @@ struct ClassifyView: View {
             HStack {
                 if swipeOffset.width > 40 {
                     Text("✓ BUSINESS")
-                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(14))
                         .foregroundStyle(Color(hex: "#00FF88"))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
@@ -317,7 +315,7 @@ struct ClassifyView: View {
                 } else if swipeOffset.width < -40 {
                     Spacer()
                     Text("PERSONAL ✕")
-                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(14))
                         .foregroundStyle(Color(hex: "#7B4FFF"))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
@@ -398,7 +396,7 @@ struct ClassifyView: View {
             Spacer()
 
             Text("AUTO-STOPPED")
-                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                .font(DS.tech(8.5))
                 .foregroundStyle(.white.opacity(0.7))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
@@ -420,9 +418,7 @@ struct ClassifyView: View {
     private func routeVisualizationBox(departure: String, arrival: String) -> some View {
         ZStack(alignment: .leading) {
             // Background artistic topography & particle route
-            Image("classify_spatial_route_bg")
-                .resizable()
-                .scaledToFill()
+            MapRouteArt(seed: 31, showPins: false, photo: "map_classify_route")
                 .frame(height: 128)
                 .clipped()
                 .overlay(
@@ -498,7 +494,7 @@ struct ClassifyView: View {
                     // Departure Origin
                     VStack(alignment: .leading, spacing: 2) {
                         Text("DEPARTURE ORIGIN")
-                            .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                            .font(DS.tech(8.5))
                             .foregroundStyle(Color(hex: "#00E5FF"))
                             .tracking(0.6)
 
@@ -512,7 +508,7 @@ struct ClassifyView: View {
                     // Arrival Destination
                     VStack(alignment: .leading, spacing: 2) {
                         Text("ARRIVAL DESTINATION")
-                            .font(.system(size: 8.5, weight: .black, design: .monospaced))
+                            .font(DS.tech(8.5))
                             .foregroundStyle(Color(hex: "#00FF88"))
                             .tracking(0.6)
 
@@ -538,7 +534,7 @@ struct ClassifyView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("POTENTIAL IRS WRITE-OFF")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .font(DS.tech(9))
                     .foregroundStyle(.white.opacity(0.4))
 
                 Spacer()
@@ -554,7 +550,7 @@ struct ClassifyView: View {
 
             HStack(alignment: .firstTextBaseline) {
                 Text(String(format: "+%@%.2f", currencySymbol, deduction))
-                    .font(.system(size: 29, weight: .black, design: .rounded))
+                    .font(DS.display(29))
                     .foregroundStyle(Color(hex: "#00FF88"))
                     .shadow(color: Color(hex: "#00FF88").opacity(0.4), radius: 8, x: 0, y: 0)
 
@@ -569,7 +565,7 @@ struct ClassifyView: View {
                         .font(.system(size: 9))
                         .foregroundStyle(Color(hex: "#00FF88").opacity(0.7))
                     Text("IRS Form 1040-ES")
-                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(.white.opacity(0.45))
                 }
             }
@@ -632,7 +628,7 @@ struct ClassifyView: View {
                 .font(.system(size: 9))
                 .foregroundStyle(Color(hex: "#00FF88"))
             Text(text)
-                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                .font(DS.tech(9.5))
                 .foregroundStyle(.white.opacity(0.85))
         }
         .padding(.horizontal, 7)
@@ -657,12 +653,12 @@ struct ClassifyView: View {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 11, weight: .black))
                         Text("PERSONAL")
-                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .font(DS.display(12))
                     }
                     .foregroundStyle(.white)
 
                     Text("$0.00 Deduction")
-                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(.white.opacity(0.5))
                 }
                 .frame(maxWidth: .infinity)
@@ -682,14 +678,14 @@ struct ClassifyView: View {
                 VStack(spacing: 2) {
                     HStack(spacing: 4) {
                         Text("BUSINESS")
-                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .font(DS.display(12))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 11, weight: .black))
                     }
                     .foregroundStyle(Color(hex: "#061A13"))
 
                     Text(String(format: "+%@%.2f WRITE-OFF", currencySymbol, tripDeduction))
-                        .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(9.5))
                         .foregroundStyle(Color(hex: "#061A13").opacity(0.8))
                 }
                 .frame(maxWidth: .infinity)
@@ -744,7 +740,7 @@ struct ClassifyView: View {
                     Image(systemName: "arrow.uturn.backward")
                         .font(.system(size: 9, weight: .bold))
                     Text(String(format: "Undo (%ds)", undoTimerCountdown))
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(10))
                 }
                 .foregroundStyle(Color(hex: "#00E5FF"))
                 .padding(.horizontal, 9)
@@ -865,7 +861,7 @@ struct BatchClassifySheet: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#06090E").ignoresSafeArea()
+            ScenicScreenBackground(image: "scene_classify")
 
             VStack(spacing: 20) {
                 // Handle
@@ -877,7 +873,7 @@ struct BatchClassifySheet: View {
                 // Title
                 VStack(spacing: 4) {
                     Text("Batch Classify")
-                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .font(DS.display(20))
                         .foregroundStyle(.white)
                     Text("\(pendingTrips.count) pending drive\(pendingTrips.count == 1 ? "" : "s")  •  \(MileageUnits.distance(totalMiles)) total")
                         .font(.system(size: 12, weight: .medium))
@@ -889,10 +885,10 @@ struct BatchClassifySheet: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("MAX POTENTIAL YIELD")
-                                .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(8.5))
                                 .foregroundStyle(.white.opacity(0.45))
                             Text(String(format: "+%@%.2f", MileageUnits.currencySymbol, totalDeduction))
-                                .font(.system(size: 28, weight: .black, design: .rounded))
+                                .font(DS.display(28))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                         }
                         Spacer()
@@ -923,10 +919,10 @@ struct BatchClassifySheet: View {
                             Image(systemName: "briefcase.fill")
                                 .font(.system(size: 14, weight: .black))
                             Text("Mark All as Business")
-                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                                .font(DS.display(15))
                             Spacer()
                             Text(String(format: "+%@%.2f", MileageUnits.currencySymbol, totalDeduction))
-                                .font(.system(size: 13, weight: .black, design: .monospaced))
+                                .font(DS.tech(13))
                         }
                         .foregroundStyle(Color(hex: "#061A13"))
                         .padding(.horizontal, 20)
@@ -949,10 +945,10 @@ struct BatchClassifySheet: View {
                             Image(systemName: "house.fill")
                                 .font(.system(size: 14, weight: .bold))
                             Text("Mark All as Personal")
-                                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                                .font(DS.display(15))
                             Spacer()
                             Text("$0.00")
-                                .font(.system(size: 13, weight: .black, design: .monospaced))
+                                .font(DS.tech(13))
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, 20)

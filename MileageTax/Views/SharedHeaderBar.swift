@@ -34,33 +34,12 @@ struct SharedHeaderBar: View {
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(hex: "#00E5FF").opacity(0.25), radius: 8, x: 0, y: 3)
 
-                    if let icon = Bundle.main.appIcon {
-                        Image(uiImage: icon)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    } else {
-                        Image(systemName: "m.circle.fill")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
+                    AppLogo(size: 44)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        (Text("Mileage")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        + Text("Tax")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "#00FF88")))
+                        Wordmark(size: 20)
 
                         Text("PRO")
                             .font(.system(size: 9, weight: .heavy))
@@ -75,14 +54,14 @@ struct SharedHeaderBar: View {
                     }
 
                     Text("TRACK  /  LOG  /  SAVE")
-                        .font(.system(size: 8.5, weight: .heavy, design: .monospaced))
+                        .font(DS.tech(8.5))
                         .foregroundStyle(.white.opacity(0.45))
                         .tracking(1.8)
 
                     if !isPremium {
                         let remaining = max(0, MileageTaxDefaults.freeTripLimit - coreData.completedTripCount)
                         Text("\(remaining) FREE DRIVE\(remaining == 1 ? "" : "S") LEFT")
-                            .font(.system(size: 7.5, weight: .black, design: .monospaced))
+                            .font(DS.tech(7.5))
                             .foregroundStyle(Color(hex: "#FFB020"))
                             .tracking(0.5)
                     }

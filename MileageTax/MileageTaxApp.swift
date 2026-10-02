@@ -47,6 +47,18 @@ struct MileageTaxApp: App {
     
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            if let i = ProcessInfo.processInfo.arguments.firstIndex(of: "-artPage"),
+               let page = Int(ProcessInfo.processInfo.arguments[safe: i + 1] ?? "") {
+                ArtGalleryView(page: page)
+            } else { appRoot }
+            #else
+            appRoot
+            #endif
+        }
+    }
+
+    private var appRoot: some View {
             ZStack {
                 SplashScreenView()
                     .environmentObject(settings)
@@ -67,6 +79,9 @@ struct MileageTaxApp: App {
                     }
                 }
             }
-        }
     }
+}
+
+private extension Array {
+    subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }

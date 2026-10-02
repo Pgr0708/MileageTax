@@ -179,9 +179,7 @@ public struct MileageTaxLiveActivity: Widget {
             } compactLeading: {
                 // MARK: Compact Leading (Left Pill)
                 HStack(spacing: 4) {
-                    Image(systemName: "steeringwheel")
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.5))
+                    AppLogo(size: 18)
                     Text(String(format: "%.1f", context.state.distanceMiles))
                         .font(.system(size: 12, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
@@ -197,9 +195,7 @@ public struct MileageTaxLiveActivity: Widget {
 
             } minimal: {
                 // MARK: Minimal (Small Circle)
-                Image(systemName: "steeringwheel")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.5))
+                AppLogo(size: 20)
             }
         }
     }
@@ -226,9 +222,7 @@ private struct LockScreenLiveActivityView: View {
             // Header: Vehicle Name + Status Pill + Speed
             HStack {
                 HStack(spacing: 6) {
-                    Image(systemName: "car.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.5))
+                    AppLogo(size: 20)
                     Text(context.attributes.vehicleName.isEmpty ? "MileageTax Active Drive" : context.attributes.vehicleName)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)

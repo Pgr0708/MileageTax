@@ -5,7 +5,6 @@
 
 import WidgetKit
 import SwiftUI
-import CoreData
 
 @main
 struct MileageTaxLiveActivityBundle: WidgetBundle {
@@ -15,52 +14,160 @@ struct MileageTaxLiveActivityBundle: WidgetBundle {
     }
 }
 
-// MARK: - CoreData read helpers (widget process shares the same App Group store)
+// MARK: - Shared data (the app writes these into the App Group defaults)
 
-private func fetchWidgetData() -> (ytdDeduction: Double, ytdMiles: Double, isTracking: Bool, liveDeduction: Double, liveMiles: Double, liveSpeed: Double) {
-    // Widgets share the same SQLite via App Group, but for simplicity read from UserDefaults
-    // which the main app keeps updated via a shared App Group suite
-    let defaults = UserDefaults(suiteName: "group.com.inovexa.mileagetax") ?? .standard
-    let ytdDeduction  = defaults.double(forKey: "widget.ytdDeduction")
-    let ytdMiles      = defaults.double(forKey: "widget.ytdMiles")
-    let isTracking    = defaults.bool(forKey: "widget.isTracking")
-    let liveDeduction = defaults.double(forKey: "widget.liveDeduction")
-    let liveMiles     = defaults.double(forKey: "widget.liveMiles")
-    let liveSpeed     = defaults.double(forKey: "widget.liveSpeed")
-    return (ytdDeduction, ytdMiles, isTracking, liveDeduction, liveMiles, liveSpeed)
-}
+private let widgetDefaults = UserDefaults(suiteName: "group.com.inovexa.mileagetax") ?? .standard
 
 // MARK: - Timeline Entry
 
 struct QuickWidgetEntry: TimelineEntry {
     let date: Date
-    let ytdDeduction: Double
-    let ytdMiles: Double
-    let isTracking: Bool
-    let liveDeduction: Double
-    let liveMiles: Double
-    let liveSpeed: Double
+    var ytdDeduction: Double
+    var ytdMiles: Double
+    var tripCount: Int
+    var ratePerMile: Double
+    var currency: String
+    var unit: String
+    var isTracking: Bool
+    var liveDeduction: Double
+    var liveMiles: Double
+    var liveSpeed: Double
+
+    static func current() -> QuickWidgetEntry {
+        let d = widgetDefaults
+        let rate = d.double(forKey: "widget.ratePerMile")
+        return QuickWidgetEntry(
+            date: Date(),
+            ytdDeduction: d.double(forKey: "widget.ytdDeduction"),
+            ytdMiles: d.double(forKey: "widget.ytdMiles"),
+            tripCount: d.integer(forKey: "widget.tripCount"),
+            ratePerMile: rate > 0 ? rate : 0.67,
+            currency: d.string(forKey: "widget.currency") ?? "$",
+            unit: d.string(forKey: "widget.unit") ?? "mi",
+            isTracking: d.bool(forKey: "widget.isTracking"),
+            liveDeduction: d.double(forKey: "widget.liveDeduction"),
+            liveMiles: d.double(forKey: "widget.liveMiles"),
+            liveSpeed: d.double(forKey: "widget.liveSpeed"))
+    }
+
+    static let sample = QuickWidgetEntry(date: Date(), ytdDeduction: 4386.20, ytdMiles: 1248.4, tripCount: 142,
+                                         ratePerMile: 0.67, currency: "$", unit: "mi", isTracking: false,
+                                         liveDeduction: 0, liveMiles: 0, liveSpeed: 0)
+
+    static let liveSample = QuickWidgetEntry(date: Date(), ytdDeduction: 4386.20, ytdMiles: 1248.4, tripCount: 142,
+                                             ratePerMile: 0.67, currency: "$", unit: "mi", isTracking: true,
+                                             liveDeduction: 7.12, liveMiles: 12.4, liveSpeed: 48)
 }
 
 // MARK: - Provider
 
 struct QuickWidgetProvider: TimelineProvider {
-    func placeholder(in context: Context) -> QuickWidgetEntry {
-        QuickWidgetEntry(date: Date(), ytdDeduction: 4892.45, ytdMiles: 7362.1, isTracking: false, liveDeduction: 0, liveMiles: 0, liveSpeed: 0)
-    }
+    func placeholder(in context: Context) -> QuickWidgetEntry { .sample }
 
     func getSnapshot(in context: Context, completion: @escaping (QuickWidgetEntry) -> Void) {
-        let d = fetchWidgetData()
-        completion(QuickWidgetEntry(date: Date(), ytdDeduction: d.ytdDeduction, ytdMiles: d.ytdMiles, isTracking: d.isTracking, liveDeduction: d.liveDeduction, liveMiles: d.liveMiles, liveSpeed: d.liveSpeed))
+        // Widget gallery shows sample numbers instead of an empty $0.00.
+        completion(context.isPreview ? .sample : .current())
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<QuickWidgetEntry>) -> Void) {
-        let d = fetchWidgetData()
-        let entry = QuickWidgetEntry(date: Date(), ytdDeduction: d.ytdDeduction, ytdMiles: d.ytdMiles, isTracking: d.isTracking, liveDeduction: d.liveDeduction, liveMiles: d.liveMiles, liveSpeed: d.liveSpeed)
+        let entry = QuickWidgetEntry.current()
         // Refresh every 15 min normally, or every 30s when tracking
-        let refreshInterval: TimeInterval = d.isTracking ? 30 : 900
-        let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(refreshInterval)))
-        completion(timeline)
+        let refresh: TimeInterval = entry.isTracking ? 30 : 900
+        completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(refresh))))
+    }
+}
+
+// MARK: - Style
+
+private enum WStyle {
+    static let cyan  = Color(red: 0.10, green: 0.85, blue: 0.96)
+    static let green = Color(red: 0.13, green: 0.89, blue: 0.60)
+    static let red   = Color(red: 0.94, green: 0.27, blue: 0.23)
+    static let ink   = Color(red: 0.02, green: 0.035, blue: 0.05)
+    static let money = LinearGradient(colors: [cyan, green], startPoint: .leading, endPoint: .trailing)
+
+    static func display(_ size: CGFloat) -> Font { .custom("SpaceGrotesk-Bold", size: size) }
+    static func tech(_ size: CGFloat) -> Font { .custom("ChakraPetch-Bold", size: size) }
+}
+
+private extension QuickWidgetEntry {
+    var amount: Double { isTracking ? liveDeduction : ytdDeduction }
+    var miles: Double { isTracking ? liveMiles : ytdMiles }
+
+    func money(_ v: Double) -> String {
+        currency + v.formatted(.number.precision(.fractionLength(2)).grouping(.automatic))
+    }
+    /// "$4.4K" style for tight spaces.
+    func compactMoney(_ v: Double) -> String {
+        currency + v.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
+    }
+    var milesText: String { miles.formatted(.number.precision(.fractionLength(miles < 100 ? 1 : 0))) + " " + unit }
+    var rateText: String {
+        currency == "$" ? "\(Int((ratePerMile * 100).rounded()))¢/\(unit)" : "\(currency)\(ratePerMile)/\(unit)"
+    }
+}
+
+// MARK: - Building blocks
+
+/// The app icon (Assets › AppLogo, cut from AppIcon) used as the brand mark everywhere.
+struct AppLogo: View {
+    var size: CGFloat = 32
+    var body: some View {
+        Image("AppLogo")
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous))
+            .accessibilityLabel("MileageTax")
+    }
+}
+
+private struct StatusPill: View {
+    let entry: QuickWidgetEntry
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle().fill(entry.isTracking ? WStyle.red : WStyle.green)
+                .frame(width: 6, height: 6)
+                .shadow(color: entry.isTracking ? WStyle.red : WStyle.green, radius: 3)
+            Text(entry.isTracking ? "LIVE" : "SYNCED")
+                .font(WStyle.tech(9)).tracking(1)
+                .foregroundStyle(.white.opacity(0.9))
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(Capsule().fill(.black.opacity(0.45)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+    }
+}
+
+private struct StatChip: View {
+    let icon: String
+    let text: String
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 9, weight: .bold)).foregroundStyle(WStyle.cyan)
+            Text(text).font(WStyle.tech(10)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.black.opacity(0.42)))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+    }
+}
+
+/// Photo background: the image plus gradients that keep the text on the left/bottom legible.
+private struct PhotoBackground: View {
+    let image: String
+    var fromLeading = true
+    var body: some View {
+        ZStack {
+            WStyle.ink
+            Image(image).resizable().scaledToFill()
+            LinearGradient(stops: [.init(color: WStyle.ink.opacity(0.92), location: 0),
+                                   .init(color: WStyle.ink.opacity(0.55), location: 0.5),
+                                   .init(color: .clear, location: 0.85)],
+                           startPoint: fromLeading ? .leading : .bottom, endPoint: fromLeading ? .trailing : .top)
+            LinearGradient(colors: [WStyle.ink.opacity(0.55), .clear], startPoint: .top, endPoint: .center)
+        }
     }
 }
 
@@ -70,80 +177,32 @@ struct SmallWidgetView: View {
     var entry: QuickWidgetEntry
 
     var body: some View {
-        ZStack {
-            // Dark background with subtle mesh gradient
-            LinearGradient(
-                colors: [Color(red: 0.04, green: 0.07, blue: 0.12), Color(red: 0.02, green: 0.04, blue: 0.07)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-
-            // Subtle neon glow orb
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.18), .clear],
-                        center: .center, startRadius: 0, endRadius: 70
-                    )
-                )
-                .frame(width: 140, height: 140)
-                .offset(x: -20, y: 40)
-
-            VStack(alignment: .leading, spacing: 0) {
-                // Header row
-                HStack(spacing: 5) {
-                    Image(systemName: "bolt.circle.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 0.0, green: 0.9, blue: 1.0))
-                    Text("MileageTax")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                    Spacer()
-                    if entry.isTracking {
-                        Circle()
-                            .fill(Color(red: 0.0, green: 1.0, blue: 0.53))
-                            .frame(width: 7, height: 7)
-                    }
-                }
-
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                AppLogo(size: 24)
                 Spacer()
-
-                if entry.isTracking {
-                    // LIVE trip mode
-                    Text("LIVE DRIVE")
-                        .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.8))
-                        .tracking(1)
-
-                    Text(String(format: "+$%.2f", entry.liveDeduction))
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.53))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-
-                    Text(String(format: "%.1f mi · %.0f mph", entry.liveMiles, entry.liveSpeed))
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.55))
-                } else {
-                    // YTD mode
-                    Text("YTD WRITE-OFF")
-                        .font(.system(size: 7.5, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .tracking(1)
-
-                    Text(String(format: "$%.2f", entry.ytdDeduction))
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.53))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-
-                    Text(String(format: "%.1f mi · 67¢/mi", entry.ytdMiles))
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
-                }
+                StatusPill(entry: entry)
             }
-            .padding(14)
+            Spacer(minLength: 0)
+            Text(entry.isTracking ? "THIS DRIVE" : "YTD WRITE-OFF")
+                .font(WStyle.tech(9)).tracking(1.2)
+                .foregroundStyle(.white.opacity(0.7))
+            Text(entry.money(entry.amount))
+                .font(WStyle.display(26))
+                .foregroundStyle(WStyle.money)
+                .lineLimit(1).minimumScaleFactor(0.55)
+                .contentTransition(.numericText(value: entry.amount))
+                .widgetAccentable()
+            Text(entry.isTracking
+                 ? "\(entry.milesText) · \(Int(entry.liveSpeed)) mph"
+                 : "\(entry.milesText) · \(entry.tripCount) drives")
+                .font(WStyle.tech(10))
+                .foregroundStyle(.white.opacity(0.75))
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
-        .containerBackground(Color(red: 0.04, green: 0.06, blue: 0.09), for: .widget)
+        .containerBackground(for: .widget) {
+            PhotoBackground(image: entry.isTracking ? "widget_bg_live" : "widget_bg_small", fromLeading: false)
+        }
     }
 }
 
@@ -153,113 +212,91 @@ struct MediumWidgetView: View {
     var entry: QuickWidgetEntry
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.04, green: 0.07, blue: 0.12), Color(red: 0.02, green: 0.04, blue: 0.08)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-
-            // Glowing orb
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.14), .clear],
-                        center: .center, startRadius: 0, endRadius: 120
-                    )
-                )
-                .frame(width: 240, height: 240)
-                .offset(x: 80, y: 30)
-
-            VStack(alignment: .leading, spacing: 8) {
-                // Header
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt.circle.fill")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Color(red: 0.0, green: 0.9, blue: 1.0))
-                        Text("MileageTax")
-                            .font(.system(size: 14, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                    }
-                    Spacer()
-                    if entry.isTracking {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color(red: 0.0, green: 1.0, blue: 0.53))
-                                .frame(width: 6, height: 6)
-                            Text("TRACKING")
-                                .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                                .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.53))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.12))
-                        .clipShape(Capsule())
-                    }
-                }
-
-                // Main metrics row
-                HStack(spacing: 10) {
-                    // Left: Big number
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.isTracking ? "TRIP WRITE-OFF" : "YTD WRITE-OFF")
-                            .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                            .foregroundStyle(entry.isTracking
-                                ? Color(red: 0.0, green: 1.0, blue: 0.53).opacity(0.8)
-                                : .white.opacity(0.45))
-                            .tracking(0.5)
-
-                        Text(String(format: "$%.2f", entry.isTracking ? entry.liveDeduction : entry.ytdDeduction))
-                            .font(.system(size: 28, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(red: 0.0, green: 1.0, blue: 0.53))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    // Divider
-                    Rectangle()
-                        .fill(Color.white.opacity(0.08))
-                        .frame(width: 1, height: 40)
-
-                    // Right: Miles
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("MILES")
-                            .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .tracking(0.5)
-
-                        Text(String(format: "%.1f", entry.isTracking ? entry.liveMiles : entry.ytdMiles))
-                            .font(.system(size: 24, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-
-                        if entry.isTracking {
-                            Text(String(format: "%.0f mph", entry.liveSpeed))
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
-                    }
-                }
-
-                // Footer bar
-                if !entry.isTracking {
-                    HStack(spacing: 4) {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.white.opacity(0.4))
-                        Text("YTD · 67¢/mi IRS rate")
-                            .font(.system(size: 9, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.4))
-                        Spacer()
-                        Text("Tap to open →")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.25))
-                    }
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                AppLogo(size: 26)
+                (Text("Mileage").foregroundStyle(.white) + Text("Tax").foregroundStyle(WStyle.money))
+                    .font(WStyle.display(15))
+                Spacer()
+                StatusPill(entry: entry)
             }
-            .padding(14)
+            Spacer(minLength: 4)
+            Text(entry.isTracking ? "THIS DRIVE · WRITE-OFF" : "YTD VERIFIED WRITE-OFF")
+                .font(WStyle.tech(9.5)).tracking(1.4)
+                .foregroundStyle(.white.opacity(0.7))
+            Text(entry.money(entry.amount))
+                .font(WStyle.display(36))
+                .foregroundStyle(WStyle.money)
+                .shadow(color: WStyle.cyan.opacity(0.35), radius: 8)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .contentTransition(.numericText(value: entry.amount))
+                .widgetAccentable()
+            Spacer(minLength: 4)
+            HStack(spacing: 6) {
+                StatChip(icon: "road.lanes", text: entry.milesText)
+                if entry.isTracking {
+                    StatChip(icon: "speedometer", text: "\(Int(entry.liveSpeed)) mph")
+                } else {
+                    StatChip(icon: "car.fill", text: "\(entry.tripCount) drives")
+                }
+                StatChip(icon: "gauge.with.dots.needle.67percent", text: entry.rateText)
+                Spacer(minLength: 0)
+            }
         }
-        .containerBackground(Color(red: 0.04, green: 0.06, blue: 0.09), for: .widget)
+        .containerBackground(for: .widget) {
+            PhotoBackground(image: entry.isTracking ? "widget_bg_live" : "widget_bg_medium")
+        }
+    }
+}
+
+// MARK: - Lock Screen Views
+
+struct CircularWidgetView: View {
+    var entry: QuickWidgetEntry
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 0) {
+                AppLogo(size: 16)
+                Text(entry.compactMoney(entry.amount))
+                    .font(WStyle.display(14))
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .widgetAccentable()
+            }
+            .padding(4)
+        }
+        .containerBackground(for: .widget) { Color.clear }
+    }
+}
+
+struct RectangularWidgetView: View {
+    var entry: QuickWidgetEntry
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                AppLogo(size: 12)
+                Text(entry.isTracking ? "LIVE DRIVE" : "YTD WRITE-OFF")
+            }
+            .font(WStyle.tech(10))
+            .widgetAccentable()
+            Text(entry.money(entry.amount))
+                .font(WStyle.display(20))
+                .lineLimit(1).minimumScaleFactor(0.6)
+            Text("\(entry.milesText) · \(entry.rateText)")
+                .font(WStyle.tech(10))
+                .opacity(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .containerBackground(for: .widget) { Color.clear }
+    }
+}
+
+struct InlineWidgetView: View {
+    var entry: QuickWidgetEntry
+    var body: some View {
+        // Inline slots only render text + SF Symbols, so the brand is spelled out instead.
+        Text("MileageTax \(entry.money(entry.amount)) · \(entry.milesText)")
+            .containerBackground(for: .widget) { Color.clear }
     }
 }
 
@@ -271,10 +308,11 @@ struct MileageTaxQuickWidgetView: View {
 
     var body: some View {
         switch family {
-        case .systemSmall:
-            SmallWidgetView(entry: entry)
-        default:
-            MediumWidgetView(entry: entry)
+        case .systemSmall:           SmallWidgetView(entry: entry)
+        case .accessoryCircular:     CircularWidgetView(entry: entry)
+        case .accessoryRectangular:  RectangularWidgetView(entry: entry)
+        case .accessoryInline:       InlineWidgetView(entry: entry)
+        default:                     MediumWidgetView(entry: entry)
         }
     }
 }
@@ -292,6 +330,14 @@ struct MileageTaxQuickWidget: Widget {
         }
         .configurationDisplayName("MileageTax Write-Off")
         .description("YTD tax deduction, mileage, and live trip tracking at a glance.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium,
+                            .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
+
+#Preview("Medium", as: .systemMedium) { MileageTaxQuickWidget() } timeline: {
+    QuickWidgetEntry.sample
+    QuickWidgetEntry.liveSample
+}
+
+#Preview("Small", as: .systemSmall) { MileageTaxQuickWidget() } timeline: { QuickWidgetEntry.sample }

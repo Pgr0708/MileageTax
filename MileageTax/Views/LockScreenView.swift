@@ -25,11 +25,8 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#06090E").ignoresSafeArea()
-            RadialGradient(
-                colors: [Color(hex: "#00E5FF").opacity(0.15), Color.clear],
-                center: .top, startRadius: 10, endRadius: 400
-            ).ignoresSafeArea()
+            ScenicBackdrop(style: .mountainLake, horizon: 0.42, showRoad: false, seed: 17, photo: "scene_lock").ignoresSafeArea()
+            DS.bg.opacity(0.6).ignoresSafeArea()
 
             if showPINEntry {
                 pinScreen
@@ -63,7 +60,7 @@ struct LockScreenView: View {
 
             VStack(spacing: 8) {
                 Text("Vault Locked")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(DS.display(28))
                     .foregroundStyle(.white)
                 Text("Authenticate to access your business ledger.")
                     .font(.system(size: 14, weight: .medium))
@@ -123,7 +120,7 @@ struct LockScreenView: View {
             Text(isSettingPIN
                  ? (showConfirm ? "Confirm Your Passcode" : "Set New Passcode")
                  : "Enter Passcode")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(DS.display(22))
                 .foregroundStyle(.white)
 
             // PIN dots
@@ -171,7 +168,7 @@ struct LockScreenView: View {
                     handleDigit(d)
                 } label: {
                     Text(d)
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(DS.display(22))
                         .foregroundStyle(.white)
                         .frame(width: 72, height: 72)
                         .background(Color.white.opacity(0.08))

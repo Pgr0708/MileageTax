@@ -6,7 +6,7 @@
 import SwiftUI
 
 enum AppFlow {
-    case splash, language, onboarding, paywall, customization, locked, home
+    case splash, onboarding, paywall, customization, locked, home
 }
 
 struct RootView: View {
@@ -24,7 +24,6 @@ struct RootView: View {
     }
 
     var currentFlow: AppFlow {
-        if !settings.hasSeenLanguage         { return .language }
         if !settings.hasSeenOnboarding       { return .onboarding }
 
         // Onboarding paywall — skipped for existing subscribers, and only part
@@ -38,19 +37,27 @@ struct RootView: View {
         return .home
     }
 
-    var body: some View {
-        Group {
-            switch currentFlow {
-            case .language:      LanguageScreenView()
-            case .onboarding:    OnBoardingScreenView()
-            case .paywall:       PaywallScreenView()
-            case .customization: CustomizationScreenView()
-            case .locked:        PaywallScreenView(isForced: true)
-            case .home:          AppTabView()
-            default:             SplashScreenView()
-            }
+    @ViewBuilder private var flowView: some View {
+        switch currentFlow {
+        case .onboarding:    OnBoardingScreenView()
+        case .paywall:       PaywallScreenView()
+        case .customization: CustomizationScreenView()
+        case .locked:        PaywallScreenView(isForced: true)
+        case .home:          AppTabView()
+        default:             SplashScreenView()
         }
-        .animation(.easeInOut(duration: 0.35), value: currentFlow)
+    }
+
+    var body: some View {
+        ZStack {
+            // Each flow step slides in from the right while the old one zooms back and fades.
+            flowView
+                .id(currentFlow)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .scale(scale: 0.94).combined(with: .opacity)))
+        }
+        .animation(.spring(response: 0.55, dampingFraction: 0.86), value: currentFlow)
         .onAppear {
             CoreDataManager.shared.persistDefaultsToCloud()
             if isPremium { settings.hasSeenPaywall = true }

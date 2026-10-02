@@ -302,6 +302,14 @@ final class CoreDataManager: NSObject, ObservableObject {
         let defaults = UserDefaults(suiteName: "group.com.inovexa.mileagetax") ?? .standard
         defaults.set(ytdDeduction, forKey: "widget.ytdDeduction")
         defaults.set(ytdMiles,     forKey: "widget.ytdMiles")
+        defaults.set(all.filter { !$0.isInProgress }.count, forKey: "widget.tripCount")
+        let std = UserDefaults.standard
+        defaults.set(std.object(forKey: AppStorageKeys.irsRateOverride) as? Double ?? MileageTaxDefaults.irsRatePerMile,
+                     forKey: "widget.ratePerMile")
+        defaults.set(std.string(forKey: AppStorageKeys.currencySymbol) ?? MileageTaxDefaults.defaultCurrencySymbol,
+                     forKey: "widget.currency")
+        defaults.set(std.string(forKey: AppStorageKeys.distanceUnit) ?? MileageTaxDefaults.defaultDistanceUnit,
+                     forKey: "widget.unit")
         WidgetCenter.shared.reloadTimelines(ofKind: "MileageTaxQuickWidget")
     }
 

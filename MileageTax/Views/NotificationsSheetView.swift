@@ -11,7 +11,7 @@ struct NotificationsSheetView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#06090E").ignoresSafeArea()
+            ScenicScreenBackground(image: "scene_radar")
             RadialGradient(
                 colors: [Color(hex: "#00E5FF").opacity(0.10), Color.clear],
                 center: .topLeading, startRadius: 0, endRadius: 340
@@ -29,22 +29,15 @@ struct NotificationsSheetView: View {
                 // Compact Header Row
                 HStack(alignment: .center) {
                     HStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: "#00E5FF").opacity(0.12))
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "bell.badge.fill")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(Color(hex: "#00E5FF"))
-                        }
+                        AppLogo(size: 32)
 
                         Text("Notifications")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .font(DS.display(18))
                             .foregroundStyle(.white)
 
                         if pendingCount > 0 {
                             Text("\(pendingCount) NEW")
-                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                .font(DS.tech(9))
                                 .foregroundStyle(Color(hex: "#00FF88"))
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
@@ -94,7 +87,7 @@ struct NotificationsSheetView: View {
                             .foregroundStyle(.white.opacity(0.2))
 
                         Text("All Clear")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(DS.display(20))
                             .foregroundStyle(.white.opacity(0.5))
 
                         Text("No new notifications.\nAll your drives are classified.")
@@ -151,7 +144,7 @@ struct NotificationsSheetView: View {
                         .shadow(color: Color(hex: "#00FF88"), radius: 4)
                 }
                 Text(time)
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .font(DS.tech(10))
                     .foregroundStyle(.white.opacity(0.35))
             }
         }

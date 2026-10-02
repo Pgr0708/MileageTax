@@ -13,5 +13,5 @@ import Foundation
 
 enum APIKeys {
     /// TomTom Reverse Geocoding API key (optional — leave empty to use Apple CLGeocoder for free)
-    static let tomTomAPIKey: String = "" // Add your TomTom key here if needed
+    static let tomTomAPIKey: String = "hYX0bRUhuttb6EV7fR85AORAnGezyHvJ" // Add your TomTom key here if needed
 }

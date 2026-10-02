@@ -30,26 +30,26 @@ struct AppTabView: View {
             // ── Content (Direct Switch with smooth crossfade animation) ──────
             ZStack {
                 RadarView(selectedTab: $selectedTab)
-                    .opacity(selectedTab == 0 ? 1 : 0)
+                    .tabPage(isActive: selectedTab == 0)
                     .allowsHitTesting(selectedTab == 0)
 
                 ClassifyView(preselectedTripID: $classifyTripID)
-                    .opacity(selectedTab == 1 ? 1 : 0)
+                    .tabPage(isActive: selectedTab == 1)
                     .allowsHitTesting(selectedTab == 1)
 
                 TrackView(selectedTab: $selectedTab)
-                    .opacity(selectedTab == 2 ? 1 : 0)
+                    .tabPage(isActive: selectedTab == 2)
                     .allowsHitTesting(selectedTab == 2)
 
                 VaultView()
-                    .opacity(selectedTab == 3 ? 1 : 0)
+                    .tabPage(isActive: selectedTab == 3)
                     .allowsHitTesting(selectedTab == 3)
 
                 RulesView()
-                    .opacity(selectedTab == 4 ? 1 : 0)
+                    .tabPage(isActive: selectedTab == 4)
                     .allowsHitTesting(selectedTab == 4)
             }
-            .animation(.easeInOut(duration: 0.22), value: selectedTab)
+            .animation(.spring(response: 0.42, dampingFraction: 0.85), value: selectedTab)
             .ignoresSafeArea()
 
             // ── Centralized Top Header Bar (overlaid above all tab content) ──
@@ -79,7 +79,19 @@ struct AppTabView: View {
             .allowsHitTesting(true)
 
             // ── Custom Tab Bar ────────────────────────────────────────────────
+            // Scrim so scrolled content never shows below / around the floating bar.
+            VStack {
+                Spacer()
+                LinearGradient(colors: [DS.bg.opacity(0), DS.bg.opacity(0.94), DS.bg],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 130 + Device.bottomSafeArea)
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
             CustomTabBar(selected: $selectedTab, trackerState: tracker.state)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 6)
         }
         .background(Color.obsidian.ignoresSafeArea())
         .preferredColorScheme(.dark)
@@ -150,13 +162,14 @@ private struct CustomTabBar: View {
         predicate: NSPredicate(format: "needsReview == true AND isInProgress == false"),
         animation: .default)
     private var pendingTrips: FetchedResults<TripEntity>
+    @Namespace private var selection
 
     private let items: [(icon: String, label: String)] = [
-        ("safari.fill", "Radar"),
-        ("tag.fill", "Classify"),
-        ("bolt.fill", "TRACK"),
-        ("building.columns.fill", "Vault"),
-        ("gearshape.fill", "Rules"),
+        ("scope", "Radar"),
+        ("doc.text", "Classify"),
+        ("chevron.up.2", "TRACK"),
+        ("lock.rectangle", "Vault"),
+        ("gearshape", "Rules"),
     ]
 
     var body: some View {
@@ -172,43 +185,21 @@ private struct CustomTabBar: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 10)
-//        .padding(.bottom, Device.bottomSafeArea > 0 ? Device.bottomSafeArea - 8 : 12)
-        .background(
+        .padding(.horizontal, 6)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background {
             ZStack {
-                // Glassmorphic background
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(Color(hex: "#05080E").opacity(0.82))
-
-                // Bottom subtle emerald atmospheric glow
-                RadialGradient(
-                    colors: [Color(hex: "#00FF88").opacity(0.12), Color.clear],
-                    center: .bottom,
-                    startRadius: 0,
-                    endRadius: 160
-                )
+                TabBarShape().fill(.ultraThinMaterial)
+                TabBarShape().fill(LinearGradient(colors: [Color(hex: "#0B1620").opacity(0.92), Color(hex: "#04070B").opacity(0.96)],
+                                                  startPoint: .top, endPoint: .bottom))
+                TabBarShape().fill(RadialGradient(colors: [DS.cyan.opacity(0.16), .clear], center: .bottom, startRadius: 0, endRadius: 170))
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "#00E5FF").opacity(0.45),
-                                Color(hex: "#00FF88").opacity(0.25),
-                                Color.white.opacity(0.08)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.2
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.6), radius: 20, x: 0, y: -4)
-//            .ignoresSafeArea(edges: .bottom)
-        )
+            .overlay(TabBarShape().stroke(
+                LinearGradient(colors: [DS.cyan.opacity(0.55), DS.green.opacity(0.25), Color.white.opacity(0.06)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.2))
+            .shadow(color: .black.opacity(0.65), radius: 18, y: 6)
+        }
     }
 
     // Regular Tab Button
@@ -219,7 +210,7 @@ private struct CustomTabBar: View {
 
         Button {
             UISelectionFeedbackGenerator().selectionChanged()
-            selected = index
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { selected = index }
         } label: {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
@@ -227,7 +218,7 @@ private struct CustomTabBar: View {
                         .font(.system(size: 19, weight: isSelected ? .bold : .medium))
                         .foregroundStyle(
                             isSelected ?
-                                AnyShapeStyle(LinearGradient(colors: [Color(hex: "#00E5FF"), Color(hex: "#00FF88")], startPoint: .topLeading, endPoint: .bottomTrailing)) :
+                                AnyShapeStyle(DS.cyan) :
                                 AnyShapeStyle(Color.white.opacity(0.45))
                         )
                         .scaleEffect(isSelected ? 1.08 : 1.0)
@@ -237,27 +228,32 @@ private struct CustomTabBar: View {
                     if index == 1 && pendingCount > 0 {
                         Text("\(pendingCount)")
                             .font(.system(size: 8.5, weight: .heavy))
-                            .foregroundStyle(Color(hex: "#061A13"))
-                            .frame(width: 15, height: 15)
-                            .background(Color(hex: "#00FF88"))
+                            .foregroundStyle(.white)
+                            .frame(width: 16, height: 16)
+                            .background(DS.danger)
                             .clipShape(Circle())
-                            .offset(x: 8, y: -3)
-                            .shadow(color: Color(hex: "#00FF88").opacity(0.6), radius: 4)
+                            .offset(x: 9, y: -4)
+                            .shadow(color: DS.danger.opacity(0.6), radius: 4)
                     }
                 }
 
                 Text(label)
                     .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .rounded))
                     .foregroundStyle(
-                        isSelected ? Color(hex: "#00E5FF") : Color.white.opacity(0.45)
+                        isSelected ? DS.cyan : Color.white.opacity(0.45)
                     )
 
-                // Active glowing bottom pill indicator
-                Capsule()
-                    .fill(Color(hex: "#00E5FF"))
-                    .frame(width: isSelected ? 12 : 0, height: 2.5)
-                    .shadow(color: Color(hex: "#00E5FF").opacity(0.8), radius: 3)
-                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
+                // Active pill slides between tabs
+                ZStack {
+                    if isSelected {
+                        Capsule()
+                            .fill(DS.brandGradient)
+                            .frame(width: 18, height: 3)
+                            .shadow(color: DS.cyan, radius: 4)
+                            .matchedGeometryEffect(id: "pill", in: selection)
+                    }
+                }
+                .frame(height: 3)
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
@@ -274,51 +270,71 @@ private struct CustomTabBar: View {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             selected = 2
         } label: {
-            VStack(spacing: 3) {
-                ZStack {
-                    // Outer subtle glowing aura ring
-                    Circle()
-                        .strokeBorder(
-                            isLive ? Color(hex: "#FF3B30").opacity(0.45) : Color(hex: "#00FF88").opacity(0.4),
-                            lineWidth: 2
-                        )
-                        .frame(width: 50, height: 50)
-                        .scaleEffect(isLive ? 1.08 : 1.0)
-
-                    // Glowing green/red elevated disc
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: isLive ?
-                                    [Color(hex: "#FF3B30"), Color(hex: "#FF6259")] :
-                                    [Color(hex: "#00FF88"), Color(hex: "#00D670")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 42, height: 42)
-                        .shadow(
-                            color: isLive ? Color(hex: "#FF3B30").opacity(0.65) : Color(hex: "#00FF88").opacity(0.6),
-                            radius: 10, x: 0, y: 3
-                        )
-
-                    // Bolt or Pulse Waveform icon
-                    Image(systemName: isLive ? "waveform.path.ecg" : "bolt.fill")
-                        .font(.system(size: 19, weight: .black))
-                        .foregroundStyle(Color(hex: "#041B12"))
+            let ring = isLive ? DS.danger : DS.cyan
+            ZStack {
+                Circle()
+                    .fill(RadialGradient(colors: [Color(hex: "#0F2430"), DS.bg], center: .center, startRadius: 2, endRadius: 36))
+                Circle()
+                    .strokeBorder(ring, lineWidth: 2.5)
+                    .shadow(color: ring, radius: isLive ? 12 : 8)
+                Circle()
+                    .strokeBorder(ring.opacity(0.25), lineWidth: 1)
+                    .padding(-6)
+                VStack(spacing: 1) {
+                    Image(systemName: isLive ? "waveform.path.ecg" : icon)
+                        .font(.system(size: 17, weight: .bold))
+                    Text(isLive ? "LIVE" : label)
+                        .font(DS.display(9))
+                        .tracking(0.5)
                 }
-                .offset(y: -10)
-
-                Text(isLive ? "LIVE" : "TRACK")
-                    .font(.system(size: 9.5, weight: .heavy, design: .rounded))
-                    .foregroundStyle(isLive ? Color(hex: "#FF3B30") : Color(hex: "#00FF88"))
-                    .tracking(0.6)
-                    .offset(y: -8)
+                .foregroundStyle(isLive ? DS.danger : .white)
             }
+            .frame(width: 62, height: 62)
+            .offset(y: -14)
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Tab bar shape (rounded bar with a curved notch cradling TRACK)
+
+struct TabBarShape: Shape {
+    var radius: CGFloat = 26
+    var notchWidth: CGFloat = 92
+    var notchDepth: CGFloat = 20
+
+    func path(in r: CGRect) -> Path {
+        let mid = r.midX, half = notchWidth / 2
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + radius, y: r.minY))
+        p.addLine(to: CGPoint(x: mid - half - 14, y: r.minY))
+        p.addCurve(to: CGPoint(x: mid, y: r.minY + notchDepth),
+                   control1: CGPoint(x: mid - half + 8, y: r.minY),
+                   control2: CGPoint(x: mid - half + 10, y: r.minY + notchDepth))
+        p.addCurve(to: CGPoint(x: mid + half + 14, y: r.minY),
+                   control1: CGPoint(x: mid + half - 10, y: r.minY + notchDepth),
+                   control2: CGPoint(x: mid + half - 8, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX - radius, y: r.minY))
+        p.addQuadCurve(to: CGPoint(x: r.maxX, y: r.minY + radius), control: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY - radius))
+        p.addQuadCurve(to: CGPoint(x: r.maxX - radius, y: r.maxY), control: CGPoint(x: r.maxX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + radius, y: r.maxY))
+        p.addQuadCurve(to: CGPoint(x: r.minX, y: r.maxY - radius), control: CGPoint(x: r.minX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.minY + radius))
+        p.addQuadCurve(to: CGPoint(x: r.minX + radius, y: r.minY), control: CGPoint(x: r.minX, y: r.minY))
+        p.closeSubpath()
+        return p
+    }
+}
+
+private extension View {
+    /// Inactive tabs recede (fade, slight zoom-out, blur); the active one settles in.
+    func tabPage(isActive: Bool) -> some View {
+        self.opacity(isActive ? 1 : 0)
+            .scaleEffect(isActive ? 1 : 0.97)
+            .blur(radius: isActive ? 0 : 8)
     }
 }
 
